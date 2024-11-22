@@ -160,20 +160,18 @@
             android:summary="@string/summary_local_cursor"
             android:defaultValue="false" />
 
-        <CheckBoxPreference
-            android:key="checkbox_multi_touch_screen"
-            android:title="@string/title_multi_touch_screen"
-            android:summary="@string/summary_multi_touch_screen"
-            android:disableDependentsState="true"
-            android:defaultValue="false" />
-
-
-        <CheckBoxPreference
-            android:dependency="checkbox_multi_touch_screen"
-            android:key="checkbox_touchscreen_trackpad"
-            android:title="@string/title_checkbox_touchscreen_trackpad"
-            android:summary="@string/summary_checkbox_touchscreen_trackpad"
-            android:defaultValue="false" />
+<!--        <CheckBoxPreference-->
+<!--            android:key="checkbox_multi_touch_screen"-->
+<!--            android:title="@string/title_multi_touch_screen"-->
+<!--            android:summary="@string/summary_multi_touch_screen"-->
+<!--            android:disableDependentsState="true"-->
+<!--            android:defaultValue="false" />-->
+<!--        <CheckBoxPreference-->
+<!--            android:dependency="checkbox_multi_touch_screen"-->
+<!--            android:key="checkbox_touchscreen_trackpad"-->
+<!--            android:title="@string/title_checkbox_touchscreen_trackpad"-->
+<!--            android:summary="@string/summary_checkbox_touchscreen_trackpad"-->
+<!--            android:defaultValue="false" />-->
 
         <CheckBoxPreference
             android:key="checkbox_mouse_nav_buttons"
