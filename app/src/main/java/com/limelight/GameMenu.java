@@ -303,7 +303,7 @@ public class GameMenu {
 
         options.add(new MenuOption(getString(R.string.game_menu_cancel), null));
 
-        showMenuDialog("游戏快捷菜单", options.toArray(new MenuOption[options.size()]));
+        showMenuDialog("Game quick menu", options.toArray(new MenuOption[options.size()]));
     }
 
 
@@ -311,7 +311,7 @@ public class GameMenu {
         Context context=game;
         int step = 10;
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setTitle("调整触摸灵敏度");
+        builder.setTitle("Adjust touch sensitivity");
         // 动态创建布局
         LinearLayout layout = new LinearLayout(context);
         layout.setOrientation(LinearLayout.VERTICAL);
@@ -341,11 +341,11 @@ public class GameMenu {
         switch (key) {
             case "touchX":
                 initialValue = game.prefConfig.touchSensitivityX;
-                builder.setTitle("调整触摸灵敏度X轴(当前界面生效)");
+                builder.setTitle("Adjust touch sensitivity on the X-axis (effective on the current interface)");
                 break;
             case "touchY":
                 initialValue = game.prefConfig.touchSensitivityY;
-                builder.setTitle("调整触摸灵敏度Y轴(当前界面生效)");
+                builder.setTitle("Adjust touch sensitivity on the Y-axis (effective on the current interface).");
                 break;
             default:
                 initialValue = 100;
@@ -370,7 +370,7 @@ public class GameMenu {
 
         builder.setView(layout);
 
-        builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 // 保存修改后的值
@@ -386,7 +386,7 @@ public class GameMenu {
             }
         });
 
-        builder.setNegativeButton("取消", null);
+        builder.setNegativeButton("Cancel", null);
 
         builder.create().show();
     }
