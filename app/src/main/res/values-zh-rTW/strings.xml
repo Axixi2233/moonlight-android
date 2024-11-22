@@ -276,4 +276,193 @@
     <string name="summary_checkbox_gamepad_motion_fallback">如果您連線的手把或 Android 版本不支援手把感測器，請使用裝置內建的動態感測器。
 \n注意：啟用此選項可能會導致您的手把在主機被辨識為 PlayStation 控制器。</string>
     <string name="title_checkbox_gamepad_motion_fallback">模擬手把動態感測器支援</string>
+
+
+
+    <string name="game_menu_send_keys_win_shift_left">Send Win + shift + left (切换桌面)</string>
+    <string name="game_menu_send_keys_ctrl_alt_shift_q">Send Ctrl+Alt+Shift+Q (PC退出串流)</string>
+    <string name="game_menu_send_keys_ctrl_alt_shift_f1">Send Ctrl+Alt+Shift+F1 (切换显示器)</string>
+    <string name="game_menu_send_keys_ctrl_alt_shift_f12">Send Ctrl+Alt+Shift+F12 (切换显示器)</string>
+
+    <string name="game_menu_send_keys_ctrl_v">Send Ctrl + V (粘贴剪切板)</string>
+    <string name="game_menu_send_keys_win">Send Win (打开Windows开始菜单)</string>
+    <string name="game_menu_send_keys_win_d">Send Win + D (返回桌面)</string>
+    <string name="game_menu_send_keys_win_p">Send Win + P (显示器模式)</string>
+    <string name="game_menu_send_keys_alt_b">Send ALT + B (切换HDR)</string>
+    <string name="game_menu_send_keys_win_x_u_s">Send Win + X ~ U + S (睡眠)</string>
+    <string name="game_menu_send_keys_win_x_u_r">Send Win + X ~ U + R (重启)</string>
+    <string name="game_menu_send_keys_win_x_u_u">Send Win + X ~ U + U (关机)</string>
+    <string name="game_menu_send_keys_win_x_u_i">Send Win + X ~ U + I (注销)</string>
+    <string name="game_menu_send_keys_win_g">Send Win + G (打开Xbox Game Bar)</string>
+    <string name="game_menu_send_keys_shift_tab">Send Shift + Tab (打开Steam Overlay)</string>
+
+    <string name="game_menu_disconnect">断开连接</string>
+    <string name="game_menu_cancel">取消</string>
+    <string name="game_menu_send_keys">发送特殊按键</string>
+
+    <string name="game_menu_toggle_keyboard">弹出软键盘</string>
+    <string name="game_menu_hud">(显示/隐藏)性能信息</string>
+    <string name="game_menu_switch_mouse_model">鼠标模式切换</string>
+    <string name="game_menu_switch_keyboard_model">(显示/隐藏)特殊按键</string>
+    <string name="game_menu_switch_virtual_model">(显示/隐藏)虚拟手柄</string>
+    <string name="game_menu_switch_virtual_keyboard_model">(显示/隐藏)虚拟全键盘</string>
+    <string name="game_menu_switch_touch_sensitivity_model">(开启/禁用)触控灵敏度</string>
+    <string name="game_menu_switch_touch_sensitivity_update_x">触控灵敏度修改X轴</string>
+    <string name="game_menu_switch_touch_sensitivity_update_y">触控灵敏度修改Y轴</string>
+
+    <string name="keyboard_service_label">Moonlight物理键盘</string>
+    <string name="accessibility_description_text">此功能仅用于外接实体键盘时，某些系统存在特定的键盘快捷键，此情况会影响串流过程中，无法将相关按键指令传输给目标PC。
+        \n\nMoonlight不会观察您输入的文本，也不会收集您的密码、信用卡号或任何其他信息。
+        \n\n请关注：B站-阿西西的日常</string>
+
+    <string name="title_lite_mode_shortcut_popup">Lite精简模式点击弹出快捷选项</string>
+    <string name="summary_lite_mode_shortcut_popup">代替返回键逻辑，弹出游戏快捷菜单。</string>
+
+    <string name="title_enable_lite_mode">开启Lite精简模式</string>
+    <string name="summary_enable_lite_mode">展示简化版性能信息：网速/延迟/解码/丢包率/FPS</string>
+
+    <string name="title_official_virtual_gamepad_skin">官方虚拟手柄皮肤</string>
+    <string name="summary_official_virtual_gamepad_skin">如果你还是喜欢官方旧版虚拟手柄按键风格可以勾选此选项。\n按键形状可以为方形，如果你勾选了底部虚拟按键【普通按钮为方形按钮】</string>
+
+    <string name="category_axixi_settings">阿西西的日常设置</string>
+
+    <string name="title_quick_option">快捷选项</string>
+    <string name="summary_quick_option">开启后，串流界面点击手机物理返回键 展示相关选项！包括软键盘、性能信息、触控模式切换、发送特殊按键。</string>
+
+    <string name="title_axixi_debug_page">阿西西调试页面</string>
+    <string name="summary_axixi_debug_page">测试手柄震动及其他内容。</string>
+
+    <string name="title_side_by_side_mode">Side-By-Side模式</string>
+    <string name="summary_side_by_side_mode">左右格式3D模式，仅供娱乐！需外接手柄使用！</string>
+
+    <string name="title_resolution_settings">分辨率设置</string>
+    <string name="summary_resolution_settings">添加一个自定义分辨率，x号分割。比较奇怪的分辨率可能无法生效。非原生分辨率如果是刘海屏，可能不会自动填充刘海区域。如果画面比例一样，可以手动设置拉伸画面来充满全屏。</string>
+
+    <string name="title_custom_resolution">自定义分辨率</string>
+
+    <string name="title_portrait_mode">竖屏显示模式</string>
+    <string name="summary_portrait_mode">搭配自定义分辨率使用，确保你使用的串流端支持并且PC端分辨率是竖直方向。</string>
+
+    <string name="title_joycon_compatibility">兼容Switch JoyCon手柄</string>
+    <string name="summary_joycon_compatibility">如果你的JoyCon无法使用或识别按键有问题，可以尝试开启此功能。适配Android 10及以上。</string>
+
+    <string name="summary_keyboard_axi_height">调整虚拟全键盘的高度</string>
+    <string name="title_keyboard_axi_height">虚拟全键盘高度</string>
+
+    <string name="title_free_analog_stick">自由摇杆</string>
+    <string name="summary_free_analog_stick">虚拟手柄左右摇杆中心点位置不固定，可自由调整在一定区域内移动。</string>
+
+    <string name="summary_free_analog_stick_opacity">默认只有摇杆移动的时候有背景显示，如何不喜欢可调节透明度效果。</string>
+
+    <string name="title_free_analog_stick_opacity">自由摇杆背景透明度</string>
+
+    <string name="title_free_analog_stick_fixed">自由摇杆键程固定</string>
+    <string name="summary_free_analog_stick_fixed">固定摇杆推到底，虚拟手柄左右摇杆中心点位置不固定，可自由调整在一定区域内移动。</string>
+
+    <string name="title_external_display_mode">外接显示器模式（Beta）</string>
+    <string name="summary_external_display_mode">串流画面显示在外接显示器，虚拟按键及性能信息等控件在手机屏幕。</string>
+
+    <string name="title_screen_gravity">画面显示位置（默认居中）</string>
+    <string name="summary_screen_gravity">可能对折叠屏手机或者平板有点帮助，请自行DIY分辨率和画面位置。</string>
+
+    <string name="title_touch_sensitivity">触控屏幕灵敏度</string>
+    <string name="summary_touch_sensitivity">开启后，可手动调整触控灵敏度。</string>
+
+    <string name="title_global_touch_sensitivity">触控屏幕灵敏度全局生效</string>
+    <string name="summary_global_touch_sensitivity">默认不勾选，只有右半边屏幕生效（适合玩原神），勾选则全屏幕范围内生效。</string>
+
+    <string name="title_touch_sensitivity_rotation_auto">触控坐标超过边界，自动回屏幕中心点</string>
+    <string name="summary_touch_sensitivity_rotation_auto">正常灵敏度太高，滑动很小的距离就会超出边界，导致划不动，可勾选此选项。</string>
+
+    <string name="title_touch_sensitivity_x_axis">屏幕灵敏度调整X轴</string>
+    <string name="summary_touch_sensitivity_opacity_x">多点触控模式，玩游戏时，可能某些游戏灵敏度调节不能满足需求，可使用此选项修改视野的灵敏度。</string>
+
+    <string name="title_touch_sensitivity_y_axis">屏幕灵敏度调整Y轴</string>
+    <string name="summary_touch_sensitivity_opacity_y">多点触控模式，玩游戏时，可能某些游戏灵敏度调节不能满足需求，可使用此选项修改视野的灵敏度。</string>
+
+    <string name="title_touchpad_sensitivity_x_axis">触控板灵敏度X轴</string>
+    <string name="summary_touchpad_sensitivity_opacity">适用于鼠标触控板模式及虚拟特殊按键触控板控件；两者共用一个灵敏度数值，但是灵敏度表现可能不一样。有人两个一起用吗？</string>
+
+    <string name="title_touchpad_sensitivity_y_axis">触控板灵敏度Y轴</string>
+    <string name="summary_touchpad_sensitivity_y_opacity">适用于鼠标触控板模式及虚拟特殊按键触控板控件；两者共用一个灵敏度数值，但是灵敏度表现可能不一样。有人两个一起用吗？</string>
+
+    <string name="title_device_rumble">强制使用设备本身的震动马达</string>
+    <string name="summary_device_rumble">如果你对连接的手柄本身震动效果不满意，可以开启此选项！【对强制使用月光自带USB驱动无效】</string>
+
+    <string name="title_virtual_motion">虚拟手柄使用设备本身的陀螺仪</string>
+    <string name="summary_virtual_motion">如果你希望虚拟手柄支持陀螺仪功能，开启此选项。可能需要在sunshine后台设置手柄强制为PS4手柄。建议连接物理手柄时关闭此选项。</string>
+
+    <string name="title_disable_default_special_button">禁用默认的特殊按键指令</string>
+    <string name="summary_disable_default_special_button">如果你感觉内置的指令对你没什么用的话，可以禁用，使用自己导入的。</string>
+
+    <string name="title_import_special_button_file">导入自定义特殊指令配置文件</string>
+    <string name="summary_import_special_button_file">每次都会覆盖原来的，请注意备份。</string>
+
+    <string name="title_software_update">软件版本更新</string>
+    <string name="summary_software_update">跳转到github获取releases</string>
+
+    <string name="title_about_author">关于作者</string>
+    <string name="summary_about_author">跳转到B站阿西西的日常个人首页</string>
+
+    <string name="title_special_button_layout_axixi">特殊按键布局-阿西西的日常</string>
+    <string name="title_virtual_keyboard_display">屏幕显示虚拟按键</string>
+    <string name="summary_virtual_keyboard_display">在触摸屏上显示一层虚拟特殊按键。按键透明度与上方选项中虚拟手柄共用。</string>
+
+    <string name="title_default_layout_scheme">默认布局方案</string>
+    <string name="summary_default_layout_scheme">每套布局方案初始默认一样（根据keyboards.json文件生成），可自行进行删减调整。</string>
+
+    <string name="summary_vibrate_osc">点按屏幕按键时，会触发手机马达震动，此选项也可用于虚拟手柄按钮。</string>
+
+    <string name="title_square_buttons">普通按钮为方形按钮</string>
+    <string name="summary_square_buttons">虚拟按钮形状为方形按钮，默认为圆形。</string>
+
+    <string name="title_reset_virtual_keyboard">重置屏幕虚拟按键布局</string>
+    <string name="summary_reset_virtual_keyboard">初始化特殊按键布局（重置默认选择的那套布局方案）</string>
+
+    <string name="title_import_config_file">导入配置文件</string>
+    <string name="summary_import_config_file">选择一个配置文件，覆盖默认选择的布局方案。</string>
+
+    <string name="title_export_config_file">导出配置文件</string>
+    <string name="summary_export_config_file">导出默认选择的布局方案。</string>
+
+    <string name="title_backup_restore_data">备份恢复数据【注意数据安全】</string>
+
+    <string name="title_export_computers_data_file">导出配对的电脑数据库文件</string>
+    <string name="summary_export_computers_data_file">导出一个db格式的sqlite数据库文件</string>
+
+    <string name="title_export_https_data_crt_file">导出网络请求的证书文件</string>
+    <string name="summary_export_https_data_crt_file">导出一个crt格式的证书文件</string>
+
+    <string name="title_export_https_data_key_file">导出网络请求的key文件</string>
+    <string name="summary_export_https_data_key_file">导出一个key格式的验证文件</string>
+
+    <string name="title_import_computers_data_file">导入配对的电脑数据库文件</string>
+    <string name="summary_import_computers_data_file">选择db数据库文件，会覆盖更新原有的电脑列表，需要重新打开APP生效。</string>
+
+    <string name="title_import_https_data_crt_file">导入网络请求的证书文件</string>
+    <string name="summary_import_https_data_crt_file">导入一个crt格式的证书文件</string>
+
+    <string name="title_import_https_data_key_file">导入网络请求的key文件</string>
+    <string name="summary_import_https_data_key_file">导入一个key格式的验证文件</string>
+
+    <string name="title_mouse_mode">触控/鼠标模式 【默认多点触控】</string>
+    <string name="summary_mouse_mode">可选择一种鼠标模式，多点触控需要搭配sunshine使用~</string>
+
+    <string name="title_local_cursor">使用本地鼠标光标</string>
+    <string name="summary_local_cursor">默认外接物理鼠标的光标会被捕获，此选项可显示安卓系统光标</string>
+
+    <string name="title_multi_touch_screen">多点触控屏幕模式</string>
+    <string name="summary_multi_touch_screen">开启此选项可以实现surface一样多点触控操作windows系统效果。\n仅支持sunshine 0.21及以上版本</string>
+
+
+    <string name="title_video_bitrate">输入视频码率Mbps</string>
+    <string name="summary_video_bitrate">如果你感觉Seek控件滑动不太好用，可以选择手动输入。\n超过Seek滑动最大值，可能不显示但是串流时是生效的~</string>
+
+    <string name="dialog_message_video_bitrate">请输入数字，小数点只能识别到x.5，超过会四舍五入~</string>
+
+    <string name="title_force_video_bitrate">强制设置视频码率（覆盖上方滑动码率）</string>
+
+    <string name="title_cutout_mode_video">填充刘海区域</string>
+
+    <string name="title_virtual_keyboard_opacity">虚拟全键盘透明度</string>
 </resources>
