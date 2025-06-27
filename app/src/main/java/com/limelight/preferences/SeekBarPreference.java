@@ -61,7 +61,7 @@ public class SeekBarPreference extends DialogPreference
         // Get default, min, and max seekbar values
         defaultValue = attrs.getAttributeIntValue(ANDROID_SCHEMA_URL, "defaultValue", PreferenceConfiguration.getDefaultBitrate(context));
         maxValue = attrs.getAttributeIntValue(ANDROID_SCHEMA_URL, "max", 100);
-        minValue = attrs.getAttributeIntValue(SEEKBAR_SCHEMA_URL, "min", 1);
+        minValue = attrs.getAttributeIntValue(SEEKBAR_SCHEMA_URL, "min", 0);
         stepSize = attrs.getAttributeIntValue(SEEKBAR_SCHEMA_URL, "step", 1);
         divisor = attrs.getAttributeIntValue(SEEKBAR_SCHEMA_URL, "divisor", 1);
         keyStepSize = attrs.getAttributeIntValue(SEEKBAR_SCHEMA_URL, "keyStep", 0);
