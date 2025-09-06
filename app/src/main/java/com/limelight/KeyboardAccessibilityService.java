@@ -5,7 +5,9 @@ import android.accessibilityservice.AccessibilityServiceInfo;
 import android.net.Uri;
 import android.support.v4.content.FileProvider;
 import android.text.TextUtils;
+import android.view.InputDevice;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.accessibility.AccessibilityEvent;
 import android.widget.Toast;
 
@@ -30,6 +32,11 @@ public class KeyboardAccessibilityService extends AccessibilityService {
 
     @Override
     public boolean onKeyEvent(KeyEvent event) {
+        //如果是手柄类型则忽略
+        int sources = event.getDevice().getSources();
+        if (((sources & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD)) {
+            return super.onKeyEvent(event);
+        }
         int action = event.getAction();
         int keyCode = event.getKeyCode();
         if (action == KeyEvent.ACTION_DOWN&&PreferenceConfiguration.readPreferences(this).enableAccessibilityShowLog) {
