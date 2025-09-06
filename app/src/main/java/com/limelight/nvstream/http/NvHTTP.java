@@ -1,6 +1,7 @@
 package com.limelight.nvstream.http;
 
 import android.os.Build;
+import android.text.TextUtils;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -51,6 +52,7 @@ import com.limelight.LimeLog;
 import com.limelight.nvstream.ConnectionContext;
 import com.limelight.nvstream.http.PairingManager.PairState;
 import com.limelight.nvstream.jni.MoonBridge;
+import com.limelight.utils.RazerUtils;
 
 import okhttp3.ConnectionPool;
 import okhttp3.HttpUrl;
@@ -416,6 +418,15 @@ public class NvHTTP {
     }
 
     private HttpUrl getCompleteUrl(HttpUrl baseUrl, String path, String query) {
+
+        if(TextUtils.isEmpty(clientName)){
+            return baseUrl.newBuilder()
+                    .addPathSegment(path)
+                    .query(query)
+                    .addQueryParameter("uniqueid", uniqueId)
+                    .addQueryParameter("uuid", UUID.randomUUID().toString())
+                    .build();
+        }
         return baseUrl.newBuilder()
                 .addPathSegment(path)
                 .query(query)
@@ -668,6 +679,8 @@ public class NvHTTP {
                     app.setAppId(xpp.getText());
                 } else if (currentTag.peek().equals("IsHdrSupported")) {
                     app.setHdrSupported(xpp.getText().equals("1"));
+                }else if (currentTag.peek().equals("CustomImagePath")) {//兼容雷蛇
+                    app.setCustomImagePath(xpp.getText());
                 }
                 break;
             }
@@ -795,6 +808,7 @@ public class NvHTTP {
             "&remoteControllersBitmap=" + context.streamConfig.getAttachedGamepadMask() +
             "&gcmap=" + context.streamConfig.getAttachedGamepadMask() +
             "&gcpersist="+(context.streamConfig.getPersistGamepadsAfterDisconnect() ? 1 : 0) +
+             RazerUtils.getUrlParams(context.streamConfig)+
             MoonBridge.getLaunchUrlQueryParameters());
         if ((verb.equals("launch") && !getXmlString(xmlStr, "gamesession", true).equals("0") ||
                 (verb.equals("resume") && !getXmlString(xmlStr, "resume", true).equals("0")))) {

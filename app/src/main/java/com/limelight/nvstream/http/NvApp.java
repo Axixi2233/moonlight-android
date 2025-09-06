@@ -7,7 +7,8 @@ public class NvApp {
     private int appId;
     private boolean initialized;
     private boolean hdrSupported;
-    
+
+    private String customImagePath;
     public NvApp() {}
     
     public NvApp(String appName) {
@@ -20,7 +21,16 @@ public class NvApp {
         this.hdrSupported = hdrSupported;
         this.initialized = true;
     }
-    
+
+
+    public void setCustomImagePath(String customImagePath) {
+        this.customImagePath = customImagePath;
+    }
+
+    public String getCustomImagePath() {
+        return customImagePath;
+    }
+
     public void setAppName(String appName) {
         this.appName = appName;
     }

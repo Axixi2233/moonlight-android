@@ -28,6 +28,9 @@ public class StreamConfiguration {
     private int colorRange;
     private int colorSpace;
     private boolean persistGamepadsAfterDisconnect;
+    private int ppi;
+    //雷蛇虚拟显示器
+    private int razerVD;
 
     public static class Builder {
         private StreamConfiguration config = new StreamConfiguration();
@@ -128,6 +131,15 @@ public class StreamConfiguration {
             return this;
         }
 
+        public StreamConfiguration.Builder setPPI(int ppi) {
+            config.ppi = ppi;
+            return this;
+        }
+        public StreamConfiguration.Builder setRazerVD(int vd) {
+            config.razerVD = vd;
+            return this;
+        }
+
         public StreamConfiguration build() {
             return config;
         }
@@ -148,6 +160,7 @@ public class StreamConfiguration {
         this.audioConfiguration = MoonBridge.AUDIO_CONFIGURATION_STEREO;
         this.supportedVideoFormats = MoonBridge.VIDEO_FORMAT_H264;
         this.attachedGamepadMask = 0;
+        this.ppi = 350;
     }
     
     public int getWidth() {
@@ -221,4 +234,13 @@ public class StreamConfiguration {
     public int getColorSpace() {
         return colorSpace;
     }
+
+    public int getPpi() {
+        return ppi;
+    }
+
+    public int getRrazerVD(){
+        return razerVD;
+    }
+
 }
