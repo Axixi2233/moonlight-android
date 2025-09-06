@@ -44,7 +44,7 @@ public class MediaCodecHelper {
     private static final List<String> exynosDecoderPrefixes;
     private static final List<String> amlogicDecoderPrefixes;
     private static final List<String> knownVendorLowLatencyOptions;
-
+    private static final List<String> mtkDecoderPrefixes; //ALONSOJR1980
     public static final boolean SHOULD_BYPASS_SOFTWARE_BLOCK =
             Build.HARDWARE.equals("ranchu") || Build.HARDWARE.equals("cheets") || Build.BRAND.equals("Android-x86");
 
@@ -249,6 +249,12 @@ public class MediaCodecHelper {
 
         amlogicDecoderPrefixes.add("omx.amlogic");
         amlogicDecoderPrefixes.add("c2.amlogic"); // Unconfirmed
+    }
+
+    static {
+        mtkDecoderPrefixes = new LinkedList<>();
+        mtkDecoderPrefixes.add("omx.mtk");
+        mtkDecoderPrefixes.add("c2.mtk");
     }
 
     private static boolean isPowerVR(String glRenderer) {
@@ -492,7 +498,7 @@ public class MediaCodecHelper {
                 !isAdreno620;
     }
 
-    public static boolean setDecoderLowLatencyOptions(MediaFormat videoFormat, MediaCodecInfo decoderInfo, int tryNumber) {
+    public static boolean setDecoderLowLatencyOptions(MediaFormat videoFormat, MediaCodecInfo decoderInfo, int tryNumber, boolean lowLatencyExperiment) {
         // Options here should be tried in the order of most to least risky. The decoder will use
         // the first MediaFormat that doesn't fail in configure().
 
@@ -505,7 +511,7 @@ public class MediaCodecHelper {
 
             // If this decoder officially supports FEATURE_LowLatency, we will just use that alone
             // for try 0. Otherwise, we'll include it as best effort with other options.
-            if (decoderSupportsAndroidRLowLatency(decoderInfo, videoFormat.getString(MediaFormat.KEY_MIME))) {
+            if (!lowLatencyExperiment&&decoderSupportsAndroidRLowLatency(decoderInfo, videoFormat.getString(MediaFormat.KEY_MIME))) {
                 return true;
             }
         }
@@ -562,6 +568,25 @@ public class MediaCodecHelper {
                 }
                 if (tryNumber < 5) {
                     videoFormat.setInteger("vendor.qti-ext-dec-low-latency.enable", 1);
+
+                    //ALONSOJR1980 - CONFIRMED WORKING: Snapdragon Elite, SD8 gen 3, SD8 gen 2
+                    //latency-wise, software fencing is the most important flag for latest Snapdragons
+                    if(lowLatencyExperiment){
+                        videoFormat.setInteger("vendor.qti-ext-output-sw-fence-enable.value", 1); //Snapdragon 8 gen 2
+                        videoFormat.setInteger("vendor.qti-ext-output-fence.enable", 1); // Snapdragon 8s Gen 3 and Elite
+                        videoFormat.setInteger("vendor.qti-ext-output-fence.fence_type", 1); // Snapdragon 8s Gen 3 and ELite / 0 = none, 1 = sw, 2 = hw, 3 = hybrid. Best option = 1
+                    }
+
+                    setNewOption = true;
+                }
+            }
+            else if (lowLatencyExperiment&isDecoderInList(mtkDecoderPrefixes, decoderInfo.getName())) {//todo mtk解码
+                if (tryNumber < 4) {
+                    videoFormat.setInteger("vendor.mtk.vdec.cpu.boost.mode.value", 2);
+                    videoFormat.setInteger("vendor.mtk.ext.dolby.vision.cpu-boost", 1);
+                    videoFormat.setInteger("vendor.mtk.vdec.bq.guard.interval.time.value", 2);
+                    videoFormat.setInteger("vendor.mtk.vdec.buffer.fetch.timeout.ms.value", 2);
+
                     setNewOption = true;
                 }
             }

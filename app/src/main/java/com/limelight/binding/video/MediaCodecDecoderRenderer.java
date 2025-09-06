@@ -36,6 +36,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Process;
 import android.os.SystemClock;
+import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.util.Range;
 import android.view.Choreographer;
@@ -671,8 +672,9 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
             LimeLog.info("Decoder configuration try: "+tryNumber);
 
             MediaFormat mediaFormat = createBaseMediaFormat(mimeType);
+            //低延迟模式
             // This will try low latency options until we find one that works (or we give up).
-            boolean newFormat = MediaCodecHelper.setDecoderLowLatencyOptions(mediaFormat, selectedDecoderInfo, tryNumber);
+            boolean newFormat = MediaCodecHelper.setDecoderLowLatencyOptions(mediaFormat, selectedDecoderInfo, tryNumber,prefs.lowLatencyExperiment);
             //todo 色彩格式
 //            MediaCodecInfo.CodecCapabilities codecCapabilities = selectedDecoderInfo.getCapabilitiesForType(mimeType);
 //            int[] colorFormats=codecCapabilities.colorFormats;
