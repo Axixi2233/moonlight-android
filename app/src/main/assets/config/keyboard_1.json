@@ -1,0 +1,83 @@
+{
+  "desc": "rocker=摇杆|dpad=十字键|keystroke=普通按钮",
+  "data": {
+    "rocker": [
+      {
+        "name": "摇杆",
+        "elementId": "rocker_1",
+        "leftCode": 29,
+        "rightCode": 32,
+        "upCode": 51,
+        "downCode": 47,
+        "middleCode": 59,
+        "desc":"简单描述下，上下左右中按键code值为keycode查阅附赠的keycode-android.java文件获取，elementId值是唯一的,middleCode是中键的小圆点，双击可以触发"
+      }
+    ],
+    "dpad": [
+      {
+        "name": "十字键",
+        "elementId": "dpad_1",
+        "leftCode": 29,
+        "rightCode": 32,
+        "upCode": 51,
+        "downCode": 47,
+        "desc":"简单描述下，上下左右按键code值为keycode查阅附赠的keycode-android.java文件获取，elementId值是唯一的"
+      }
+    ],
+    "mouse": [
+      {
+        "name": "ML",
+        "code": 1,
+        "desc":"简单描述下，code值固定，name为按钮显示文字，ML左键、MM中键、MR右键"
+      },
+      {
+        "name": "MR",
+        "code": 3
+      },
+      {
+        "name": "MR+",
+        "code": 3,
+        "switchButton": 1
+      },
+      {
+        "name": "MM",
+        "code": 2
+      },
+      {
+        "name": "M⬆",
+        "code": 4
+      },
+      {
+        "name": "M⬇",
+        "code": 5
+      },
+      {
+        "name": "触控板(右)",
+        "code": 9,
+        "desc": "特殊触控板按键适合魔兽转视野，name的数值可以清空，但是怕不好区分，可以修改成其他的"
+      },
+      {
+        "name": "触控板",
+        "code": 10,
+        "desc": "普通触控板控件"
+      },
+      {
+        "name": "触控板(左)",
+        "code": 11,
+        "desc": "一直按着左键不放~"
+      },
+      {
+        "name": "触控板(中)",
+        "code": 12,
+        "desc": "一直按着鼠标中键不放~"
+      },
+      {
+        "name": "触控板(无)",
+        "code": 13,
+        "desc": "普通触控板控件没有点击事件"
+      }
+    ],
+    "keystroke": [
+    ]
+  }
+}

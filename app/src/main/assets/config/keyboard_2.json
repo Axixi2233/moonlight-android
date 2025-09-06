@@ -1,0 +1,13 @@
+{
+  "desc": "rocker=摇杆|dpad=十字键|keystroke=普通按钮",
+  "data": {
+    "rocker": [
+    ],
+    "dpad": [
+    ],
+    "mouse": [
+    ],
+    "keystroke": [
+    ]
+  }
+}
