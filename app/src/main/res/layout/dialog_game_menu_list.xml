@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="300dp"
+    android:layout_height="match_parent"
+    android:background="@color/gameMenuBgColor"
+    android:orientation="vertical"
+    android:paddingBottom="10dp"
+    android:paddingLeft="10dp"
+    android:paddingRight="10dp"
+    android:paddingTop="10dp">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <ImageButton
+            android:src="@drawable/ic_axi_back"
+            android:background="@drawable/ic_game_menu_btn_side_selector"
+            android:layout_width="24dp"
+            android:id="@+id/ibtn_back"
+            android:layout_height="24dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="触控模式"
+            android:id="@+id/tx_title"
+            android:textColor="@android:color/white"
+            android:textSize="13dp" />
+
+        <Button
+            android:layout_width="50dp"
+            android:layout_height="24dp"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:text="新增"
+            android:visibility="visible"
+            android:background="@drawable/ic_game_menu_btn_side_selector"
+            android:layout_marginRight="5dp"
+            android:gravity="center"
+            android:id="@+id/btn_right"
+            android:textColor="@android:color/white"
+            android:textSize="11dp" />
+
+    </RelativeLayout>
+
+    <ListView
+        android:divider="@android:color/transparent"
+        android:scrollbars="none"
+        android:id="@+id/lv_menu"
+        android:dividerHeight="5dp"
+        android:layout_marginTop="8dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+</LinearLayout>

@@ -1,0 +1,772 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="300dp"
+    android:layout_height="match_parent"
+    android:background="@color/gameMenuBgColor"
+    android:orientation="vertical"
+    android:paddingBottom="10dp"
+    android:paddingLeft="10dp"
+    android:paddingRight="10dp"
+    android:paddingTop="10dp">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:paddingBottom="4dp"
+        android:layout_height="wrap_content">
+        <ImageButton
+            android:src="@drawable/ic_axi_back"
+            android:background="@drawable/ic_game_menu_btn_side_selector"
+            android:layout_width="24dp"
+            android:id="@+id/ibtn_back"
+            android:layout_height="24dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="显示"
+            android:id="@+id/tx_title"
+            android:textColor="@android:color/white"
+            android:textSize="13dp" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="24dp"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:text="应用配置"
+            android:background="@drawable/ic_game_menu_btn_side_selector"
+            android:layout_marginRight="5dp"
+            android:gravity="center"
+            android:id="@+id/btn_right"
+            android:textColor="@android:color/white"
+            android:textSize="11dp" />
+
+    </RelativeLayout>
+
+    <ScrollView
+        android:scrollbars="none"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:layout_marginTop="10dp"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:layout_marginBottom="5dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="视频信息"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/white"
+                    android:textSize="12dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="5dp"
+                    android:text="应用配置后，页面关闭，需重新打开串流页面生效！"
+                    android:textStyle="italic|bold"
+                    android:textColor="#FFC107"
+                    android:textSize="8dp" />
+
+            </LinearLayout>
+
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="5dp"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="left"
+                    android:text="分辨率：1920x1080"
+                    android:textStyle="italic|bold"
+                    android:textColor="@android:color/white"
+                    android:id="@+id/tx_game_display_screen"
+                    android:textSize="11dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="left"
+                    android:layout_marginTop="4dp"
+                    android:text="\t码率：100 mbps"
+                    android:textColor="@android:color/white"
+                    android:id="@+id/tx_game_display_bit"
+                    android:textStyle="italic|bold"
+                    android:textSize="11dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="left"
+                    android:layout_marginTop="4dp"
+                    android:text="\t帧率：60 fps"
+                    android:textColor="@android:color/white"
+                    android:id="@+id/tx_game_display_fps"
+                    android:textStyle="italic|bold"
+                    android:textSize="11dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="left"
+                    android:layout_marginTop="4dp"
+                    android:text="\t方向：横向"
+                    android:textColor="@android:color/white"
+                    android:id="@+id/tx_game_display_direction"
+                    android:textStyle="italic|bold"
+                    android:textSize="11dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="left"
+                    android:layout_marginTop="4dp"
+                    android:text="\t模式：外接显示器"
+                    android:textColor="@android:color/white"
+                    android:id="@+id/tx_game_display_ex"
+                    android:textStyle="italic|bold"
+                    android:textSize="11dp" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="5dp"
+                android:text="选项"
+                android:textStyle="bold"
+                android:textColor="@android:color/white"
+                android:textSize="12dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <Button
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:drawableLeft="@drawable/ic_axi_game_pad_display"
+                    android:drawablePadding="4dp"
+                    android:id="@+id/bt_display_screen"
+                    android:drawableRight="@drawable/ic_axi_arrow"
+                    android:gravity="left|center_vertical"
+                    android:padding="10dp"
+                    android:text="分辨率"
+                    android:textSize="11dp" />
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_marginTop="4dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="27dp">
+
+                    <Button
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="4dp"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:gravity="center"
+                        android:layout_weight="1"
+                        android:id="@+id/bt_display_ex"
+                        android:text="模式切换"
+                        android:textSize="10dp" />
+
+                    <Button
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:layout_marginRight="2dp"
+                        android:id="@+id/bt_display_exchange"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:gravity="center"
+                        android:text="宽高交换"
+                        android:textSize="10dp" />
+
+                    <Button
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginLeft="2dp"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:gravity="center"
+                        android:layout_weight="1"
+                        android:id="@+id/bt_display_direction"
+                        android:text="方向交换"
+                        android:textSize="10dp" />
+
+
+                </LinearLayout>
+
+
+            </LinearLayout>
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/ic_game_menu_btn_selector"
+                android:drawableLeft="@drawable/ic_axi_game_pad_bitrate"
+                android:drawablePadding="4dp"
+                android:id="@+id/bt_display_bitrate"
+                android:drawableRight="@drawable/ic_axi_arrow"
+                android:gravity="left|center_vertical"
+                android:padding="10dp"
+                android:text="码率"
+                android:textSize="11dp" />
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/ic_game_menu_btn_selector"
+                android:drawableLeft="@drawable/ic_axi_game_pad_fps"
+                android:drawablePadding="4dp"
+                android:id="@+id/bt_display_fps"
+                android:drawableRight="@drawable/ic_axi_arrow"
+                android:gravity="left|center_vertical"
+                android:padding="10dp"
+                android:text="帧率"
+                android:textSize="11dp" />
+
+            <LinearLayout
+                android:layout_marginTop="10dp"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:layout_marginBottom="5dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="解码器"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/white"
+                    android:textSize="12dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="5dp"
+                    android:singleLine="true"
+                    android:ellipsize="end"
+                    android:text="如果主机软件或显卡不支持编解码器选择，则可能会忽略编解码器选择。"
+                    android:textStyle="italic|bold"
+                    android:textColor="#FFC107"
+                    android:textSize="6dp" />
+            </LinearLayout>
+
+            <RadioGroup
+                android:layout_width="match_parent"
+                android:layout_height="27dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginRight="5dp"
+                android:layout_marginLeft="5dp"
+                android:layout_marginBottom="5dp"
+                android:id="@+id/rg_game_display_video_format"
+                android:orientation="horizontal">
+
+                <RadioButton
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/rbt_game_display_video_format_1"
+                    android:button="@null"
+                    android:text="自动"
+                    android:checked="true"
+                    android:textSize="10dp" />
+
+                <RadioButton
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/rbt_game_display_video_format_2"
+                    android:button="@null"
+                    android:text="H264"
+                    android:textSize="10dp" />
+
+                <RadioButton
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/rbt_game_display_video_format_3"
+                    android:button="@null"
+                    android:text="HEVC"
+                    android:textSize="10dp" />
+
+                <RadioButton
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/rbt_game_display_video_format_4"
+                    android:button="@null"
+                    android:text="AV1"
+                    android:textSize="10dp" />
+
+            </RadioGroup>
+
+
+            <LinearLayout
+                android:layout_marginTop="10dp"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:layout_marginBottom="5dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="解码低延迟模式Beta"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/white"
+                    android:textSize="12dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="5dp"
+                    android:singleLine="true"
+                    android:ellipsize="end"
+                    android:text="高通8Gen1及以上和联发科9300及以下芯片机型生效！"
+                    android:textStyle="italic|bold"
+                    android:textColor="#FFC107"
+                    android:textSize="6dp" />
+            </LinearLayout>
+
+            <RadioGroup
+                android:layout_width="match_parent"
+                android:layout_height="27dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginRight="5dp"
+                android:layout_marginLeft="5dp"
+                android:layout_marginBottom="5dp"
+                android:id="@+id/rg_game_display_lowlatency"
+                android:orientation="horizontal">
+
+                <RadioButton
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/rbt_game_display_lowlatency_1"
+                    android:button="@null"
+                    android:text="开启"
+                    android:checked="true"
+                    android:textSize="10dp" />
+
+                <RadioButton
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/rbt_game_display_lowlatency_2"
+                    android:button="@null"
+                    android:text="关闭"
+                    android:textSize="10dp" />
+
+            </RadioGroup>
+
+            <LinearLayout
+                android:layout_marginTop="10dp"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:layout_marginBottom="5dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="HDR"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/white"
+                    android:textSize="12dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="5dp"
+                    android:singleLine="true"
+                    android:ellipsize="end"
+                    android:text="重新打开串流页面生效！"
+                    android:textStyle="italic|bold"
+                    android:textColor="#FFC107"
+                    android:textSize="8dp" />
+            </LinearLayout>
+
+            <RadioGroup
+                android:layout_width="match_parent"
+                android:layout_height="27dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginRight="5dp"
+                android:layout_marginLeft="5dp"
+                android:layout_marginBottom="5dp"
+                android:id="@+id/rg_game_display_hdr"
+                android:orientation="horizontal">
+
+                <RadioButton
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/rbt_game_display_hdr_1"
+                    android:button="@null"
+                    android:text="开启"
+                    android:checked="true"
+                    android:textSize="10dp" />
+
+                <RadioButton
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/rbt_game_display_hdr_2"
+                    android:button="@null"
+                    android:text="关闭"
+                    android:textSize="10dp" />
+
+            </RadioGroup>
+
+            <LinearLayout
+                android:layout_marginTop="10dp"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:layout_marginBottom="5dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="虚拟显示器"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/white"
+                    android:textSize="12dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="5dp"
+                    android:singleLine="true"
+                    android:ellipsize="end"
+                    android:text="使用雷蛇Cortex雷游生效，兼容Apollo版(仅支持扩展模式)"
+                    android:textStyle="italic|bold"
+                    android:textColor="#FFC107"
+                    android:textSize="6dp" />
+            </LinearLayout>
+
+            <RadioGroup
+                android:layout_width="match_parent"
+                android:layout_height="27dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginRight="5dp"
+                android:layout_marginLeft="5dp"
+                android:layout_marginBottom="5dp"
+                android:id="@+id/rg_game_display_vd"
+                android:orientation="horizontal">
+
+                <RadioButton
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/rbt_game_display_vd_1"
+                    android:button="@null"
+                    android:text="关闭"
+                    android:checked="true"
+                    android:textSize="10dp" />
+
+                <RadioButton
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/rbt_game_display_vd_2"
+                    android:button="@null"
+                    android:text="扩展模式"
+                    android:textSize="10dp" />
+
+                <RadioButton
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/rbt_game_display_vd_3"
+                    android:button="@null"
+                    android:text="仅虚拟显示屏"
+                    android:textSize="10dp" />
+
+            </RadioGroup>
+
+
+            <LinearLayout
+                android:layout_marginTop="10dp"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:layout_marginBottom="5dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="强制显示模式"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/white"
+                    android:textSize="12dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="5dp"
+                    android:singleLine="true"
+                    android:ellipsize="end"
+                    android:text="在某些系统(如ColorOS)上启用才能正确设置刷新率/分辨率。"
+                    android:textStyle="italic|bold"
+                    android:textColor="#FFC107"
+                    android:textSize="6dp" />
+            </LinearLayout>
+
+            <RadioGroup
+                android:layout_width="match_parent"
+                android:layout_height="27dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginRight="5dp"
+                android:layout_marginLeft="5dp"
+                android:layout_marginBottom="5dp"
+                android:id="@+id/rg_game_display_enforce"
+                android:orientation="horizontal">
+
+                <RadioButton
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/rbt_game_display_enforce_1"
+                    android:button="@null"
+                    android:text="开启"
+                    android:checked="true"
+                    android:textSize="10dp" />
+
+                <RadioButton
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/rbt_game_display_enforce_2"
+                    android:button="@null"
+                    android:text="关闭"
+                    android:textSize="10dp" />
+
+            </RadioGroup>
+
+            <LinearLayout
+                android:layout_marginTop="10dp"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:layout_marginBottom="5dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="播放声音"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/white"
+                    android:textSize="12dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="5dp"
+                    android:singleLine="true"
+                    android:ellipsize="end"
+                    android:text="重新打开串流页面生效！"
+                    android:textStyle="italic|bold"
+                    android:textColor="#FFC107"
+                    android:textSize="8dp" />
+            </LinearLayout>
+
+            <RadioGroup
+                android:layout_width="match_parent"
+                android:layout_height="27dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginRight="5dp"
+                android:layout_marginLeft="5dp"
+                android:layout_marginBottom="5dp"
+                android:id="@+id/rg_game_display_audio"
+                android:orientation="horizontal">
+
+                <RadioButton
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/rbt_game_display_audio_1"
+                    android:button="@null"
+                    android:text="本设备发声"
+                    android:checked="true"
+                    android:textSize="10dp" />
+
+                <RadioButton
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/rbt_game_display_audio_2"
+                    android:button="@null"
+                    android:text="本设备和PC同时发声"
+                    android:textSize="10dp" />
+
+            </RadioGroup>
+
+            <LinearLayout
+                android:orientation="vertical"
+                android:id="@+id/lv_display_lock"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <LinearLayout
+                    android:layout_marginTop="10dp"
+                    android:layout_marginLeft="5dp"
+                    android:layout_marginRight="5dp"
+                    android:layout_marginBottom="5dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="亮屏自动回连"
+                        android:textStyle="bold"
+                        android:textColor="@android:color/white"
+                        android:textSize="12dp" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="5dp"
+                        android:singleLine="true"
+                        android:ellipsize="end"
+                        android:text="立即生效，锁屏时保持游戏菜单是关闭状态！！！"
+                        android:textStyle="italic|bold"
+                        android:textColor="#FFC107"
+                        android:textSize="8dp" />
+
+                </LinearLayout>
+
+                <RadioGroup
+                    android:layout_width="match_parent"
+                    android:layout_height="27dp"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginRight="5dp"
+                    android:layout_marginLeft="5dp"
+                    android:layout_marginBottom="5dp"
+                    android:id="@+id/rg_game_display_lock"
+                    android:orientation="horizontal">
+
+                    <RadioButton
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:gravity="center"
+                        android:padding="4dp"
+                        android:id="@+id/rbt_game_display_lock_1"
+                        android:button="@null"
+                        android:text="关闭"
+                        android:checked="true"
+                        android:textSize="10dp" />
+
+                    <RadioButton
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:gravity="center"
+                        android:padding="4dp"
+                        android:id="@+id/rbt_game_display_lock_2"
+                        android:button="@null"
+                        android:text="本次生效"
+                        android:textSize="10dp" />
+
+                    <RadioButton
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:gravity="center"
+                        android:padding="4dp"
+                        android:id="@+id/rbt_game_display_lock_3"
+                        android:button="@null"
+                        android:text="一直生效"
+                        android:textSize="10dp" />
+
+                </RadioGroup>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</LinearLayout>

@@ -4,10 +4,13 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.os.Handler;
 import android.os.Looper;
+import android.preference.PreferenceManager;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+
+import com.limelight.preferences.PreferenceConfiguration;
 
 /**
 * 自动吸附悬浮窗view
@@ -54,6 +57,12 @@ public class AXFloatingMagnetView extends FrameLayout {
         mMoveAnimator = new MoveAnimator();
         mStatusBarHeight = 0;
         setClickable(true);
+        if(PreferenceConfiguration.readPreferences(getContext()).axFloatingPostionAuto
+                &&PreferenceConfiguration.readPreferences(getContext()).axFloatingPostionX !=-1){
+            setX(PreferenceConfiguration.readPreferences(getContext()).axFloatingPostionX);
+            setY(PreferenceConfiguration.readPreferences(getContext()).axFloatingPostionY);
+            isNearestLeft=PreferenceConfiguration.readPreferences(getContext()).axFloatingPostionIsNearestLeft;
+        }
         startDelayedAction();
 //        updateSize();
     }
@@ -65,9 +74,23 @@ public class AXFloatingMagnetView extends FrameLayout {
             public void run() {
                 // 修改透明度和位置
                 mMoveAnimator.stop();
-                animate().alpha(0.2f).setDuration(100).start();
+                animate().alpha(0.3f).setDuration(100).start();
                 float x=isNearestLeft? (float) -getWidth() /2:getX()+ (float) getWidth() /2;
                 animate().translationX(x).setDuration(100).start();
+                if(PreferenceConfiguration.readPreferences(getContext()).axFloatingPostionAuto){
+                    PreferenceManager.getDefaultSharedPreferences(getContext())
+                            .edit()
+                            .putFloat("ax_floating_postion_x",getX())
+                            .apply();
+                    PreferenceManager.getDefaultSharedPreferences(getContext())
+                            .edit()
+                            .putFloat("ax_floating_postion_y",getY())
+                            .apply();
+                    PreferenceManager.getDefaultSharedPreferences(getContext())
+                            .edit()
+                            .putBoolean("ax_floating_postion_isnearestleft",isNearestLeft)
+                            .apply();
+                }
             }
         };
         mHandler.postDelayed(delayedAction, 2000);

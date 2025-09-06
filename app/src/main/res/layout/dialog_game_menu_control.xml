@@ -1,0 +1,496 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="300dp"
+    android:layout_height="match_parent"
+    android:background="@color/gameMenuBgColor"
+    android:orientation="vertical"
+    android:paddingBottom="10dp"
+    android:paddingLeft="10dp"
+    android:paddingRight="10dp"
+    android:paddingTop="10dp">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:paddingBottom="4dp"
+        android:layout_height="wrap_content">
+        <ImageButton
+            android:src="@drawable/ic_axi_back"
+            android:background="@drawable/ic_game_menu_btn_side_selector"
+            android:layout_width="24dp"
+            android:id="@+id/ibtn_back"
+            android:layout_height="24dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="外设"
+            android:id="@+id/tx_title"
+            android:textColor="@android:color/white"
+            android:textSize="13dp" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="24dp"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:text="应用配置"
+            android:visibility="visible"
+            android:background="@drawable/ic_game_menu_btn_side_selector"
+            android:layout_marginRight="5dp"
+            android:gravity="center"
+            android:id="@+id/btn_right"
+            android:textColor="@android:color/white"
+            android:textSize="11dp" />
+
+    </RelativeLayout>
+
+    <ScrollView
+        android:scrollbars="none"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:layout_marginTop="10dp"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:layout_marginBottom="5dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="手柄"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/white"
+                    android:textSize="12dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="5dp"
+                    android:text="以下功能可能需要重新连接手柄生效！"
+                    android:textStyle="italic|bold"
+                    android:textColor="#FFC107"
+                    android:textSize="8dp" />
+
+            </LinearLayout>
+
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="5dp"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_marginTop="4dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="32dp">
+
+                    <CheckBox
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:drawableLeft="@drawable/ic_axi_game_pad_xbox"
+                        android:gravity="center|left"
+                        android:drawablePadding="4dp"
+                        android:padding="4dp"
+                        android:button="@null"
+                        android:id="@+id/btn_game_usb"
+                        android:text="启用月光\nUSB手柄驱动"
+                        android:textSize="8dp" />
+
+                    <CheckBox
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:drawableLeft="@drawable/ic_axi_game_pad_pass"
+                        android:gravity="center|left"
+                        android:drawablePadding="4dp"
+                        android:padding="4dp"
+                        android:button="@null"
+                        android:id="@+id/btn_game_grip"
+                        android:text="反转握把\n震动方向"
+                        android:textSize="8dp" />
+
+                    <CheckBox
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:drawableLeft="@drawable/ic_axi_game_pad_pass"
+                        android:gravity="center|left"
+                        android:drawablePadding="4dp"
+                        android:padding="4dp"
+                        android:button="@null"
+                        android:id="@+id/btn_game_trigger"
+                        android:text="忽略扳机\n默认死区"
+                        android:textSize="8dp" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_marginTop="5dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="32dp">
+
+                    <CheckBox
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:drawableLeft="@drawable/ic_axi_game_pad_pass"
+                        android:gravity="center|left"
+                        android:drawablePadding="4dp"
+                        android:padding="4dp"
+                        android:button="@null"
+                        android:id="@+id/btn_game_battery"
+                        android:text="上报手柄\n电池状态"
+                        android:textSize="8dp" />
+
+                    <CheckBox
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:drawableLeft="@drawable/ic_axi_game_pad_pass"
+                        android:gravity="center|left"
+                        android:drawablePadding="4dp"
+                        android:padding="4dp"
+                        android:button="@null"
+                        android:id="@+id/btn_game_usb_gyroscope"
+                        android:text="启用USB驱动\n手柄陀螺仪"
+                        android:textSize="8dp" />
+
+                    <CheckBox
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:drawableLeft="@drawable/ic_axi_game_pad_pass"
+                        android:gravity="center|left"
+                        android:drawablePadding="4dp"
+                        android:padding="4dp"
+                        android:button="@null"
+                        android:id="@+id/btn_game_trigger_rumble"
+                        android:text="握把震动联动\n扳机震动"
+                        android:textSize="8dp" />
+
+<!--                    <View-->
+<!--                        android:layout_width="match_parent"-->
+<!--                        android:layout_height="match_parent"-->
+<!--                        android:layout_marginRight="5dp"-->
+<!--                        android:layout_weight="1"-->
+<!--                        android:visibility="invisible"-->
+<!--                        android:button="@null"-->
+<!--                        android:textSize="8dp" />-->
+
+                </LinearLayout>
+
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginRight="5dp"
+                    android:layout_marginBottom="5dp"
+                    android:text="以下功能需要重新打开串流页面生效！"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/white"
+                    android:textSize="9dp" />
+
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_marginTop="4dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="32dp">
+
+                    <CheckBox
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:drawableLeft="@drawable/ic_axi_game_pad_via"
+                        android:gravity="center|left"
+                        android:drawablePadding="4dp"
+                        android:padding="4dp"
+                        android:button="@null"
+                        android:id="@+id/btn_game_shake"
+                        android:text="强制使用\n机身震动"
+                        android:textSize="8dp" />
+
+                    <CheckBox
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:drawableLeft="@drawable/ic_axi_game_pad_senser"
+                        android:gravity="center|left"
+                        android:drawablePadding="4dp"
+                        android:padding="4dp"
+                        android:button="@null"
+                        android:id="@+id/btn_game_gyroscope"
+                        android:text="无手柄使用\n设备陀螺仪"
+                        android:textSize="8dp" />
+
+                    <CheckBox
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:drawableLeft="@drawable/ic_axi_game_pad_joycon"
+                        android:gravity="center|left"
+                        android:drawablePadding="4dp"
+                        android:padding="4dp"
+                        android:button="@null"
+                        android:id="@+id/btn_game_joycon"
+                        android:text="兼容NS\n手柄按键"
+                        android:textSize="8dp" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_marginTop="10dp"
+                    android:layout_marginRight="5dp"
+                    android:layout_marginBottom="5dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="PS5手柄自适应扳机"
+                        android:textStyle="bold"
+                        android:textColor="@android:color/white"
+                        android:textSize="10dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="5dp"
+                        android:text="右上角应用配置生效！(每次连接手动执行下)"
+                        android:textStyle="italic|bold"
+                        android:textColor="#FFC107"
+                        android:textSize="8dp" />
+
+                </LinearLayout>
+
+
+                <RadioGroup
+                    android:layout_width="match_parent"
+                    android:layout_height="27dp"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginRight="5dp"
+                    android:layout_marginBottom="5dp"
+                    android:id="@+id/rg_game_control_ds5"
+                    android:orientation="horizontal">
+
+                    <RadioButton
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:gravity="center"
+                        android:padding="4dp"
+                        android:id="@+id/rbt_game_control_ds5_1"
+                        android:button="@null"
+                        android:text="关闭"
+                        android:checked="true"
+                        android:textSize="8dp" />
+
+                    <RadioButton
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:gravity="center"
+                        android:padding="4dp"
+                        android:id="@+id/rbt_game_control_ds5_2"
+                        android:button="@null"
+                        android:text="阻尼"
+                        android:textSize="8dp" />
+
+                    <RadioButton
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:gravity="center"
+                        android:padding="4dp"
+                        android:id="@+id/rbt_game_control_ds5_3"
+                        android:button="@null"
+                        android:text="扳机"
+                        android:textSize="8dp" />
+
+                    <RadioButton
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:gravity="center"
+                        android:padding="4dp"
+                        android:id="@+id/rbt_game_control_ds5_4"
+                        android:button="@null"
+                        android:text="自动步枪扳机"
+                        android:textSize="8dp" />
+
+                </RadioGroup>
+                <LinearLayout
+                    android:orientation="vertical"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="5dp"
+                        android:text="震动强度"
+                        android:textStyle="bold"
+                        android:textColor="@android:color/white"
+                        android:textSize="8dp" />
+                    <SeekBar
+                        android:max="255"
+                        android:min="10"
+                        android:progress="230"
+                        android:splitTrack="false"
+                        android:id="@+id/sb_game_control_ds5_strength"
+                        android:thumb="@android:color/transparent"
+                        android:progressDrawable="@drawable/ic_game_menu_seek_bg"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="left"
+                        android:layout_marginLeft="20dp"
+                        android:layout_marginTop="4dp"
+                        android:text="230"
+                        android:textStyle="italic"
+                        android:textColor="@android:color/white"
+                        android:id="@+id/tx_game_control_ds5_strength"
+                        android:textSize="7dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="5dp"
+                        android:text="震动频率"
+                        android:textStyle="bold"
+                        android:textColor="@android:color/white"
+                        android:textSize="8dp" />
+                    <SeekBar
+                        android:max="15"
+                        android:min="5"
+                        android:progress="10"
+                        android:splitTrack="false"
+                        android:id="@+id/sb_game_control_ds5_frequency"
+                        android:thumb="@android:color/transparent"
+                        android:progressDrawable="@drawable/ic_game_menu_seek_bg"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="left"
+                        android:layout_marginLeft="20dp"
+                        android:layout_marginTop="4dp"
+                        android:text="10"
+                        android:textColor="@android:color/white"
+                        android:textStyle="italic"
+                        android:id="@+id/tx_game_control_ds5_frequency"
+                        android:textSize="7dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="5dp"
+                        android:text="起始位置"
+                        android:textStyle="bold"
+                        android:textColor="@android:color/white"
+                        android:textSize="8dp" />
+                    <SeekBar
+                        android:max="255"
+                        android:min="10"
+                        android:progress="40"
+                        android:splitTrack="false"
+                        android:id="@+id/sb_game_control_ds5_start"
+                        android:thumb="@android:color/transparent"
+                        android:progressDrawable="@drawable/ic_game_menu_seek_bg"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="left"
+                        android:layout_marginLeft="20dp"
+                        android:layout_marginTop="4dp"
+                        android:text="40"
+                        android:textColor="@android:color/white"
+                        android:textStyle="italic"
+                        android:id="@+id/tx_game_control_ds5_start"
+                        android:textSize="7dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="5dp"
+                        android:text="结束位置"
+                        android:textStyle="bold"
+                        android:textColor="@android:color/white"
+                        android:textSize="8dp" />
+                    <SeekBar
+                        android:max="255"
+                        android:min="10"
+                        android:progress="100"
+                        android:splitTrack="false"
+                        android:id="@+id/sb_game_control_ds5_end"
+                        android:thumb="@android:color/transparent"
+                        android:progressDrawable="@drawable/ic_game_menu_seek_bg"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="left"
+                        android:layout_marginLeft="20dp"
+                        android:layout_marginTop="4dp"
+                        android:text="100"
+                        android:textColor="@android:color/white"
+                        android:textStyle="italic"
+                        android:id="@+id/tx_game_control_ds5_end"
+                        android:textSize="7dp" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</LinearLayout>

@@ -72,21 +72,43 @@
             android:preferKeepClear="true"
             android:visibility="gone" />
 
-        <TextView
+        <android.support.v7.widget.AppCompatTextView
             android:id="@+id/performanceOverlayLite"
             tools:text="延迟/解码：109ms/7ms 丢包率：69% FPS：60"
-            android:textSize="10sp"
+            android:textSize="10dp"
             android:layout_marginTop="4dp"
             android:background="@drawable/ic_hud_bg"
             android:paddingLeft="5dp"
             android:paddingRight="5dp"
             android:paddingTop="2dp"
+            android:drawablePadding="2dp"
+            tools:drawableLeft="@drawable/icon_axi_wifi"
             android:paddingBottom="2dp"
             android:visibility="gone"
+            tools:visibility="visible"
+            android:autoSizeTextType="uniform"
+            android:autoSizeMinTextSize="5dp"
+            android:autoSizeMaxTextSize="10dp"
+            android:maxLines="1"
             android:textAppearance="?android:attr/textAppearanceLarge"
             android:layout_gravity="center_horizontal"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
+
+        <TextView
+            android:id="@+id/performanceRumble"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="5dp"
+            android:layout_marginStart="5dp"
+            android:layout_marginTop="5dp"
+            android:padding="4dp"
+            android:textSize="13sp"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:layout_gravity="center_horizontal"
+            android:background="@drawable/ic_hud_bg"
+            android:preferKeepClear="true"
+            android:visibility="gone" />
 
     </LinearLayout>
 

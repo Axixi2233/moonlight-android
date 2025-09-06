@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="300dp"
+    android:layout_height="match_parent"
+    android:background="@color/gameMenuBgColor"
+    android:orientation="vertical"
+    android:paddingBottom="10dp"
+    android:paddingLeft="10dp"
+    android:paddingRight="10dp"
+    android:paddingTop="10dp">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:paddingBottom="4dp"
+        android:layout_height="wrap_content">
+        <ImageButton
+            android:src="@drawable/ic_axi_back"
+            android:background="@drawable/ic_game_menu_btn_side_selector"
+            android:layout_width="24dp"
+            android:id="@+id/ibtn_back"
+            android:layout_height="24dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="操作"
+            android:id="@+id/tx_title"
+            android:textColor="@android:color/white"
+            android:textSize="13dp" />
+
+    </RelativeLayout>
+
+    <ScrollView
+        android:scrollbars="none"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:layout_marginTop="10dp"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:layout_marginBottom="5dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="快捷操作"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/white"
+                    android:textSize="12dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="5dp"
+                    android:text=""
+                    android:textStyle="italic|bold"
+                    android:textColor="@android:color/white"
+                    android:textSize="8dp" />
+
+            </LinearLayout>
+
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:layout_margin="5dp"
+                android:orientation="horizontal">
+
+                <Button
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:drawablePadding="4dp"
+                    android:drawableTop="@drawable/ic_axi_logout"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/btn_logout"
+                    android:text="注销"
+                    android:textSize="9dp" />
+
+                <Button
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:drawablePadding="4dp"
+                    android:drawableTop="@drawable/ic_axi_shutdown"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/btn_shutdown"
+                    android:text="关机"
+                    android:textSize="9dp" />
+
+                <Button
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:drawablePadding="4dp"
+                    android:drawableTop="@drawable/ic_axi_sleep"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/btn_sleep"
+                    android:text="睡眠"
+                    android:textSize="9dp" />
+
+                <Button
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:drawablePadding="4dp"
+                    android:drawableTop="@drawable/ic_axi_reboot"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/btn_reboot"
+                    android:text="重启"
+                    android:textSize="9dp" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:layout_margin="5dp"
+                android:orientation="horizontal">
+
+                <Button
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:drawablePadding="4dp"
+                    android:drawableTop="@drawable/ic_axi_task_manager"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/btn_task_manager"
+                    android:text="任务管理器"
+                    android:textSize="9dp" />
+
+                <Button
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:drawablePadding="4dp"
+                    android:drawableTop="@drawable/ic_axi_clipboard_send"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/btn_clipboard_send"
+                    android:text="发送剪切板"
+                    android:textSize="9dp" />
+
+
+                <Button
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:drawablePadding="4dp"
+                    android:drawableTop="@drawable/ic_axi_clipboard_send"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/btn_clipboard_open"
+                    android:text="打开剪切板"
+                    android:textSize="9dp" />
+
+                <Button
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:drawablePadding="4dp"
+                    android:drawableTop="@drawable/ic_axi_win_setting"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/btn_open_setting"
+                    android:text="Win系统设置"
+                    android:textSize="9dp" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:layout_margin="5dp"
+                android:orientation="horizontal">
+
+                <Button
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:drawablePadding="4dp"
+                    android:drawableTop="@drawable/ic_axi_computer"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/btn_computer"
+                    android:text="我的电脑"
+                    android:textSize="9dp" />
+
+                <Button
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:drawablePadding="4dp"
+                    android:drawableTop="@drawable/ic_axi_win_center"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/btn_win_center"
+                    android:text="移动中心"
+                    android:textSize="9dp" />
+
+                <Button
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:drawablePadding="4dp"
+                    android:drawableTop="@drawable/ic_axi_win_p"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/btn_win_p"
+                    android:text="显示器模式"
+                    android:textSize="9dp" />
+
+                <View
+                    android:layout_weight="1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</LinearLayout>

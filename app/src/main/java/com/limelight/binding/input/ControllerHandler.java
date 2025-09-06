@@ -33,6 +33,7 @@ import android.view.MotionEvent;
 import android.view.Surface;
 import android.widget.Toast;
 
+import com.google.gson.Gson;
 import com.limelight.GameMenu;
 import com.limelight.LimeLog;
 import com.limelight.R;
@@ -42,10 +43,12 @@ import com.limelight.binding.input.driver.UsbDriverListener;
 import com.limelight.binding.input.driver.UsbDriverService;
 import com.limelight.nvstream.NvConnection;
 import com.limelight.nvstream.input.ControllerPacket;
+import com.limelight.nvstream.input.KeyboardPacket;
 import com.limelight.nvstream.input.MouseButtonPacket;
 import com.limelight.nvstream.jni.MoonBridge;
 import com.limelight.preferences.PreferenceConfiguration;
 import com.limelight.ui.GameGestures;
+import com.limelight.ui.gamemenu.GameMenuFragment;
 import com.limelight.utils.Vector2d;
 
 import org.cgutman.shieldcontrollerextensions.SceChargingState;
@@ -180,7 +183,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
 
         // 1% is the lowest possible deadzone we support
         if (deadzonePercentage <= 0) {
-            deadzonePercentage = 1;
+            deadzonePercentage = 0;
         }
 
         this.stickDeadzone = (double)deadzonePercentage / 100.0;
@@ -261,7 +264,6 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         }
 
         LimeLog.info("Device changed: "+existingContext.name+" ("+deviceId+")");
-
         // Migrate the existing context into this new one by moving any stateful elements
         InputDeviceContext newContext = createInputDeviceContextForDevice(device);
         newContext.migrateContext(existingContext);
@@ -816,7 +818,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         // to work as a duplicate Select button instead of a unique button we can handle separately.
         context.isDualShockStandaloneTouchpad =
                 context.vendorId == 0x054c && // Sony
-                devName.endsWith(" Touchpad") &&
+                        (devName.endsWith(" Touchpad")||devName.startsWith("DualSense")) &&
                 dev.getSources() == (InputDevice.SOURCE_KEYBOARD | InputDevice.SOURCE_MOUSE);
 
         InputDevice.MotionRange leftTriggerRange = getMotionRangeForJoystickAxis(dev, MotionEvent.AXIS_LTRIGGER);
@@ -1260,10 +1262,8 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
 
         if (originalContext.mouseEmulationActive) {
             int changedMask = inputMap ^  originalContext.mouseEmulationLastInputMap;
-
             boolean aDown = (inputMap & ControllerPacket.A_FLAG) != 0;
             boolean bDown = (inputMap & ControllerPacket.B_FLAG) != 0;
-
             originalContext.mouseEmulationLastInputMap = inputMap;
 
             if ((changedMask & ControllerPacket.A_FLAG) != 0) {
@@ -1282,24 +1282,124 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                     conn.sendMouseButtonUp(MouseButtonPacket.BUTTON_RIGHT);
                 }
             }
+            //上下左右
             if ((changedMask & ControllerPacket.UP_FLAG) != 0) {
+//                if ((inputMap & ControllerPacket.UP_FLAG) != 0) {
+//                    conn.sendMouseScroll((byte) 1);
+//                }
                 if ((inputMap & ControllerPacket.UP_FLAG) != 0) {
-                    conn.sendMouseScroll((byte) 1);
+                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_UP, KeyboardPacket.KEY_DOWN, (byte) 0, (byte) 0);
+                }else{
+                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_UP, KeyboardPacket.KEY_UP, (byte) 0, (byte) 0);
                 }
             }
             if ((changedMask & ControllerPacket.DOWN_FLAG) != 0) {
+//                if ((inputMap & ControllerPacket.DOWN_FLAG) != 0) {
+//                    conn.sendMouseScroll((byte) -1);
+//                }
                 if ((inputMap & ControllerPacket.DOWN_FLAG) != 0) {
-                    conn.sendMouseScroll((byte) -1);
+                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_DOWN, KeyboardPacket.KEY_DOWN, (byte) 0, (byte) 0);
+                }else{
+                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_DOWN, KeyboardPacket.KEY_UP, (byte) 0, (byte) 0);
                 }
             }
             if ((changedMask & ControllerPacket.RIGHT_FLAG) != 0) {
+//                if ((inputMap & ControllerPacket.RIGHT_FLAG) != 0) {
+//                    conn.sendMouseHScroll((byte) 1);
+//                }
                 if ((inputMap & ControllerPacket.RIGHT_FLAG) != 0) {
-                    conn.sendMouseHScroll((byte) 1);
+                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_RIGHT, KeyboardPacket.KEY_DOWN, (byte) 0, (byte) 0);
+                }else{
+                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_RIGHT, KeyboardPacket.KEY_UP, (byte) 0, (byte) 0);
                 }
             }
             if ((changedMask & ControllerPacket.LEFT_FLAG) != 0) {
+//                if ((inputMap & ControllerPacket.LEFT_FLAG) != 0) {
+//                    conn.sendMouseHScroll((byte) -1);
+//                }
                 if ((inputMap & ControllerPacket.LEFT_FLAG) != 0) {
-                    conn.sendMouseHScroll((byte) -1);
+                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_LEFT, KeyboardPacket.KEY_DOWN, (byte) 0, (byte) 0);
+                }else{
+                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_LEFT, KeyboardPacket.KEY_UP, (byte) 0, (byte) 0);
+                }
+            }
+
+            //显示左摇杆 显示软键盘
+            if ((changedMask & ControllerPacket.LS_CLK_FLAG) != 0) {
+                if ((inputMap & ControllerPacket.LS_CLK_FLAG) != 0) {
+                    //Win+CTRL+O
+//                    if(activityContext instanceof Game){
+//                        ((Game)activityContext).toggleKeyboard();
+//                    }
+                    GameMenuFragment.sendKeys(conn,new short[]{KeyboardTranslator.VK_LWIN, KeyboardTranslator.VK_LCONTROL,KeyboardTranslator.VK_O});
+                }
+            }
+
+            //下压右摇杆 WIN+D 显示桌面
+            if ((changedMask & ControllerPacket.RS_CLK_FLAG) != 0) {
+                if ((inputMap & ControllerPacket.RS_CLK_FLAG) != 0) {
+                    GameMenuFragment.sendKeys(conn,new short[]{KeyboardTranslator.VK_LWIN, KeyboardTranslator.VK_D});
+                }
+            }
+
+            //X=esc
+            if ((changedMask & ControllerPacket.X_FLAG) != 0) {
+                if ((inputMap & ControllerPacket.X_FLAG) != 0) {
+                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_ESCAPE, KeyboardPacket.KEY_DOWN, (byte) 0, (byte) 0);
+                }else{
+                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_ESCAPE, KeyboardPacket.KEY_UP, (byte) 0, (byte) 0);
+                }
+            }
+
+            //Y=回车
+            if ((changedMask & ControllerPacket.Y_FLAG) != 0) {
+                if ((inputMap & ControllerPacket.Y_FLAG) != 0) {
+                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_RETURN, KeyboardPacket.KEY_DOWN, (byte) 0, (byte) 0);
+                }else{
+                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_RETURN, KeyboardPacket.KEY_UP, (byte) 0, (byte) 0);
+                }
+            }
+            //xbox键 windows键
+            if ((changedMask & ControllerPacket.SPECIAL_BUTTON_FLAG) != 0) {
+                if ((inputMap & ControllerPacket.SPECIAL_BUTTON_FLAG) != 0) {
+                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_LWIN, KeyboardPacket.KEY_DOWN, (byte) 0, (byte) 0);
+                }else{
+                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_LWIN, KeyboardPacket.KEY_UP, (byte) 0, (byte) 0);
+                }
+            }
+            //LB alt
+            if ((changedMask & ControllerPacket.LB_FLAG) != 0) {
+                if ((inputMap & ControllerPacket.LB_FLAG) != 0) {
+                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_LMENU, KeyboardPacket.KEY_DOWN, (byte) 0, (byte) 0);
+                }else{
+                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_LMENU, KeyboardPacket.KEY_UP, (byte) 0, (byte) 0);
+                }
+            }
+
+            //RB tab
+            if ((changedMask & ControllerPacket.RB_FLAG) != 0) {
+                if ((inputMap & ControllerPacket.RB_FLAG) != 0) {
+                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_TAB, KeyboardPacket.KEY_DOWN, (byte) 0, (byte) 0);
+                }else{
+                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_TAB, KeyboardPacket.KEY_UP, (byte) 0, (byte) 0);
+                }
+            }
+
+            //start
+            if ((changedMask & ControllerPacket.PLAY_FLAG) != 0) {
+                if ((inputMap & ControllerPacket.PLAY_FLAG) != 0) {
+                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_BACK_SPACE, KeyboardPacket.KEY_DOWN, (byte) 0, (byte) 0);
+                }else{
+                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_BACK_SPACE, KeyboardPacket.KEY_UP, (byte) 0, (byte) 0);
+                }
+            }
+
+            //select
+            if ((changedMask & ControllerPacket.BACK_FLAG) != 0) {
+                if ((inputMap & ControllerPacket.BACK_FLAG) != 0) {
+                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_SPACE, KeyboardPacket.KEY_DOWN, (byte) 0, (byte) 0);
+                }else{
+                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_SPACE, KeyboardPacket.KEY_UP, (byte) 0, (byte) 0);
                 }
             }
 
@@ -1307,6 +1407,13 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                     (short)0, (byte)0, (byte)0, (short)0, (short)0, (short)0, (short)0);
         }
         else {
+            //强制体感模拟右摇杆
+            if(prefConfig.gameForceGyro&&originalContext.sensorStick){
+                originalContext.sensorStick=false;
+                if(prefConfig.gameForceGyroLeftTrigger&&(leftTrigger & 0xFF) !=255){
+                    return;
+                }
+            }
             conn.sendControllerInput(controllerNumber, getActiveControllerMask(),
                     inputMap,
                     leftTrigger, rightTrigger,
@@ -1900,7 +2007,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         Vector2d vector = new Vector2d();
         vector.initialize(stickX, stickY);
         vector.scalarMultiply(1 / 32766.0f);
-        vector.scalarMultiply(4);
+        vector.scalarMultiply(4*prefConfig.mouseGamePadSensitity*0.01f);
         if (vector.getMagnitude() > 0) {
             // Move faster as the stick is pressed further from center
             vector.scalarMultiply(Math.pow(vector.getMagnitude(), 2));
@@ -1921,6 +2028,35 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             conn.sendMouseHighResScroll((short)vector.getY());
             conn.sendMouseHighResHScroll((short)vector.getX());
         }
+    }
+
+    boolean wasLeftTriggerPressed = false;
+    boolean wasRightTriggerPressed = false;
+
+    private void checkTriggerState(float leftTrigger, float rightTrigger) {
+        final float TRIGGER_THRESHOLD = 0.1f;
+
+        // 左扳机状态变化
+        boolean isLeftTriggerPressed = leftTrigger > TRIGGER_THRESHOLD;
+        if (isLeftTriggerPressed && !wasLeftTriggerPressed) {
+//            System.out.println("左扳机刚刚按下");
+            conn.sendMouseScroll((byte) 1);
+        } else if (!isLeftTriggerPressed && wasLeftTriggerPressed) {
+//            System.out.println("左扳机刚刚抬起");
+            wasLeftTriggerPressed = isLeftTriggerPressed;
+        }
+
+
+        // 右扳机状态变化
+        boolean isRightTriggerPressed = rightTrigger > TRIGGER_THRESHOLD;
+        if (isRightTriggerPressed && !wasRightTriggerPressed) {
+//            System.out.println("右扳机刚刚按下");
+            conn.sendMouseScroll((byte) -1);
+        } else if (!isRightTriggerPressed && wasRightTriggerPressed) {
+//            System.out.println("右扳机刚刚抬起");
+            wasRightTriggerPressed = isRightTriggerPressed;
+        }
+
     }
 
     @TargetApi(31)
@@ -1948,7 +2084,6 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         // Normalize motor values to 0-255 amplitudes for VibrationManager
         highFreqMotor = (short)((highFreqMotor >> 8) & 0xFF);
         lowFreqMotor = (short)((lowFreqMotor >> 8) & 0xFF);
-
         // If they're both zero, we can just call cancel().
         if (lowFreqMotor == 0 && highFreqMotor == 0) {
             vm.cancel();
@@ -2228,7 +2363,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         }
     }
 
-    private SensorEventListener createSensorListener(final short controllerNumber, final byte motionType, final boolean needsDeviceOrientationCorrection) {
+    private SensorEventListener createSensorListener(final GenericControllerContext context,final short controllerNumber, final byte motionType, final boolean needsDeviceOrientationCorrection) {
         return new SensorEventListener() {
             private float[] lastValues = new float[3];
 
@@ -2289,6 +2424,38 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                     }
                 }
 
+                //强制体感
+                if(prefConfig.gameForceGyro){
+                    if(motionType == MoonBridge.LI_MOTION_TYPE_GYRO) {
+                        // 原始陀螺仪数据 (rad/s)
+                        float rawX = -sensorEvent.values[x]; // 左右
+                        float rawY = -sensorEvent.values[y]; // 上下
+                        //反转
+                        if(prefConfig.gameForceGyroXYSwitch){
+                            rawX = -sensorEvent.values[y];
+                            rawY = -sensorEvent.values[x];
+                        }
+                        // 灵敏度
+                        float mappedX = rawX * 0.8f;
+                        float mappedY = rawY * 0.9f;
+
+                        // 限制范围 [-1, 1]
+                        mappedX = Math.max(-1f, Math.min(1f, mappedX));
+                        mappedY = Math.max(-1f, Math.min(1f, mappedY));
+
+                        // 死区处理
+                        if (Math.abs(mappedX) < 0.05f) mappedX = 0;
+                        if (Math.abs(mappedY) < 0.05f) mappedY = 0;
+
+                        // 平滑处理 (低通滤波)
+                        context.rightStickX = (short) (mappedX* 0x7FFE);
+                        context.rightStickY = (short) (mappedY* 0x7FFE);
+                        context.sensorStick=true;
+                        sendControllerInputPacket(context);
+                    }
+                    return;
+                }
+
                 if (motionType == MoonBridge.LI_MOTION_TYPE_GYRO) {
                     // Convert from rad/s to deg/s
                     conn.sendControllerMotionEvent((byte) controllerNumber,
@@ -2296,8 +2463,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                             sensorEvent.values[x] * xFactor * 57.2957795f,
                             sensorEvent.values[y] * yFactor * 57.2957795f,
                             sensorEvent.values[z] * zFactor * 57.2957795f);
-                }
-                else {
+                } else {
                     // Pass m/s^2 directly without conversion
                     conn.sendControllerMotionEvent((byte) controllerNumber,
                             motionType,
@@ -2359,7 +2525,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                         // Enable the accelerometer if requested
                         Sensor accelSensor = sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
                         if (reportRateHz != 0 && accelSensor != null) {
-                            deviceContext.accelListener = createSensorListener(controllerNumber, motionType, sm == deviceSensorManager);
+                            deviceContext.accelListener = createSensorListener(deviceContext,controllerNumber, motionType, sm == deviceSensorManager);
                             sm.registerListener(deviceContext.accelListener, accelSensor, 1000000 / reportRateHz);
                         }
                         break;
@@ -2372,7 +2538,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                         // Enable the gyroscope if requested
                         Sensor gyroSensor = sm.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
                         if (reportRateHz != 0 && gyroSensor != null) {
-                            deviceContext.gyroListener = createSensorListener(controllerNumber, motionType, sm == deviceSensorManager);
+                            deviceContext.gyroListener = createSensorListener(deviceContext,controllerNumber, motionType, sm == deviceSensorManager);
                             sm.registerListener(deviceContext.gyroListener, gyroSensor, 1000000 / reportRateHz);
                         }
                         break;
@@ -2969,6 +3135,9 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         if (context == null) {
             return;
         }
+        if(!prefConfig.usbGyroscopeReport){
+            return;
+        }
         conn.sendControllerMotionEvent((byte)context.controllerNumber, motionType, motionX, motionY, motionZ);
     }
 
@@ -2976,7 +3145,6 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
     public void deviceRemoved(AbstractController controller) {
         UsbDeviceContext context = usbDeviceContexts.get(controller.getControllerId());
         if (context != null) {
-            LimeLog.info("Removed controller: "+controller.getControllerId());
             releaseControllerNumber(context);
             context.destroy();
             usbDeviceContexts.remove(controller.getControllerId());
@@ -3016,6 +3184,8 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         public short leftStickX = 0x0000;
         public short leftStickY = 0x0000;
 
+        public boolean sensorStick = false;
+
         public boolean mouseEmulationActive;
         public int mouseEmulationLastInputMap;
         public final int mouseEmulationReportPeriod = 50;
@@ -3026,7 +3196,6 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                 if (!mouseEmulationActive) {
                     return;
                 }
-
                 // Send mouse events from analog sticks
                 if (prefConfig.analogStickForScrolling == PreferenceConfiguration.AnalogStickForScrolling.RIGHT) {
                     sendEmulatedMouseMove(leftStickX, leftStickY);
@@ -3041,6 +3210,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                     sendEmulatedMouseMove(rightStickX, rightStickY);
                 }
 
+                checkTriggerState(leftTrigger& 0xFF,rightTrigger& 0xFF);
                 // Requeue the callback
                 mainThreadHandler.postDelayed(this, mouseEmulationReportPeriod);
             }
@@ -3059,8 +3229,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         public void toggleMouseEmulation() {
             mainThreadHandler.removeCallbacks(mouseEmulationRunnable);
             mouseEmulationActive = !mouseEmulationActive;
-            Toast.makeText(activityContext, "Mouse emulation is: " + (mouseEmulationActive ? "ON" : "OFF"), Toast.LENGTH_SHORT).show();
-
+            Toast.makeText(activityContext, "手柄键鼠模式: " + (mouseEmulationActive ? "开启" : "关闭"), Toast.LENGTH_SHORT).show();
             if (mouseEmulationActive) {
                 mainThreadHandler.postDelayed(mouseEmulationRunnable, mouseEmulationReportPeriod);
             }
@@ -3172,7 +3341,6 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         @Override
         public void destroy() {
             super.destroy();
-
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && vibratorManager != null) {
                 vibratorManager.cancel();
             }
@@ -3337,12 +3505,12 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             }
             this.gyroReportRateHz = oldContext.gyroReportRateHz;
             this.accelReportRateHz = oldContext.accelReportRateHz;
-
+            //todo 键鼠模式标记 ds手柄打开菜单失去焦点走onInputDeviceChanged回调，初始化了键鼠标记和摇杆线程
+            this.mouseEmulationActive = oldContext.mouseEmulationActive;
             // Don't release the controller number, because we will carry it over if it is present.
             // We also want to make sure the change is invisible to the host PC to avoid an add/remove
             // cycle for the gamepad which may break some games.
             oldContext.destroy();
-
             // Copy over existing controller number state
             this.assignedControllerNumber = oldContext.assignedControllerNumber;
             this.reservedControllerNumber = oldContext.reservedControllerNumber;
@@ -3400,7 +3568,6 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         @Override
         public void destroy() {
             super.destroy();
-
             // Nothing for now
         }
 
@@ -3442,7 +3609,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                 // Enable the accelerometer if requested
                 Sensor accelSensor = sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
                 if (reportRateHz != 0 && accelSensor != null) {
-                    defaultContext.accelListener = createSensorListener(controllerNumber, motionType, sm == deviceSensorManager);
+                    defaultContext.accelListener = createSensorListener(defaultContext,controllerNumber, motionType, sm == deviceSensorManager);
                     sm.registerListener(defaultContext.accelListener, accelSensor, 1000000 / reportRateHz);
                 }
                 break;
@@ -3455,7 +3622,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                 // Enable the gyroscope if requested
                 Sensor gyroSensor = sm.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
                 if (reportRateHz != 0 && gyroSensor != null) {
-                    defaultContext.gyroListener = createSensorListener(controllerNumber, motionType, sm == deviceSensorManager);
+                    defaultContext.gyroListener = createSensorListener(defaultContext,controllerNumber, motionType, sm == deviceSensorManager);
                     sm.registerListener(defaultContext.gyroListener, gyroSensor, 1000000 / reportRateHz);
                 }
                 break;
@@ -3483,4 +3650,5 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             }
         }
     }
+
 }

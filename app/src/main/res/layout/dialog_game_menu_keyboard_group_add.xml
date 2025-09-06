@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/gameMenuBgColor"
+    android:orientation="vertical"
+    android:paddingBottom="10dp"
+    android:paddingLeft="10dp"
+    android:paddingRight="10dp"
+    android:paddingTop="10dp">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:paddingBottom="4dp"
+        android:layout_height="wrap_content">
+        <ImageButton
+            android:src="@drawable/ic_axi_back"
+            android:background="@drawable/ic_game_menu_btn_side_selector"
+            android:layout_width="24dp"
+            android:id="@+id/ibtn_back"
+            android:layout_height="24dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="组合键"
+            android:id="@+id/tx_title"
+            android:textColor="@android:color/white"
+            android:textSize="13dp" />
+
+        <Button
+            android:layout_width="50dp"
+            android:layout_height="24dp"
+            android:layout_centerVertical="true"
+            android:text="清空"
+            android:background="@drawable/ic_game_menu_btn_side_selector"
+            android:layout_marginRight="5dp"
+            android:gravity="center"
+            android:id="@+id/btn_reset"
+            android:layout_toLeftOf="@+id/btn_right"
+            android:textColor="@android:color/white"
+            android:textSize="11dp" />
+
+        <Button
+            android:layout_width="50dp"
+            android:layout_height="24dp"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:text="保存"
+            android:background="@drawable/ic_game_menu_btn_side_selector"
+            android:layout_marginRight="5dp"
+            android:gravity="center"
+            android:id="@+id/btn_right"
+            android:textColor="@android:color/white"
+            android:textSize="11dp" />
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:id="@+id/lv_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:orientation="vertical">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="left"
+                android:text="按键名称"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:textSize="10dp" />
+
+            <EditText
+                android:id="@+id/edt_name"
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/ic_game_menu_btn_selector"
+                android:hint="请输入按键名称，不易过长~"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:singleLine="true"
+                android:textSize="12dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="left"
+                android:text="组合键值"
+                android:textColor="@android:color/white"
+                android:layout_marginTop="10dp"
+                android:textStyle="bold"
+                android:textSize="10dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="left"
+                android:text="阿西西快捷键：AXIX前缀，例如AXIX0(软键盘)，AXIX1(虚拟按键)，AXIX2(虚拟全键盘)，AXIX3(虚拟手柄)，AXIX4(悬浮球)，AXIX5(性能信息),AXIX6(游戏菜单)"
+                android:layout_marginTop="4dp"
+                android:id="@+id/tx_tips_axi"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:textSize="8dp" />
+
+            <TextView
+                android:hint="使用虚拟键盘输入1~5个按键，输错了点击清空。"
+                android:id="@+id/tx_content"
+                android:textColor="@android:color/white"
+                android:textSize="20dp"
+                android:layout_marginTop="18dp"
+                android:gravity="center_horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+
+        </LinearLayout>
+
+        <include
+            android:id="@+id/lv_keyboard"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:layout_alignParentBottom="true"
+            layout="@layout/item_layout_axixi_keyboard"/>
+
+    </RelativeLayout>
+
+
+
+
+</LinearLayout>

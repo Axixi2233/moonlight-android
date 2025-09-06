@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:padding="5dp"
+    android:background="@drawable/ic_game_menu_btn_selector"
+    android:layout_height="wrap_content">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:drawableLeft="@drawable/ic_axi_quick"
+        android:drawablePadding="4dp"
+        android:id="@+id/tx_title"
+        android:textColor="@android:color/white"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:gravity="left|center_vertical"
+        android:padding="10dp"
+        android:text="触控模式"
+        android:textSize="11dp" />
+
+</RelativeLayout>

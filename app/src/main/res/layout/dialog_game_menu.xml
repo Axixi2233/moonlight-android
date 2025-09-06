@@ -1,0 +1,461 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="364dp"
+    android:layout_height="match_parent"
+    android:background="#E6272727"
+    >
+
+    <LinearLayout
+        android:layout_alignParentRight="true"
+        android:orientation="vertical"
+        android:layout_width="64dp"
+        android:id="@+id/right_view"
+        android:gravity="center"
+        android:background="#99000000"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:layout_height="wrap_content">
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:drawableTop="@drawable/ic_axi_menu"
+                android:gravity="center"
+                android:background="@drawable/ic_game_menu_btn_side_selector"
+                android:padding="4dp"
+                android:text="操作"
+                android:id="@+id/btn_soft_function"
+                android:textSize="11dp" />
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:layout_height="wrap_content">
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:drawableTop="@drawable/ic_axi_keyboard"
+                android:gravity="center"
+                android:background="@drawable/ic_game_menu_btn_side_selector"
+                android:padding="4dp"
+                android:text="键盘"
+                android:id="@+id/btn_soft_keyboard"
+                android:textSize="11dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:layout_height="wrap_content">
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:drawableTop="@drawable/ic_axi_desktop"
+                android:gravity="center"
+                android:background="@drawable/ic_game_menu_btn_side_selector"
+                android:padding="4dp"
+                android:text="桌面"
+                android:id="@+id/btn_desktop"
+                android:textSize="11dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:layout_height="wrap_content">
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:drawableTop="@drawable/ic_axi_window"
+                android:gravity="center"
+                android:background="@drawable/ic_game_menu_btn_side_selector"
+                android:padding="4dp"
+                android:text="全部窗口"
+                android:id="@+id/btn_window"
+                android:textSize="11dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <ScrollView
+        android:id="@+id/leftView"
+        android:paddingBottom="10dp"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:paddingTop="10dp"
+        android:scrollbars="none"
+        android:layout_toLeftOf="@+id/right_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <RelativeLayout
+            android:layout_marginLeft="5dp"
+            android:layout_marginRight="5dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="功能与操作"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:id="@+id/tx_title_name"
+                android:textSize="11dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="(只对本次串流生效)"
+                android:textStyle="italic"
+                android:layout_marginLeft="4dp"
+                android:layout_centerVertical="true"
+                android:layout_toRightOf="@+id/tx_title_name"
+                android:textSize="8dp" />
+
+            <TextClock
+                android:id="@+id/textClock"
+                android:textSize="11dp"
+                android:textStyle="bold"
+                android:layout_centerVertical="true"
+                android:layout_toLeftOf="@+id/tx_title_battery"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:format12Hour="EEEE hh:mm"
+                android:format24Hour="EEEE HH:mm" />
+
+            <TextView
+                android:id="@+id/tx_title_battery"
+                android:textSize="11dp"
+                android:textStyle="bold"
+                tools:text="100%"
+                android:gravity="center"
+                android:drawableLeft="@drawable/ic_axi_game_pad_battery"
+                android:layout_marginLeft="4dp"
+                android:textColor="@android:color/white"
+                android:layout_centerVertical="true"
+                android:layout_alignParentRight="true"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        </RelativeLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:layout_margin="5dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginRight="5dp"
+                android:layout_weight="1"
+                android:background="@drawable/ic_game_menu_btn_selector"
+                android:drawablePadding="4dp"
+                android:drawableTop="@drawable/ic_axi_unlink"
+                android:gravity="center"
+                android:padding="4dp"
+                android:id="@+id/btn_unlink"
+                android:text="断开连接"
+                android:textSize="11dp" />
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginRight="5dp"
+                android:layout_weight="1"
+                android:background="@drawable/ic_game_menu_btn_selector"
+                android:drawablePadding="4dp"
+                android:drawableTop="@drawable/ic_axi_exit"
+                android:gravity="center"
+                android:padding="4dp"
+                android:id="@+id/btn_exit"
+                android:text="退出串流"
+                android:textSize="11dp" />
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginRight="5dp"
+                android:layout_weight="1"
+                android:background="@drawable/ic_game_menu_btn_selector"
+                android:drawablePadding="4dp"
+                android:drawableTop="@drawable/ic_axi_screen"
+                android:gravity="center"
+                android:padding="4dp"
+                android:id="@+id/btn_swicth_screen"
+                android:text="旋转屏幕"
+                android:textSize="11dp" />
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@drawable/ic_game_menu_btn_selector"
+                android:drawablePadding="4dp"
+                android:drawableTop="@drawable/ic_axi_performance"
+                android:gravity="center"
+                android:padding="4dp"
+                android:id="@+id/btn_performance"
+                android:text="性能信息"
+                android:textSize="11dp" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:layout_margin="5dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginRight="5dp"
+                android:layout_weight="1"
+                android:background="@drawable/ic_game_menu_btn_selector"
+                android:drawablePadding="4dp"
+                android:drawableTop="@drawable/ic_axi_game_pad"
+                android:gravity="center"
+                android:padding="4dp"
+                android:id="@+id/btn_game_pad"
+                android:text="虚拟手柄"
+                android:textSize="11dp" />
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginRight="5dp"
+                android:layout_weight="1"
+                android:background="@drawable/ic_game_menu_btn_selector"
+                android:drawablePadding="4dp"
+                android:drawableTop="@drawable/ic_axi_vkeyboard"
+                android:gravity="center"
+                android:padding="4dp"
+                android:id="@+id/btn_v_keyboard"
+                android:text="虚拟按键"
+                android:textSize="11dp" />
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginRight="5dp"
+                android:layout_weight="1"
+                android:background="@drawable/ic_game_menu_btn_selector"
+                android:drawablePadding="4dp"
+                android:drawableTop="@drawable/ic_axi_quick"
+                android:gravity="center"
+                android:padding="4dp"
+                android:text="全键盘"
+                android:id="@+id/btn_keyboard"
+                android:textSize="11dp" />
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@drawable/ic_game_menu_btn_selector"
+                android:drawablePadding="4dp"
+                android:drawableTop="@drawable/ic_axi_zoom"
+                android:gravity="center"
+                android:padding="4dp"
+                android:id="@+id/btn_screen_move"
+                android:text="画面缩放"
+                android:textSize="11dp" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:layout_margin="5dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginRight="5dp"
+                android:layout_weight="1"
+                android:background="@drawable/ic_game_menu_btn_selector"
+                android:drawablePadding="4dp"
+                android:drawableTop="@drawable/ic_axi_switch_screen"
+                android:gravity="center"
+                android:padding="4dp"
+                android:id="@+id/btn_display_1"
+                android:text="显示器1"
+                android:textSize="11dp" />
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginRight="5dp"
+                android:layout_weight="1"
+                android:background="@drawable/ic_game_menu_btn_selector"
+                android:drawablePadding="4dp"
+                android:drawableTop="@drawable/ic_axi_switch_screen"
+                android:gravity="center"
+                android:padding="4dp"
+                android:id="@+id/btn_display_2"
+                android:text="显示器2"
+                android:textSize="11dp" />
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginRight="5dp"
+                android:background="@drawable/ic_game_menu_btn_selector"
+                android:drawablePadding="4dp"
+                android:drawableTop="@drawable/ic_axi_hdr"
+                android:gravity="center"
+                android:padding="4dp"
+                android:id="@+id/btn_hdr"
+                android:text="HDR开关"
+                android:textSize="10dp" />
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@drawable/ic_game_menu_btn_selector"
+                android:drawablePadding="4dp"
+                android:drawableTop="@drawable/ic_axi_joystick"
+                android:gravity="center"
+                android:padding="4dp"
+                android:id="@+id/btn_gamepad_mouse"
+                android:text="手柄键鼠"
+                android:textSize="11dp" />
+
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:text="特色功能 月光·阿西西"
+            android:textSize="11dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:orientation="vertical">
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/ic_game_menu_btn_selector"
+                android:drawableLeft="@drawable/ic_axi_touch"
+                android:drawablePadding="4dp"
+                android:id="@+id/bt_touch_list"
+                android:drawableRight="@drawable/ic_axi_arrow"
+                android:gravity="left|center_vertical"
+                android:padding="10dp"
+                android:text="鼠标与触控"
+                android:textSize="11dp" />
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:background="@drawable/ic_game_menu_btn_selector"
+                android:drawableLeft="@drawable/ic_axi_quick"
+                android:drawablePadding="4dp"
+                android:drawableRight="@drawable/ic_axi_arrow"
+                android:gravity="left|center_vertical"
+                android:padding="10dp"
+                android:text="快捷键"
+                android:id="@+id/bt_quick_list"
+                android:textSize="11dp" />
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:background="@drawable/ic_game_menu_btn_selector"
+                android:drawableLeft="@drawable/ic_axi_game_pad"
+                android:drawablePadding="4dp"
+                android:drawableRight="@drawable/ic_axi_arrow"
+                android:gravity="left|center_vertical"
+                android:padding="10dp"
+                android:id="@+id/bt_virtual_view"
+                android:text="虚拟手柄与按键"
+                android:textSize="11dp" />
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:background="@drawable/ic_game_menu_btn_selector"
+                android:drawableLeft="@drawable/ic_axi_game_pad_display"
+                android:drawablePadding="4dp"
+                android:drawableRight="@drawable/ic_axi_arrow"
+                android:gravity="left|center_vertical"
+                android:padding="10dp"
+                android:id="@+id/bt_display"
+                android:text="显示"
+                android:textSize="11dp" />
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:background="@drawable/ic_game_menu_btn_selector"
+                android:drawableLeft="@drawable/ic_axi_game_pad_device"
+                android:drawablePadding="4dp"
+                android:drawableRight="@drawable/ic_axi_arrow"
+                android:gravity="left|center_vertical"
+                android:padding="10dp"
+                android:id="@+id/bt_device"
+                android:text="外设"
+                android:textSize="11dp" />
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:background="@drawable/ic_game_menu_btn_selector"
+                android:drawableLeft="@drawable/ic_axi_touch_sensitivity"
+                android:drawablePadding="4dp"
+                android:drawableRight="@drawable/ic_axi_arrow"
+                android:gravity="left|center_vertical"
+                android:padding="10dp"
+                android:id="@+id/bt_touch_sensitivity"
+                android:text="触控灵敏度"
+                android:textSize="11dp" />
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:background="@drawable/ic_game_menu_btn_selector"
+                android:drawableLeft="@drawable/ic_axi_other_setting"
+                android:drawablePadding="4dp"
+                android:drawableRight="@drawable/ic_axi_arrow"
+                android:gravity="left|center_vertical"
+                android:padding="10dp"
+                android:id="@+id/bt_other_setting"
+                android:text="杂项"
+                android:textSize="11dp" />
+
+        </LinearLayout>
+
+
+    </LinearLayout>
+    </ScrollView>
+
+</RelativeLayout>

@@ -48,7 +48,7 @@ public class GameMenu {
     public static class MenuOption {
         private final String label;
         private final boolean withGameFocus;
-        private final Runnable runnable;
+        public final Runnable runnable;
 
         public MenuOption(String label, boolean withGameFocus, Runnable runnable) {
             this.label = label;

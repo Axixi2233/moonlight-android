@@ -32,12 +32,14 @@ import com.limelight.nvstream.input.MouseButtonPacket;
 import com.limelight.nvstream.jni.MoonBridge;
 import com.limelight.preferences.GlPreferences;
 import com.limelight.preferences.PreferenceConfiguration;
+import com.limelight.ui.gamemenu.GameMenuFragment;
 import com.limelight.ui.GameGestures;
 import com.limelight.ui.StreamView;
 import com.limelight.ui.floatingview.AXFloatingMagnetView;
 import com.limelight.ui.floatingview.AXFloatingView;
 import com.limelight.ui.floatingview.AXFloatingViewListener;
 import com.limelight.utils.Dialog;
+import com.limelight.utils.RazerUtils;
 import com.limelight.utils.ServerHelper;
 import com.limelight.utils.ShortcutHelper;
 import com.limelight.utils.SpinnerDialog;
@@ -48,6 +50,8 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.PictureInPictureParams;
 import android.app.Service;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -59,10 +63,12 @@ import android.content.res.Configuration;
 import android.graphics.Outline;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.graphics.drawable.Drawable;
 import android.hardware.display.DisplayManager;
 import android.hardware.input.InputManager;
 import android.media.AudioManager;
 import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -89,6 +95,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -210,6 +217,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     private ViewParent rootView;
 
     private StreamReqBean streamReqBean;
+    private ConnectivityManager connManager;
+
+    private TextView performanceRumble;
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -244,6 +254,8 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         // Inflate the content
         setContentView(R.layout.activity_game);
 
+        connManager=(ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+
         // Start the spinner
         spinner = SpinnerDialog.displayDialog(this, getResources().getString(R.string.conn_establishing_title),
                 getResources().getString(R.string.conn_establishing_msg), true);
@@ -272,6 +284,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         streamView.setOnGenericMotionListener(this);
         streamView.setOnKeyListener(this);
         streamView.setInputCallbacks(this);
+
+        performanceRumble=findViewById(R.id.performanceRumble);
+        switchPerformanceRumbleHUD();
 
         //光标是否显示
         cursorVisible=prefConfig.enableMouseLocalCursor;
@@ -440,18 +455,24 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             }
         }
 
-        // Check if the user has enabled performance stats overlay
+                // Check if the user has enabled performance stats overlay
         if (prefConfig.enablePerfOverlay) {
             performanceOverlayView.setVisibility(View.VISIBLE);
             if(prefConfig.enablePerfOverlayLite){
                 performanceOverlayLite.setVisibility(View.VISIBLE);
-                if(prefConfig.enablePerfOverlayLiteDialog){
-                    performanceOverlayLite.setOnClickListener(v -> showGameMenu(null));
-                }
             }else{
                 performanceOverlayBig.setVisibility(View.VISIBLE);
             }
         }
+        setPerformanceOverlayLiteMagin();
+        performanceOverlayLite.setOnClickListener(v -> {
+            if(prefConfig.enablePerfOverlayLiteDialog){
+                showGameMenu(null);
+            }
+        });
+
+        performanceOverlayLite.setClickable(prefConfig.enablePerfOverlayLiteDialog);
+
 
         decoderRenderer = new MediaCodecDecoderRenderer(
                 this,
@@ -558,6 +579,8 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 .setAudioConfiguration(prefConfig.audioConfiguration)
                 .setColorSpace(decoderRenderer.getPreferredColorSpace())
                 .setColorRange(decoderRenderer.getPreferredColorRange())
+                .setPPI(RazerUtils.getPPI(this))
+                .setRazerVD(prefConfig.razerVD)
                 .setPersistGamepadsAfterDisconnect(!prefConfig.multiController)
                 .build();
 
@@ -635,25 +658,38 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             showSecondScreen();
         }
 
+        setPerformanceOverlayLiteMagin();
+
+        NetworkInfo networkInfo=connManager.getActiveNetworkInfo();
+        if(networkInfo==null){
+            return;
+        }
+        Drawable drawable = getResources().getDrawable(R.drawable.icon_axi_wifi);
+        if(networkInfo.getType() == ConnectivityManager.TYPE_MOBILE){
+            drawable = getResources().getDrawable(R.drawable.icon_axi_mobile);
+        }
+        drawable.setBounds(0, 0, drawable.getMinimumWidth(),
+                drawable.getMinimumHeight());
+        performanceOverlayLite.setCompoundDrawables(drawable, null,null, null);
 //        initFloatingView();
 
     }
 
     private void initKeyboardController(){
-        keyBoardController=new KeyBoardController(controllerHandler,(FrameLayout)rootView, this);
+        keyBoardController=new KeyBoardController(controllerHandler,(FrameLayout)rootView, this,prefConfig);
         keyBoardController.refreshLayout();
         keyBoardController.show();
     }
 
 
     private void initVirtualController(){
-        virtualController = new VirtualController(controllerHandler, (FrameLayout)rootView, this);
+        virtualController = new VirtualController(controllerHandler, (FrameLayout)rootView, this,prefConfig);
         virtualController.refreshLayout();
         virtualController.show();
     }
 
     private void initkeyBoardLayoutController(){
-        keyBoardLayoutController=new KeyBoardLayoutController(controllerHandler,(FrameLayout)rootView, this);
+        keyBoardLayoutController=new KeyBoardLayoutController(controllerHandler,(FrameLayout)rootView, this,prefConfig);
         keyBoardLayoutController.refreshLayout();
         keyBoardLayoutController.show();
     }
@@ -662,9 +698,10 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     public void showHideKeyboardController(){
         if(keyBoardController==null){
             initKeyboardController();
+            prefConfig.enableKeyboard=true;
             return;
         }
-        keyBoardController.switchShowHide();
+        prefConfig.enableKeyboard=keyBoardController.switchShowHide() != 0;
     }
 
     public void showHidekeyBoardLayoutController(){
@@ -782,16 +819,24 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 // Restore overlays to previous state when leaving PiP
 
                 if (virtualController != null) {
-                    virtualController.show();
+                    if(prefConfig.onscreenController){
+                        virtualController.show();
+                    }else{
+                        virtualController.hide();
+                    }
                 }
 
                 if (keyBoardController != null) {
-                    keyBoardController.show();
+                    if(prefConfig.enableKeyboard){
+                        keyBoardController.show();
+                    }else{
+                        keyBoardController.hide();
+                    }
                 }
 
-                if(keyBoardLayoutController!=null){
-                    keyBoardLayoutController.show();
-                }
+//                if(keyBoardLayoutController!=null){
+//                    keyBoardLayoutController.show();
+//                }
 
                 if (prefConfig.enablePerfOverlay) {
                     performanceOverlayView.setVisibility(View.VISIBLE);
@@ -1060,7 +1105,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 // If we only changed refresh rate and we're on an OS that supports Surface.setFrameRate()
                 // use that instead of using preferredDisplayModeId to avoid the possibility of triggering
                 // bugs that can cause the system to switch from 4K60 to 4K24 on Chromecast 4K.
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
+                if (prefConfig.enforceDisplayMode ||Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
                         display.getMode().getPhysicalWidth() != bestMode.getPhysicalWidth() ||
                         display.getMode().getPhysicalHeight() != bestMode.getPhysicalHeight()) {
                     // Apply the display mode change
@@ -1273,6 +1318,10 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             keyBoardLayoutController.hide();
         }
 
+        if(dialogGameMenu!=null&&dialogGameMenu.isVisible()){
+            dialogGameMenu.dismiss();
+        }
+
         if (conn != null) {
             int videoFormat = decoderRenderer.getActiveVideoFormat();
 
@@ -1284,7 +1333,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                     public void run() {
                         quitSteaming();
                     }
-                },100); // 延时100毫秒
+                },200); // 延时100毫秒
             }
             if (prefConfig.enableLatencyToast) {
                 int averageEndToEndLat = decoderRenderer.getAverageEndToEndLatency();
@@ -1337,8 +1386,33 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                         .apply();
             }
         }
-
+        if(prefConfig.enableScreenOnAuto!=0){
+            isAutoLink=true;
+            return;
+        }
         finish();
+    }
+
+    @Override
+    public void finish() {
+        super.finish();
+        if(prefConfig.enableScreenOnAuto==1){
+            PreferenceManager.getDefaultSharedPreferences(this)
+                    .edit()
+                    .putInt("enable_screen_on_auto",0)
+                    .commit();
+        }
+    }
+
+    private boolean isAutoLink=false;
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (isAutoLink) {
+            isAutoLink = false;
+            recreate();
+        }
     }
 
     private void setInputGrabState(boolean grab) {
@@ -2294,10 +2368,10 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 }
 
                 //五指打开输入法
-                if(prefConfig.enableFiveFingersOperate){
+                if(prefConfig.quickSoftKeyboardFingers>0){
                     switch (event.getActionMasked()){
                         case MotionEvent.ACTION_POINTER_DOWN:
-                            if(event.getPointerCount() == 5){
+                            if(event.getPointerCount() == prefConfig.quickSoftKeyboardFingers){
                                 threeFingerDownTime = event.getEventTime();
                                 // Cancel the first and second touches to avoid
                                 // erroneous events
@@ -2314,6 +2388,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                                 // All fingers up
                                 if (event.getEventTime() - threeFingerDownTime < THREE_FINGER_TAP_THRESHOLD) {
                                     // This is a 3 finger tap to bring up the keyboard
+                                    conn.sendTouchEvent(MoonBridge.LI_TOUCH_EVENT_CANCEL_ALL, 0,
+                                            0, 0, 0, 0, 0,
+                                            MoonBridge.LI_ROT_UNKNOWN);
                                     toggleKeyboard();
                                     return true;
                                 }
@@ -2787,8 +2864,20 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     @Override
     public void rumble(short controllerNumber, short lowFreqMotor, short highFreqMotor) {
         LimeLog.info(String.format((Locale)null, "Rumble on gamepad %d: %04x %04x", controllerNumber, lowFreqMotor, highFreqMotor));
-
         controllerHandler.handleRumble(controllerNumber, lowFreqMotor, highFreqMotor);
+        //联动扳机震动
+        if(prefConfig.gameTriggerRumbleLink){
+            rumbleTriggers(controllerNumber,lowFreqMotor,highFreqMotor);
+        }
+        if(!prefConfig.showRumbleHUD){
+            return;
+        }
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                performanceRumble.setText(String.format((Locale)null, "手柄%d 震动信号 高%d 低%d", controllerNumber,  (short)((highFreqMotor >> 8) & 0xFF),  (short)((lowFreqMotor >> 8) & 0xFF)));
+            }
+        });
     }
 
     @Override
@@ -2806,6 +2895,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     @Override
     public void setMotionEventState(short controllerNumber, byte motionType, short reportRateHz) {
+//        LimeLog.info("axi-->: controllerNumber" + controllerNumber+"-motionType:"+motionType+"-reportRateHz:"+reportRateHz);
         controllerHandler.handleSetMotionEventState(controllerNumber, motionType, reportRateHz);
     }
 
@@ -2934,6 +3024,10 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         conn.sendMouseHScroll(amount);
     }
 
+    public void mouseHighResScroll(boolean up){
+        conn.sendMouseHighResScroll((short) (up?prefConfig.mouseSCAmount*50:-50*prefConfig.mouseSCAmount));
+    }
+
     @Override
     public void keyboardEvent(boolean buttonDown, short keyCode) {
         short keyMap = keyboardTranslator.translate(keyCode, -1);
@@ -3039,7 +3133,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     }
 
     //本地鼠标光标切换
-    private void switchMouseLocalCursor(){
+    public void switchMouseLocalCursor(){
         if (!grabbedInput) {
             inputCaptureProvider.enableCapture();
             grabbedInput = true;
@@ -3052,7 +3146,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         }
     }
 
-    private void switchMouseModel(int which){
+    public void switchMouseModel(int which){
         disableMouseModel=false;
         //多点触控
         if(which==0){
@@ -3127,6 +3221,53 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         prefConfig.enableTouchSensitivity=!prefConfig.enableTouchSensitivity;
     }
 
+    //更新虚拟布局视图
+    public void updateVirtualView(){
+        if (virtualController != null && prefConfig.onscreenController) {
+            virtualController.refreshLayout();
+        }
+        if(keyBoardController !=null && prefConfig.enableKeyboard){
+            keyBoardController.refreshLayout();
+        }
+        if(keyBoardLayoutController!=null){
+            keyBoardLayoutController.refreshLayout();
+        }
+    }
+
+    //切换虚拟手柄模式
+    public void switchVirtualController(VirtualController.ControllerMode mode){
+        if(virtualController==null){
+            Toast.makeText(this,"请先打开虚拟手柄开关！",Toast.LENGTH_SHORT).show();
+            return;
+        }
+        virtualController.switchMode(mode);
+
+    }
+    //返回虚拟手柄当前的状态
+    public VirtualController.ControllerMode getVirtualControllerMode(){
+        if(virtualController==null){
+            return VirtualController.ControllerMode.NONE;
+        }
+        return virtualController.getControllerMode();
+    }
+
+    //切换虚拟手柄模式
+    public void switchVirtualKeyController(KeyBoardController.ControllerMode mode){
+        if(keyBoardController==null){
+            Toast.makeText(this,"请先打开虚拟按键开关！",Toast.LENGTH_SHORT).show();
+            return;
+        }
+        keyBoardController.switchMode(mode);
+
+    }
+    //返回虚拟手柄当前的状态
+    public KeyBoardController.ControllerMode getVirtualKeyControllerMode(){
+        if(keyBoardController==null){
+            return KeyBoardController.ControllerMode.NONE;
+        }
+        return keyBoardController.getControllerMode();
+    }
+
 
     public boolean isPortrait;
 
@@ -3154,13 +3295,30 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         Toast.makeText(this,"关闭画面平移&缩放！",Toast.LENGTH_SHORT).show();
     }
 
+    public boolean getScreenMoveZoom(){
+        return streamView.isEnableZoomAndPan();
+    }
+
     public void disconnect() {
         finish();
     }
 
+    private GameMenuFragment dialogGameMenu;
     @Override
     public void showGameMenu(GameInputDevice device) {
-        new GameMenu(this,conn,device);
+        if(!prefConfig.enableGameMenuNew){
+            new GameMenu(this,conn,device);
+            return;
+        }
+        if(dialogGameMenu!=null){
+            dialogGameMenu=null;
+        }
+        dialogGameMenu=new GameMenuFragment();
+        dialogGameMenu.setWidth(UiHelper.dpToPx(this,364));
+        dialogGameMenu.setConn(conn);
+        dialogGameMenu.setDevice(device);
+        dialogGameMenu.setGame(this);
+        dialogGameMenu.show(getFragmentManager());
     }
 
 
@@ -3214,24 +3372,98 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         ServerHelper.doQuit(this,streamReqBean, null);
     }
 
+    private AXFloatingView floatingView;
     private void initFloatingView(){
-        AXFloatingView floatingView = new AXFloatingView(this);
-        floatingView.setIconImage(R.drawable.app_icon);
+        floatingView = new AXFloatingView(this);
+        floatingView.setIconImage(R.drawable.app_icon_axi);
         floatingView.setLayoutParams(AXFloatingView.getLayParams());
         ViewGroup decorViewGroup= (ViewGroup) getWindow().getDecorView();
         decorViewGroup.addView(floatingView);
         floatingView.setFloatingViewListener(new AXFloatingViewListener() {
             @Override
             public void onClick(AXFloatingMagnetView magnetView) {
-                if(prefConfig.enableAXFloatingOperate){
-                    toggleKeyboard();
-                    return;
+                switch (prefConfig.axFloatingOperate){
+                    case 0://游戏菜单
+                        showGameMenu(null);
+                        break;
+                    case 1://软键盘
+                        toggleKeyboard();
+                        break;
+                    case 2://全键盘
+                        showHidekeyBoardLayoutController();
+                        break;
                 }
-                showGameMenu(null);
+
             }
         });
 //        streamView.setZOrderOnTop(true);
 //        streamView.setZOrderMediaOverlay(true);
+    }
+
+    public void switchFloatView(){
+        if(floatingView==null){
+            showFloatView();
+            return;
+        }
+        if (floatingView.getVisibility() == View.VISIBLE) {
+            hideFloatView();
+        } else {
+            showFloatView();
+        }
+    }
+
+    public void showFloatView(){
+        if(floatingView==null){
+            initFloatingView();
+        }
+        floatingView.setVisibility(View.VISIBLE);
+    }
+
+    public void hideFloatView(){
+        if(floatingView!=null){
+            floatingView.setVisibility(View.GONE);
+        }
+    }
+
+    public void sendClipboardText(){
+        if(conn==null){
+            return;
+        }
+        ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+        ClipData clip = clipboard.getPrimaryClip();
+        if (clip != null && clip.getItemCount() > 0) {
+            String text=clip.getItemAt(0).coerceToText(this).toString();
+            conn.sendUtf8Text(text);
+        }
+    }
+
+    public void switchPerformanceRumbleHUD(){
+        performanceRumble.setVisibility(prefConfig.showRumbleHUD?View.VISIBLE:View.GONE);
+    }
+
+    //设置性能信息是否可以点击
+    public void switchPerformanceLiteHudclick(){
+        performanceOverlayLite.setClickable(prefConfig.enablePerfOverlayLiteDialog);
+    }
+
+    //设置ds5手柄的自适应扳机
+    public void setDualSenseTrigger(){
+        controllerHandler.setDualSenseTrigger(prefConfig.ds5TriggerMode,
+                prefConfig.ds5TriggerStrength,
+                prefConfig.ds5TriggerFrequency,prefConfig.ds5TriggerStart,prefConfig.ds5TriggerEnd);
+    }
+
+    public KeyBoardController getKeyBoardController(){
+        return keyBoardController;
+    }
+
+    public void setPerformanceOverlayLiteMagin(){
+        if(prefConfig.performanceOverlayLiteMaginTop==4){
+            return;
+        }
+        LinearLayout.LayoutParams params1= (LinearLayout.LayoutParams) performanceOverlayLite.getLayoutParams();
+        params1.setMargins(0,UiHelper.dpToPx(this,prefConfig.performanceOverlayLiteMaginTop),0,0);
+        performanceOverlayLite.setLayoutParams(params1);
     }
 
 }
