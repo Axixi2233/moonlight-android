@@ -1,9 +1,12 @@
 package com.limelight;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.UnknownHostException;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.limelight.binding.PlatformBinding;
 import com.limelight.binding.crypto.AndroidCryptoProvider;
 import com.limelight.computers.ComputerManagerListener;
@@ -22,6 +25,7 @@ import com.limelight.preferences.PreferenceConfiguration;
 import com.limelight.preferences.StreamSettings;
 import com.limelight.ui.AdapterFragment;
 import com.limelight.ui.AdapterFragmentCallbacks;
+import com.limelight.utils.DeviceUtils;
 import com.limelight.utils.Dialog;
 import com.limelight.utils.HelpLauncher;
 import com.limelight.utils.ServerHelper;
@@ -34,23 +38,33 @@ import android.app.Service;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.graphics.Color;
+import android.graphics.RenderEffect;
+import android.graphics.Shader;
+import android.net.Uri;
 import android.opengl.GLSurfaceView;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
+import android.text.TextUtils;
 import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnClickListener;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 
@@ -58,6 +72,9 @@ import org.xmlpull.v1.XmlPullParserException;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
+
+import static android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
+import static android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE;
 
 public class PcView extends Activity implements AdapterFragmentCallbacks {
     private RelativeLayout noPcFoundLayout;
@@ -121,21 +138,50 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
     private final static int GAMESTREAM_EOL_ID = 11;
 
     private void initializeViews() {
-        setContentView(R.layout.activity_pc_view);
-
-        UiHelper.notifyNewRootView(this);
-
+        setContentView(R.layout.activity_pc_view_new);
+        UiHelper.notifyNewRootViewImmersive(this);
         // Allow floating expanded PiP overlays while browsing PCs
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             setShouldDockBigOverlays(false);
         }
-
         // Set default preferences if we've never been run
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 
         // Set the correct layout for the PC grid
         pcGridAdapter.updateLayoutWithPreferences(this, PreferenceConfiguration.readPreferences(this));
 
+        ImageView imageView=findViewById(R.id.iv_root_view);
+
+        PreferenceConfiguration pref=PreferenceConfiguration.readPreferences(this);
+
+        findViewById(R.id.iv_logo).setVisibility(pref.hide_screen_logo?View.GONE:View.VISIBLE);
+
+        if(pref.enableScreenBg&&Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
+            File imageFile=new File(getFilesDir().getAbsolutePath(),"axi_screen_bg.png");
+            if(imageFile.exists()){
+                try{
+                    Glide.with(this)
+                            .load(imageFile)
+                            .skipMemoryCache(true)
+                            .diskCacheStrategy( DiskCacheStrategy.NONE )
+                            .into(imageView);
+                    imageView.setVisibility(View.VISIBLE);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S&&pref.enableScreenObscure) {
+                        findViewById(R.id.iv_root_view).setRenderEffect(RenderEffect.createBlurEffect(25, 25, Shader.TileMode.CLAMP));
+                    }
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+            }else{
+                imageView.setVisibility(View.GONE);
+            }
+        }else{
+            imageView.setVisibility(View.GONE);
+        }
+        if(!TextUtils.isEmpty(pref.screenLabel)){
+            TextView tx_label=findViewById(R.id.tx_label);
+            tx_label.setText(pref.screenLabel);
+        }
         // Setup the list view
         ImageButton settingsButton = findViewById(R.id.settingsButton);
         ImageButton addComputerButton = findViewById(R.id.manuallyAddPc);
@@ -428,6 +474,7 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
                     httpConn = new NvHTTP(ServerHelper.getCurrentAddressFromComputer(computer),
                             computer.httpsPort, managerBinder.getUniqueId(), computer.serverCert,
                             PlatformBinding.getCryptoProvider(PcView.this));
+                    httpConn.setClientName(DeviceUtils.getManufacturer()+"-"+DeviceUtils.getModel());
                     if (httpConn.getPairState() == PairState.PAIRED) {
                         // Don't display any toast, but open the app list
                         message = null;
@@ -562,6 +609,7 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
                     httpConn = new NvHTTP(ServerHelper.getCurrentAddressFromComputer(computer),
                             computer.httpsPort, managerBinder.getUniqueId(), computer.serverCert,
                             PlatformBinding.getCryptoProvider(PcView.this));
+                    httpConn.setClientName(DeviceUtils.getManufacturer()+"-"+DeviceUtils.getModel());
                     if (httpConn.getPairState() == PairingManager.PairState.PAIRED) {
                         httpConn.unpair();
                         if (httpConn.getPairState() == PairingManager.PairState.NOT_PAIRED) {
@@ -755,7 +803,7 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
 
     @Override
     public int getAdapterFragmentLayoutId() {
-        return R.layout.pc_grid_view;
+        return R.layout.pc_grid_view_new;
     }
 
     @Override
@@ -797,4 +845,5 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
             return details.name;
         }
     }
+
 }

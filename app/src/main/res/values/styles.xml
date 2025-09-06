@@ -50,4 +50,19 @@
         <item name="android:windowNoTitle">true</item>
     </style>
 
+    <style name="BottomDialog" parent="@android:style/Theme.DeviceDefault.Dialog">
+        <item name="android:windowTitleStyle">@null</item>
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:colorBackgroundCacheHint">@null</item>
+        <item name="android:windowAnimationStyle">@style/BottomDialog.AnimationStyle</item>
+        <item name="android:windowSoftInputMode">stateUnspecified|adjustPan</item>
+    </style>
+
+
+    <style name="BottomDialog.AnimationStyle" parent="android:Animation">
+        <item name="android:windowEnterAnimation">@anim/boxart_fadein</item>
+        <item name="android:windowExitAnimation">@anim/boxart_fadeout</item>
+    </style>
+
 </resources>

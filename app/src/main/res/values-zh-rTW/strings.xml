@@ -134,7 +134,7 @@
     <string name="title_checkbox_xb1_driver">Xbox 360/One USB 手把驅動程式</string>
     <string name="summary_checkbox_xb1_driver">為缺少原生 Xbox 控制器支援的裝置啟用內建 USB 驅動程式</string>
     <string name="title_checkbox_usb_bind_all">覆寫原生 Xbox 手把支援</string>
-    <string name="summary_checkbox_usb_bind_all">強制 Moonlight 的 USB 驅動程式接管所有受支援的原生 Xbox 控制器</string>
+    <string name="summary_checkbox_usb_bind_all">強制 Moonlight 的 USB 驅動程式接管所有受支援的原生Xbox、PS4、PS5、NSPro控制器</string>
     <string name="title_checkbox_mouse_emulation">透過手把仿真滑鼠</string>
     <string name="summary_checkbox_mouse_emulation">長按開始鍵將手把切換為滑鼠模式</string>
     <string name="title_checkbox_mouse_nav_buttons"> 啟用前進後退滑鼠鍵 </string>

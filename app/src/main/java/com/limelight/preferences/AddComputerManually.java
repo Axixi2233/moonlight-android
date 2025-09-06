@@ -10,8 +10,11 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.Collections;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import com.limelight.SrvResolver;
 import com.limelight.binding.PlatformBinding;
 import com.limelight.computers.ComputerManagerService;
 import com.limelight.R;
@@ -30,7 +33,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
+import android.text.TextUtils;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
@@ -300,6 +306,49 @@ public class AddComputerManually extends Activity {
             @Override
             public void onClick(View view) {
                 handleDoneEvent();
+            }
+        });
+
+        findViewById(R.id.razerPort).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                hostText.setText(hostText.getText().toString()+":51337");
+            }
+        });
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Handler handler = new Handler(Looper.getMainLooper());
+        findViewById(R.id.getPcButton).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String text=hostText.getText().toString().trim();
+                if(TextUtils.isEmpty(text)){
+                    Toast.makeText(AddComputerManually.this, getResources().getString(R.string.addpc_enter_ip), Toast.LENGTH_LONG).show();
+                    return;
+                }
+                SpinnerDialog dialog = SpinnerDialog.displayDialog(AddComputerManually.this, "提示",
+                        "请求中....", false);
+                //"wtb.plus"
+                executor.execute(() -> {
+                    // 在后台线程中执行网络请求
+                    SrvResolver.ResultCode result = SrvResolver.resolveSRVRecord(text);
+                    // 切换到主线程更新 UI
+                    handler.post(() -> {
+                        dialog.dismiss();
+                        if (result == null) {
+                            return;
+                        }
+                        if(result.getCode()!=0){
+                            Toast.makeText(AddComputerManually.this,result.getResult(),Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        if(TextUtils.isEmpty(result.getResult())){
+                            Toast.makeText(AddComputerManually.this,"没有检索到_limelightax._tcp",Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        hostText.setText(result.getResult());
+                    });
+                });
             }
         });
 

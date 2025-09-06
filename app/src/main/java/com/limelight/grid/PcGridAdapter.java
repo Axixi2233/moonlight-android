@@ -22,7 +22,7 @@ public class PcGridAdapter extends GenericGridAdapter<PcView.ComputerObject> {
     }
 
     private static int getLayoutIdForPreferences(PreferenceConfiguration prefs) {
-        return R.layout.pc_grid_item;
+        return R.layout.pc_grid_item_new;
     }
 
     public void updateLayoutWithPreferences(Context context, PreferenceConfiguration prefs) {
@@ -85,9 +85,40 @@ public class PcGridAdapter extends GenericGridAdapter<PcView.ComputerObject> {
             overlayView.setImageResource(R.drawable.ic_lock);
             overlayView.setAlpha(1.0f);
             overlayView.setVisibility(View.VISIBLE);
+        } else if(obj.details.state == ComputerDetails.State.ONLINE &&
+                obj.details.pairState == PairingManager.PairState.PAIRED){
+            overlayView.setImageResource(R.drawable.ic_play);
+            overlayView.setAlpha(1.0f);
+            overlayView.setVisibility(View.VISIBLE);
         }
         else {
             overlayView.setVisibility(View.GONE);
         }
+
+        TextView txIp=parentView.findViewById(R.id.tx_item_ip);
+        txIp.setVisibility(View.VISIBLE);
+        if (obj.details.state == ComputerDetails.State.ONLINE) {
+            txIp.setAlpha(1.0f);
+        } else {
+            txIp.setAlpha(0.4f);
+        }
+        if(obj.details.localAddress!=null){
+            txIp.setText(obj.details.localAddress.address);
+            return;
+        }
+        if(obj.details.ipv6Address!=null){
+            txIp.setText(obj.details.ipv6Address.address);
+            return;
+        }
+
+        if(obj.details.remoteAddress!=null){
+            txIp.setText(obj.details.remoteAddress.address);
+            return;
+        }
+        if(obj.details.manualAddress!=null){
+            txIp.setText(obj.details.manualAddress.address);
+            return;
+        }
+        txIp.setVisibility(View.GONE);
     }
 }

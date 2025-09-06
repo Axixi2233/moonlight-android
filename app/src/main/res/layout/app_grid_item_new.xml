@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="150dp"
+    android:layout_margin="10dp"
+    android:background="@drawable/ic_app_item_bg_selector"
+    android:padding="4dp">
+
+    <com.limelight.ui.RoundedImageView
+        android:id="@+id/grid_image"
+        android:scaleType="centerCrop"
+        android:src="@drawable/app_icon"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
+    <ImageView
+        android:id="@+id/grid_overlay"
+        android:layout_width="50dp"
+        android:layout_centerInParent="true"
+        tools:src="@drawable/ic_play"
+        android:layout_height="50dp">
+    </ImageView>
+
+    <TextView
+        tools:text="我的应用"
+        android:id="@+id/grid_text"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_centerInParent="true"
+        android:layout_margin="5dp"
+        android:gravity="center"
+        android:textSize="18sp">
+    </TextView>
+</RelativeLayout>

@@ -1,0 +1,75 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bgColor"
+    tools:context=".AppView" >
+
+    <ImageView
+        android:scaleType="centerCrop"
+        android:layout_width="match_parent"
+        android:id="@+id/iv_root_view"
+        android:visibility="gone"
+        tools:visibility="visible"
+        android:layout_height="match_parent"/>
+    <RelativeLayout
+        android:id="@+id/rv_top_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/appListText"
+            tools:text="我的电脑"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:gravity="center"
+            android:layout_marginTop="15dp"
+            android:layout_marginLeft="15dp"
+            android:layout_marginRight="5dp"
+            android:layout_marginBottom="10dp"
+            android:preferKeepClear="true"
+            android:textSize="16dp"/>
+
+        <TextView
+            android:text="长按选中菜单有更多选项"
+            android:layout_marginTop="20dp"
+            android:textStyle="italic"
+            android:textSize="10dp"
+            android:layout_toRightOf="@+id/appListText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <ImageButton
+            android:id="@+id/settingsButton"
+            android:layout_alignParentRight="true"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/ic_game_menu_btn_side_selector"
+            android:src="@drawable/ic_axi_menu"
+            android:scaleType="centerInside"
+            android:layout_marginRight="10dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"/>
+    </RelativeLayout>
+
+
+    <FrameLayout
+        android:id="@+id/appFragmentContainer"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="15dp"
+        android:layout_marginBottom="10dp"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_below="@+id/rv_top_view"/>
+
+
+
+</RelativeLayout>

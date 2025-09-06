@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <color name="ic_launcher_background">#565C64</color>
+  <!-- 5c5cae 565C64-->
+  <color name="ic_launcher_background">#5c5cae</color>
 </resources>

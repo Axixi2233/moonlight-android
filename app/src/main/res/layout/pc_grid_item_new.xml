@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:padding="10dp"
+    android:layout_margin="4dp"
+    android:background="@drawable/ic_app_item_bg_selector"
+    android:layout_height="wrap_content">
+
+    <RelativeLayout
+        android:id="@+id/grid_image_layout"
+        android:layout_width="match_parent"
+        android:layout_height="150dp">
+
+        <ImageView
+            tools:src="@drawable/ic_computer"
+            android:id="@+id/grid_image"
+            android:layout_width="25dp"
+            android:layout_height="25dp"/>
+
+        <TextView
+            tools:text="192.168.31.115"
+            android:layout_marginLeft="10dp"
+            android:textSize="11dp"
+            android:id="@+id/tx_item_ip"
+            android:layout_marginTop="5dp"
+            android:textStyle="bold|italic"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:textColor="@android:color/white"
+            android:layout_toRightOf="@+id/grid_image"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <ImageView
+            tools:src="@drawable/ic_pc_offline"
+            android:id="@+id/grid_overlay"
+            android:layout_centerInParent="true"
+            android:layout_width="55dp"
+            android:layout_height="55dp">
+        </ImageView>
+
+        <ProgressBar
+            android:id="@+id/grid_spinner"
+            android:layout_centerInParent="true"
+            android:layout_width="75dp"
+            android:indeterminateDrawable="@drawable/ic_axi_progress_bg"
+            android:layout_height="75dp"
+            android:indeterminate="true">
+        </ProgressBar>
+
+        <TextView
+            android:layout_alignParentBottom="true"
+            android:id="@+id/grid_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            tools:text="DESP"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:gravity="center"
+            android:textSize="13dp" />
+    </RelativeLayout>
+
+</RelativeLayout>

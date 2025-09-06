@@ -2,11 +2,17 @@ package com.limelight.grid;
 
 import android.content.Context;
 import android.graphics.BitmapFactory;
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.load.resource.drawable.GlideDrawable;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
 import com.limelight.AppView;
 import com.limelight.LimeLog;
 import com.limelight.R;
@@ -74,12 +80,13 @@ public class AppGridAdapter extends GenericGridAdapter<AppView.AppObject> {
     }
 
     private static int getLayoutIdForPreferences(PreferenceConfiguration prefs) {
-        if (prefs.smallIconMode) {
-            return R.layout.app_grid_item_small;
-        }
-        else {
-            return R.layout.app_grid_item;
-        }
+//        if (prefs.smallIconMode) {
+//            return R.layout.app_grid_item_small;
+//        }
+//        else {
+//            return R.layout.app_grid_item;
+//        }
+        return R.layout.app_grid_item_new;
     }
 
     public void updateLayoutWithPreferences(Context context, PreferenceConfiguration prefs) {
@@ -163,7 +170,31 @@ public class AppGridAdapter extends GenericGridAdapter<AppView.AppObject> {
     @Override
     public void populateView(View parentView, ImageView imgView, ProgressBar prgView, TextView txtView, ImageView overlayView, AppView.AppObject obj) {
         // Let the cached asset loader handle it
-        loader.populateImageView(obj.app, imgView, txtView);
+        if(!TextUtils.isEmpty(obj.app.getCustomImagePath())&&(obj.app.getCustomImagePath().startsWith("http")||obj.app.getCustomImagePath().startsWith("HTTP"))){
+            Glide.with(context)
+                    .load(obj.app.getCustomImagePath())
+                    .skipMemoryCache(true)
+                    .diskCacheStrategy( DiskCacheStrategy.ALL)
+                    .error(R.drawable.no_app_image)
+                    .placeholder(R.drawable.no_app_image)
+                    .listener(new RequestListener<String, GlideDrawable>() {
+                        @Override
+                        public boolean onException(Exception e, String model, Target<GlideDrawable> target, boolean isFirstResource) {
+                            txtView.setVisibility(View.VISIBLE);
+                            return false;
+                        }
+
+                        @Override
+                        public boolean onResourceReady(GlideDrawable resource, String model, Target<GlideDrawable> target, boolean isFromMemoryCache, boolean isFirstResource) {
+                            txtView.setVisibility(View.GONE);
+                            return false;
+                        }
+                    })
+                    .into(imgView);
+            txtView.setText(obj.app.getAppName());
+        }else{
+            loader.populateImageView(obj.app, imgView, txtView);
+        }
 
         if (obj.isRunning) {
             // Show the play button overlay

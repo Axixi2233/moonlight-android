@@ -47,5 +47,26 @@
         android:layout_alignParentEnd="true"
         android:preferKeepClear="true"
         android:text="@android:string/ok"/>
+
+    <Button
+        android:id="@+id/getPcButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="25dp"
+        android:layout_below="@+id/addPcButton"
+        android:layout_alignParentLeft="true"
+        android:preferKeepClear="true"
+        android:visibility="gone"
+        android:text="根据svr获取"/>
+
+    <Button
+        android:id="@+id/razerPort"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="25dp"
+        android:layout_below="@+id/addPcButton"
+        android:layout_alignParentLeft="true"
+        android:preferKeepClear="true"
+        android:text="追加Razer雷游端口号"/>
 	
 </RelativeLayout>

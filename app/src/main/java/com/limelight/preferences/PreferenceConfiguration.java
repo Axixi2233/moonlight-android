@@ -219,8 +219,8 @@ public class PreferenceConfiguration {
 
     public boolean enableKeyboardSquare;
 
-    //官方虚拟按钮风格
-    public boolean enableOnScreenStyleOfficial;
+    //虚拟手柄皮肤
+    public int gamepad_skin;
 
     //自由摇杆背景透明度
     public int senableNewAnalogStickOpacity;
@@ -269,7 +269,10 @@ public class PreferenceConfiguration {
     public boolean enableAXFloating;
 
     //悬浮球操作
-    public boolean enableAXFloatingOperate;
+//    public boolean enableAXFloatingOperate;
+
+    //悬浮球操作
+    public int axFloatingOperate;
 
     //禁用扳机死区
     public boolean disableTriggerDeadzone;
@@ -311,7 +314,7 @@ public class PreferenceConfiguration {
     public int virtualkeyViewNormalColor;
 
     //雷蛇虚拟显示器
-    public boolean razerVD;
+    public int razerVD;
 
     //内置的虚拟按键布局
     public int virtualKeyboardFileUsed;
@@ -341,6 +344,42 @@ public class PreferenceConfiguration {
 
     //虚拟手柄按键 缩放系数
     public int virtualGamePadScaleFactor;
+
+    //低延迟模式 实验性
+    public boolean lowLatencyExperiment;
+
+    //手柄键鼠模式 鼠标指针灵敏度
+    public int mouseGamePadSensitity;
+
+    //禁言游戏模式=quest可能有效
+    public boolean enableGameManagerQuest;
+
+    //强制显示模式
+    public boolean enforceDisplayMode;
+
+    //禁用虚拟手柄摇杆l3r3
+    public boolean disableRockerClickL3R3;
+
+    //记住上次悬浮球位置
+    public boolean axFloatingPostionAuto;
+    public float axFloatingPostionX;
+    public float axFloatingPostionY;
+    public boolean axFloatingPostionIsNearestLeft;
+
+    //精简性能信息顶部边距
+    public int performanceOverlayLiteMaginTop;
+
+    //鼠标滚轮移动距离
+    public int mouseSCAmount;
+    //强制体感模拟右摇杆
+    public boolean gameForceGyro;
+    //按住左扳机生效
+    public boolean gameForceGyroLeftTrigger;
+    //强制体感反转xy轴方向
+    public boolean gameForceGyroXYSwitch;
+
+    //握把震动联动扳机震动
+    public boolean gameTriggerRumbleLink;
 
     public static boolean isNativeResolution(int width, int height) {
         // It's not a native resolution if it matches an existing resolution option
@@ -797,7 +836,7 @@ public class PreferenceConfiguration {
 
         config.enableBatteryReport=prefs.getBoolean("checkbox_gamepad_enable_battery_report",true);
 
-        config.enableOnScreenStyleOfficial=prefs.getBoolean("checkbox_onscreen_style_official",false);
+        config.gamepad_skin=prefs.getInt("onscreen_game_pad_skin",0);
 
         config.senableNewAnalogStickOpacity=prefs.getInt("seekbar_osc_free_analog_stick_opacity",20);
 
@@ -846,7 +885,7 @@ public class PreferenceConfiguration {
         config.quickSoftKeyboardFingers=prefs.getInt("touch_number_quick_soft_keyboard",0);
 
         config.enableAXFloating=prefs.getBoolean("checkbox_enable_ax_floating",false);
-        config.enableAXFloatingOperate=prefs.getBoolean("checkbox_enable_ax_floating_operate",false);
+        config.axFloatingOperate =prefs.getInt("ax_floating_operate",0);
 
         config.disableTriggerDeadzone=prefs.getBoolean("checkbox_disable_trigger_deadzone",false);
 
@@ -884,7 +923,7 @@ public class PreferenceConfiguration {
 
         config.showRumbleHUD=prefs.getBoolean("rumble_HUD_show",false);
 
-        config.razerVD=prefs.getBoolean("razerVD",false);
+        config.razerVD=prefs.getInt("vdValue",0);
 
         config.ds5TriggerMode=prefs.getInt("ds5TriggerMode",0);
         config.ds5TriggerStrength=prefs.getInt("ds5TriggerStrength",230);
@@ -896,6 +935,15 @@ public class PreferenceConfiguration {
 
         config.virtualGamePadScaleFactor=prefs.getInt("virtualGamePadScaleFactor",100);
 
+        config.lowLatencyExperiment=prefs.getBoolean("enable_lowLatency_experiment",false);
+
+        config.mouseGamePadSensitity=prefs.getInt("mouse_gamepad_sensitity",100);
+
+        config.enableGameManagerQuest=prefs.getBoolean("checkbox_enable_game_manager_quest",false);
+
+        config.disableRockerClickL3R3=prefs.getBoolean("checkbox_rocker_click_L3R3",false);
+
+        config.enforceDisplayMode=prefs.getBoolean("checkbox_enforce_display_mode",false);
         config.absoluteMouseMode = prefs.getBoolean(ABSOLUTE_MOUSE_MODE_PREF_STRING, DEFAULT_ABSOLUTE_MOUSE_MODE);
         config.enableAudioFx = prefs.getBoolean(ENABLE_AUDIO_FX_PREF_STRING, DEFAULT_ENABLE_AUDIO_FX);
         config.reduceRefreshRate = prefs.getBoolean(REDUCE_REFRESH_RATE_PREF_STRING, DEFAULT_REDUCE_REFRESH_RATE);
@@ -904,6 +952,21 @@ public class PreferenceConfiguration {
         config.gamepadMotionSensors = prefs.getBoolean(GAMEPAD_MOTION_SENSORS_PREF_STRING, DEFAULT_GAMEPAD_MOTION_SENSORS);
         config.gamepadMotionSensorsFallbackToDevice = prefs.getBoolean(GAMEPAD_MOTION_FALLBACK_PREF_STRING, DEFAULT_GAMEPAD_MOTION_FALLBACK);
 
+        config.performanceOverlayLiteMaginTop=prefs.getInt("performance_overlayLite_magin_top",4);
+
+        config.axFloatingPostionAuto =prefs.getBoolean("ax_floating_postion_auto",false);
+        config.axFloatingPostionX =prefs.getFloat("ax_floating_postion_x",-1);
+        config.axFloatingPostionY =prefs.getFloat("ax_floating_postion_y",-1);
+        config.axFloatingPostionIsNearestLeft =prefs.getBoolean("ax_floating_postion_isnearestleft",true);
+
+        config.mouseSCAmount=prefs.getInt("mouse_sc_amount",5);
+
+        config.gameForceGyroLeftTrigger=prefs.getBoolean("gameForceGyroLeftTrigger",false);
+        config.gameForceGyro=prefs.getBoolean("gameForceGyro",false);
+        config.gameForceGyroXYSwitch=prefs.getBoolean("gameForceGyroXYSwitch",true);
+        config.gameTriggerRumbleLink=prefs.getBoolean("gameTriggerRumbleLink",false);
+
         return config;
     }
+
 }

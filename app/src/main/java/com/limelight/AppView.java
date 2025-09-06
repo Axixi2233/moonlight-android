@@ -1,10 +1,14 @@
 package com.limelight;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.HashSet;
 import java.util.List;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.load.resource.bitmap.GlideBitmapDrawable;
 import com.limelight.computers.ComputerManagerListener;
 import com.limelight.computers.ComputerManagerService;
 import com.limelight.grid.AppGridAdapter;
@@ -15,6 +19,7 @@ import com.limelight.nvstream.http.PairingManager;
 import com.limelight.preferences.PreferenceConfiguration;
 import com.limelight.ui.AdapterFragment;
 import com.limelight.ui.AdapterFragmentCallbacks;
+import com.limelight.ui.gamemenu.GameDisplayFragment;
 import com.limelight.utils.CacheHelper;
 import com.limelight.utils.Dialog;
 import com.limelight.utils.ServerHelper;
@@ -30,6 +35,8 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.graphics.RenderEffect;
+import android.graphics.Shader;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Build;
 import android.os.Bundle;
@@ -176,6 +183,9 @@ public class AppView extends Activity implements AdapterFragmentCallbacks {
                 e.printStackTrace();
             }
         }
+        if(dialogFragment!=null) {
+            dialogFragment.dismiss();
+        }
     }
 
     private void startComputerUpdates() {
@@ -279,6 +289,9 @@ public class AppView extends Activity implements AdapterFragmentCallbacks {
         }
     }
 
+    private GameDisplayFragment dialogFragment;
+
+    private PreferenceConfiguration pref;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -291,14 +304,14 @@ public class AppView extends Activity implements AdapterFragmentCallbacks {
 
         UiHelper.setLocale(this);
 
-        setContentView(R.layout.activity_app_view);
+        setContentView(R.layout.activity_app_view_new);
 
         // Allow floating expanded PiP overlays while browsing apps
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             setShouldDockBigOverlays(false);
         }
 
-        UiHelper.notifyNewRootView(this);
+        UiHelper.notifyNewRootViewImmersive(this);
 
         showHiddenApps = getIntent().getBooleanExtra(SHOW_HIDDEN_APPS_EXTRA, false);
         uuidString = getIntent().getStringExtra(UUID_EXTRA);
@@ -313,6 +326,55 @@ public class AppView extends Activity implements AdapterFragmentCallbacks {
         TextView label = findViewById(R.id.appListText);
         setTitle(computerName);
         label.setText(computerName);
+
+        ImageView imageView=findViewById(R.id.iv_root_view);
+
+        pref=PreferenceConfiguration.readPreferences(this);
+
+        if(pref.enableScreenBg&&Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
+            File imageFile=new File(getFilesDir().getAbsolutePath(),"axi_screen_bg.png");
+            if(imageFile.exists()){
+                try{
+                    Glide.with(this)
+                            .load(imageFile)
+                            .skipMemoryCache(true)
+                            .diskCacheStrategy( DiskCacheStrategy.NONE )
+                            .into(imageView);
+                    imageView.setVisibility(View.VISIBLE);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S&&pref.enableScreenObscure) {
+                        findViewById(R.id.iv_root_view).setRenderEffect(RenderEffect.createBlurEffect(25, 25, Shader.TileMode.CLAMP));
+                    }
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+            }else{
+                imageView.setVisibility(View.GONE);
+            }
+        }else{
+            imageView.setVisibility(View.GONE);
+        }
+
+        findViewById(R.id.settingsButton).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(dialogFragment!=null){
+                    dialogFragment.dismiss();
+                    dialogFragment=null;
+                }
+                dialogFragment=new GameDisplayFragment();
+                dialogFragment.setWidth(UiHelper.dpToPx(AppView.this,364));
+                dialogFragment.setTitle("显示");
+                dialogFragment.setShowLock(false);
+                dialogFragment.setOnClick(new GameDisplayFragment.onClick() {
+                    @Override
+                    public void click() {
+                        Toast.makeText(AppView.this,"修改成功！",Toast.LENGTH_SHORT).show();
+                    }
+                });
+                dialogFragment.setPrefConfig(pref);
+                dialogFragment.show(getFragmentManager());
+            }
+        });
 
         // Bind to the computer manager service
         bindService(new Intent(this, ComputerManagerService.class), serviceConnection,
@@ -422,11 +484,21 @@ public class AppView extends Activity implements AdapterFragmentCallbacks {
             ImageView appImageView = info.targetView.findViewById(R.id.grid_image);
             if (appImageView != null) {
                 // We have a grid ImageView, so we must be in grid-mode
-                BitmapDrawable drawable = (BitmapDrawable)appImageView.getDrawable();
-                if (drawable != null && drawable.getBitmap() != null) {
-                    // We have a bitmap loaded too
-                    menu.add(Menu.NONE, CREATE_SHORTCUT_ID, 5, getResources().getString(R.string.applist_menu_scut));
+//                com.bumptech.glide.load.resource.bitmap.GlideBitmapDrawable cannot be cast to android.graphics.drawable.BitmapDrawable
+                if(appImageView.getDrawable() instanceof BitmapDrawable){
+                    BitmapDrawable drawable = (BitmapDrawable)appImageView.getDrawable();
+                    if (drawable != null && drawable.getBitmap() != null) {
+                        // We have a bitmap loaded too
+                        menu.add(Menu.NONE, CREATE_SHORTCUT_ID, 5, getResources().getString(R.string.applist_menu_scut));
+                    }
+                } else if(appImageView.getDrawable() instanceof GlideBitmapDrawable){
+                    GlideBitmapDrawable drawable = (GlideBitmapDrawable)appImageView.getDrawable();
+                    if (drawable != null && drawable.getBitmap() != null) {
+                        // We have a bitmap loaded too
+                        menu.add(Menu.NONE, CREATE_SHORTCUT_ID, 5, getResources().getString(R.string.applist_menu_scut));
+                    }
                 }
+
             }
         }
     }
@@ -494,7 +566,18 @@ public class AppView extends Activity implements AdapterFragmentCallbacks {
 
             case CREATE_SHORTCUT_ID:
                 ImageView appImageView = info.targetView.findViewById(R.id.grid_image);
-                Bitmap appBits = ((BitmapDrawable)appImageView.getDrawable()).getBitmap();
+                Bitmap appBits = null;
+                if(appImageView.getDrawable() instanceof BitmapDrawable){
+                    BitmapDrawable drawable = (BitmapDrawable)appImageView.getDrawable();
+                    appBits=drawable.getBitmap();
+                } else if(appImageView.getDrawable() instanceof GlideBitmapDrawable){
+                    GlideBitmapDrawable drawable = (GlideBitmapDrawable)appImageView.getDrawable();
+                    appBits=drawable.getBitmap();
+                }
+                if(app==null){
+                    Toast.makeText(AppView.this, getResources().getString(R.string.unable_to_pin_shortcut), Toast.LENGTH_LONG).show();
+                    return true;
+                }
                 if (!shortcutHelper.createPinnedGameShortcut(computer, app.app, appBits)) {
                     Toast.makeText(AppView.this, getResources().getString(R.string.unable_to_pin_shortcut), Toast.LENGTH_LONG).show();
                 }
@@ -619,8 +702,9 @@ public class AppView extends Activity implements AdapterFragmentCallbacks {
 
     @Override
     public int getAdapterFragmentLayoutId() {
-        return PreferenceConfiguration.readPreferences(AppView.this).smallIconMode ?
-                    R.layout.app_grid_view_small : R.layout.app_grid_view;
+//        return PreferenceConfiguration.readPreferences(AppView.this).smallIconMode ?
+//                    R.layout.app_grid_view_small : R.layout.app_grid_view;
+        return R.layout.app_grid_view_new;
     }
 
     @Override
@@ -633,7 +717,7 @@ public class AppView extends Activity implements AdapterFragmentCallbacks {
                 AppObject app = (AppObject) appGridAdapter.getItem(pos);
 
                 // Only open the context menu if something is running, otherwise start it
-                if (lastRunningAppId != 0) {
+                if (lastRunningAppId != 0&&!pref.passAppMenu) {
                     openContextMenu(arg1);
                 } else {
                     ServerHelper.doStart(AppView.this, app.app, computer, managerBinder);
@@ -662,4 +746,5 @@ public class AppView extends Activity implements AdapterFragmentCallbacks {
             return app.getAppName();
         }
     }
+
 }

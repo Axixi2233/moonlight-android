@@ -1,0 +1,135 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bgColor"
+    tools:ignore="MissingDefaultResource">
+
+    <ImageView
+        android:scaleType="centerCrop"
+        android:layout_width="match_parent"
+        android:id="@+id/iv_root_view"
+        android:visibility="gone"
+        tools:visibility="visible"
+        android:layout_height="match_parent"/>
+
+    <RelativeLayout
+        android:id="@+id/rv_top_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:gravity="center"
+            android:layout_marginTop="15dp"
+            android:layout_marginLeft="25dp"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp">
+            <ImageView
+                android:id="@+id/iv_logo"
+                android:src="@drawable/app_icon_axi"
+                android:layout_width="36dp"
+                android:layout_height="36dp"/>
+            <TextView
+                android:layout_marginLeft="10dp"
+                android:text="@string/app_label"
+                android:textSize="12dp"
+                android:id="@+id/tx_label"
+                android:textColor="@android:color/white"
+                android:textStyle="bold|italic"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:layout_alignParentRight="true"
+            android:layout_marginRight="10dp"
+            android:id="@+id/lv_right"
+            android:padding="15dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <ImageButton
+                android:id="@+id/manuallyAddPc"
+                android:background="@drawable/ic_game_menu_btn_side_selector"
+                android:src="@drawable/ic_axi_app_add"
+                android:layout_marginRight="5dp"
+                android:layout_width="48dp"
+                android:scaleType="centerInside"
+                android:layout_height="48dp"/>
+
+            <ImageButton
+                android:id="@+id/helpButton"
+                android:background="@drawable/ic_game_menu_btn_side_selector"
+                android:src="@drawable/ic_axi_app_help"
+                android:layout_marginRight="5dp"
+                android:scaleType="centerInside"
+                android:layout_width="48dp"
+                android:layout_height="48dp"/>
+
+            <ImageButton
+                android:id="@+id/axiButton"
+                android:background="@drawable/ic_game_menu_btn_side_selector"
+                android:src="@drawable/ic_game_controller"
+                android:layout_marginRight="5dp"
+                android:scaleType="centerInside"
+                android:layout_width="48dp"
+                android:layout_height="48dp"/>
+
+            <ImageButton
+                android:id="@+id/settingsButton"
+                android:background="@drawable/ic_game_menu_btn_side_selector"
+                android:src="@drawable/ic_axi_app_setting"
+                android:scaleType="centerInside"
+                android:layout_width="48dp"
+                android:layout_height="48dp"/>
+
+        </LinearLayout>
+    </RelativeLayout>
+
+
+
+    <RelativeLayout
+        android:id="@+id/pcFragmentContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="15dp"
+        android:background="@android:color/transparent"
+        android:layout_marginBottom="15dp"
+        android:layout_marginLeft="28dp"
+        android:layout_marginRight="15dp"
+        android:layout_marginTop="28dp"
+        android:layout_below="@+id/rv_top_view"
+        android:layout_alignParentBottom="true">
+
+        <RelativeLayout
+            android:id="@+id/no_pc_found_layout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_centerHorizontal="true">
+            <ProgressBar
+                android:id="@+id/pcs_loading"
+                android:layout_width="75dp"
+                android:layout_height="75dp"
+                android:indeterminateDrawable="@drawable/ic_axi_progress_bg"
+                android:indeterminate="true"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_toRightOf="@+id/pcs_loading"
+                android:layout_toEndOf="@+id/pcs_loading"
+                android:layout_marginLeft="10dp"
+                android:layout_marginStart="10dp"
+                android:layout_centerVertical="true"
+                android:textAppearance="?android:attr/textAppearanceLarge"
+                android:gravity="center"
+                android:textSize="12dp"
+                android:textStyle="italic"
+                android:text="@string/searching_pc"/>
+        </RelativeLayout>
+
+    </RelativeLayout>
+</RelativeLayout>

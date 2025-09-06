@@ -46,6 +46,13 @@
             android:entryValues="@array/video_frame_pacing_values"
             android:summary="@string/summary_frame_pacing"
             android:defaultValue="latency" />
+
+        <CheckBoxPreference
+            android:key="enable_lowLatency_experiment"
+            android:title="优化解码低延迟模式(Beta)"
+            android:summary="(实验性) 高通8Gen1及以上和联发科9300及以下芯片机型生效。"
+            android:defaultValue="false" />
+
         <CheckBoxPreference
             android:key="checkbox_stretch_video"
             android:title="@string/title_checkbox_stretch_video"
@@ -107,6 +114,7 @@
             android:title="@string/title_checkbox_mouse_emulation"
             android:summary="@string/summary_checkbox_mouse_emulation"
             android:defaultValue="true" />
+
         <ListPreference
             android:key="analog_scrolling"
             android:dependency="checkbox_mouse_emulation"
@@ -180,13 +188,6 @@
             android:summary="默认外接物理鼠标的光标会被捕获，此选项可显示安卓系统光标"
             android:defaultValue="false" />
 
-
-        <CheckBoxPreference
-            android:key="checkbox_five_fingers_operate"
-            android:title="快速打开软键盘"
-            android:summary="使用五根手指点击屏幕，快速打开安卓系统输入法。\n默认触控板模式三指打开输入法。"
-            android:defaultValue="false" />
-
 <!--        <CheckBoxPreference-->
 <!--            android:key="checkbox_multi_touch_screen"-->
 <!--            android:title="多点触控屏幕模式"-->
@@ -219,12 +220,7 @@
             android:key="checkbox_show_onscreen_controls"
             android:summary="@string/summary_checkbox_show_onscreen_controls"
             android:title="@string/title_checkbox_show_onscreen_controls" />
-        <CheckBoxPreference
-            android:defaultValue="false"
-            android:dependency="checkbox_show_onscreen_controls"
-            android:key="checkbox_onscreen_style_official"
-            android:summary="如果你还是喜欢官方旧版虚拟手柄按键风格可以勾选此选项。\n按键形状可以为方形，如果你勾选了底部虚拟按键【普通按钮为方形按钮】"
-            android:title="官方虚拟手柄皮肤" />
+       
         <CheckBoxPreference
             android:key="checkbox_vibrate_osc"
             android:dependency="checkbox_show_onscreen_controls"
@@ -245,6 +241,7 @@
             android:key="checkbox_show_guide_button"
             android:summary="@string/summary_show_guide_button"
             android:title="@string/title_show_guide_button" />
+
         <com.limelight.preferences.SeekBarPreference
             android:key="seekbar_osc_opacity"
             android:dependency="checkbox_show_onscreen_controls"
@@ -256,6 +253,12 @@
             android:summary="@string/summary_osc_opacity"
             android:text="@string/suffix_osc_opacity"
             android:title="@string/dialog_title_osc_opacity" />
+
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="checkbox_rocker_click_L3R3"
+            android:summary="开启后，虚拟手柄摇杆无法触发L3和R3"
+            android:title="禁用虚拟手柄摇杆中心区域" />
 
         <com.limelight.preferences.ConfirmDeleteOscPreference
             android:title="@string/title_reset_osc"
@@ -336,21 +339,39 @@
             android:key="checkbox_enable_perf_overlay"
             android:title="@string/title_enable_perf_overlay"
             android:summary="@string/summary_enable_perf_overlay"
-            android:defaultValue="false"/>
+            android:defaultValue="true"/>
 
         <CheckBoxPreference
             android:key="checkbox_enable_perf_overlay_lite"
             android:dependency="checkbox_enable_perf_overlay"
             android:title="开启Lite精简模式"
             android:summary="展示简化版性能信息：网速/延迟/解码/丢包率/FPS"
-            android:defaultValue="false" />
+            android:defaultValue="true" />
 
         <CheckBoxPreference
             android:key="checkbox_enable_perf_overlay_lite_dialog"
             android:dependency="checkbox_enable_perf_overlay_lite"
             android:title="Lite精简模式点击弹出快捷选项"
             android:summary="代替返回键逻辑，弹出游戏快捷菜单。"
-            android:defaultValue="false" />
+            android:defaultValue="true" />
+
+        <CheckBoxPreference
+            android:key="checkbox_enable_perf_overlay_lite_ext"
+            android:dependency="checkbox_enable_perf_overlay_lite"
+            android:title="Lite精简模式扩展参数"
+            android:summary="开启后，增加分辨率、HDR、解码器等参数。"
+            android:defaultValue="true" />
+
+        <com.limelight.preferences.SeekBarPreference
+            android:key="performance_overlayLite_magin_top"
+            android:dialogMessage="设置精简性能信息距屏幕顶部边距，默认是4dp"
+            seekbar:min="0"
+            android:max="50"
+            seekbar:step="1"
+            android:defaultValue="4"
+            android:summary="设置精简性能信息距屏幕顶部边距，默认是4dp"
+            android:text="dp"
+            android:title="精简性能控件距顶部距离" />
 
         <CheckBoxPreference
             android:key="checkbox_enable_post_stream_toast"
@@ -379,6 +400,12 @@
             android:key="checkbox_enable_axi_test"
             android:title="首页显示手柄调试入口"
             android:summary="开启后会显示一个图标，快速打开手柄调试页面"
+            android:defaultValue="true"/>
+
+        <CheckBoxPreference
+            android:key="checkbox_enable_game_menu_new"
+            android:title="使用新版游戏菜单"
+            android:summary="替换之前对话框菜单，采用新UI样式。"
             android:defaultValue="true"/>
 
         <CheckBoxPreference
@@ -411,16 +438,16 @@
             android:defaultValue="false"/>
 
         <CheckBoxPreference
+            android:key="checkbox_gamepad_enable_battery_report"
+            android:summary="在可用时汇报手柄电池状态。\n如果在使用触摸屏/触摸板/手写笔/鼠标时偶尔有卡顿现象发生，关闭此选项可能会有用。"
+            android:title="启用手柄电池状态报告"
+            android:defaultValue="true"
+            />
+
+        <CheckBoxPreference
             android:key="checkbox_enable_ax_floating"
             android:title="启用悬浮球（Beta）"
             android:summary="开启后，点击打开快捷菜单。"
-            android:defaultValue="false"/>
-
-        <CheckBoxPreference
-            android:key="checkbox_enable_ax_floating_operate"
-            android:title="悬浮球点击操作"
-            android:dependency="checkbox_enable_ax_floating"
-            android:summary="切换为快速打开输入法软键盘"
             android:defaultValue="false"/>
 
         <com.limelight.preferences.SeekBarPreference
@@ -449,18 +476,6 @@
             android:summary="虚拟手柄 左右摇杆中心点位置不固定，可自由调整在一定区域内移动。"
             android:defaultValue="false"/>
 
-        <com.limelight.preferences.SeekBarPreference
-            android:key="seekbar_osc_free_analog_stick_opacity"
-            android:dependency="checkbox_enable_analog_stick_new"
-            android:dialogMessage="@string/summary_osc_opacity"
-            seekbar:min="0"
-            seekbar:step="1"
-            android:max="100"
-            android:defaultValue="20"
-            android:summary="默认只有摇杆移动的时候，有背景显示，如何不喜欢可调节透明度效果。"
-            android:text="@string/suffix_osc_opacity"
-            android:title="自由摇杆背景透明度" />
-
         <CheckBoxPreference
             android:key="checkbox_enable_analog_stick_new_fixed"
             android:title="自由摇杆键程固定"
@@ -482,69 +497,6 @@
             android:entryValues="@array/screen_gravity_list_values"
             android:defaultValue="0" />
 
-
-        <CheckBoxPreference
-            android:key="checkbox_enable_touch_sensitivity"
-            android:title="触控屏幕灵敏度"
-            android:summary="开启后，可手动调整触控灵敏度。"
-            android:defaultValue="false"/>
-
-        <CheckBoxPreference
-            android:key="checkbox_enable_global_touch_sensitivity"
-            android:dependency="checkbox_enable_touch_sensitivity"
-            android:title="触控屏幕灵敏度全局生效"
-            android:summary="默认不勾选，只有右半边屏幕生效(适合玩原神)，勾选则全屏幕范围内生效。"
-            android:defaultValue="false"/>
-
-        <CheckBoxPreference
-            android:key="checkbox_enable_touch_sensitivity_rotation_auto"
-            android:dependency="checkbox_enable_touch_sensitivity"
-            android:title="触控坐标超过边界，自动回屏幕中心点"
-            android:summary="正常灵敏度太高，滑动很小的距离就会超出边界，导致划不动，可勾选此选项。"
-            android:defaultValue="true"/>
-
-        <com.limelight.preferences.SeekBarPreference
-            android:key="seekbar_touch_sensitivity_opacity_x"
-            android:dependency="checkbox_enable_touch_sensitivity"
-            seekbar:min="10"
-            seekbar:step="10"
-            android:max="300"
-            android:defaultValue="100"
-            android:summary="多点触控模式，玩游戏时，可能某些游戏灵敏度调节不能满足需求，可使用此选项修改视野的灵敏度。"
-            android:text="%"
-            android:title="屏幕灵敏度调整X轴" />
-
-        <com.limelight.preferences.SeekBarPreference
-            android:key="seekbar_touch_sensitivity_opacity_y"
-            android:dependency="checkbox_enable_touch_sensitivity"
-            seekbar:min="10"
-            seekbar:step="10"
-            android:max="300"
-            android:defaultValue="100"
-            android:summary="多点触控模式，玩游戏时，可能某些游戏灵敏度调节不能满足需求，可使用此选项修改视野的灵敏度。"
-            android:text="%"
-            android:title="屏幕灵敏度调整Y轴" />
-
-        <com.limelight.preferences.SeekBarPreference
-            android:key="seekbar_mouse_touchpad_sensitivity_x_opacity"
-            seekbar:min="10"
-            seekbar:step="10"
-            android:max="300"
-            android:defaultValue="100"
-            android:summary="适用于鼠标触控板模式"
-            android:text="%"
-            android:title="触控板灵敏度X轴" />
-
-        <com.limelight.preferences.SeekBarPreference
-            android:key="seekbar_mouse_touchpad_sensitivity_y_opacity"
-            seekbar:min="10"
-            seekbar:step="10"
-            android:max="300"
-            android:defaultValue="100"
-            android:summary="适用于鼠标触控板模式"
-            android:text="%"
-            android:title="触控板灵敏度Y轴" />
-
         <CheckBoxPreference
             android:key="checkbox_enable_device_rumble"
             android:title="强制使用设备本身的震动马达"
@@ -559,13 +511,19 @@
 
         <CheckBoxPreference
             android:key="checkbox_enable_clear_default_special_button"
-            android:title="禁用默认的特殊按键指令"
+            android:title="禁用默认的特殊按键指令(快捷键)"
             android:summary="如果你感觉内置的指令对你没什么用的话，可以禁用，使用自己导入的。"
+            android:defaultValue="false"/>
+
+        <CheckBoxPreference
+            android:key="checkbox_enable_game_manager_quest"
+            android:title="禁用游戏模式"
+            android:summary="可能对Quest 安卓13及以上版本有用"
             android:defaultValue="false"/>
 
         <Preference
             android:key="import_special_button_file"
-            android:title="导入自定义特殊指令配置文件"
+            android:title="导入自定义特殊指令(快捷键)配置文件"
             android:summary="每次都会覆盖原来的，请注意备份。"
             />
 
@@ -580,16 +538,6 @@
             android:title="无障碍键盘模式显示捕获的键值"
             android:summary="打开无障碍键盘，在月光app任意界面，输入按键，会弹出键值，用于自定义无障碍配置文件使用。"
             android:defaultValue="false"/>
-
-        <com.limelight.preferences.WebLauncherPreference
-            android:title="软件版本更新"
-            android:summary="跳转到github获取releases"
-            url="https://github.com/Axixi2233/moonlight-android/releases"/>
-
-        <com.limelight.preferences.WebLauncherPreference
-            android:title="关于作者"
-            android:summary="跳转到B站阿西西的日常个人首页"
-            url="https://space.bilibili.com/16893379"/>
 
     </PreferenceCategory>
 
@@ -621,6 +569,12 @@
             android:defaultValue="false" />
 
         <CheckBoxPreference
+            android:key="checkbox_enable_keyboard_square"
+            android:title="普通按钮为方形按钮"
+            android:summary="虚拟按钮形状为方形按钮，默认为圆形。"
+            android:defaultValue="false" />
+
+        <CheckBoxPreference
             android:key="checkbox_enable_custom_axi_keyboard_file"
             android:title="启用自定义虚拟按钮配置文件"
             android:summary="优先使用导入的keyboards.json文件。"
@@ -632,39 +586,9 @@
             android:summary="会覆盖替换掉APP内置默认的keyboards.json文件\n旧版本只能修改APK文件重新打包。"
             />
 
-        <CheckBoxPreference
-            android:key="checkbox_enable_keyboard_square"
-            android:dependency="checkbox_enable_keyboard"
-            android:title="普通按钮为方形按钮"
-            android:summary="虚拟按钮形状为方形按钮，默认为圆形。"
-            android:defaultValue="false" />
-
-
-        <com.limelight.preferences.SeekBarPreference
-            android:key="seekbar_touchpad_sensitivity_opacity"
-            seekbar:min="10"
-            seekbar:step="10"
-            android:max="300"
-            android:defaultValue="100"
-            android:summary="适用于虚拟特殊按键触控板控件。"
-            android:text="%"
-            android:title="触控板控件灵敏度X轴" />
-
-        <com.limelight.preferences.SeekBarPreference
-            android:key="seekbar_touchpad_sensitivity_y_opacity"
-            seekbar:min="10"
-            seekbar:step="10"
-            android:max="300"
-            android:defaultValue="100"
-            android:summary="适用于虚拟特殊按键触控板控件。"
-            android:text="%"
-            android:title="触控板控件灵敏度Y轴" />
-
-
         <com.limelight.preferences.ConfirmDeleteKeyboardPreference
             android:title="重置屏幕虚拟按键布局"
             android:summary="初始化特殊按键布局（重置默认选择的那套布局方案）"
-            android:dependency="checkbox_enable_keyboard"
             android:dialogTitle="@string/dialog_title_reset_osc"
             android:dialogMessage="@string/dialog_text_reset_osc"
             android:positiveButtonText="@string/yes"
@@ -674,15 +598,25 @@
         <Preference
             android:key="import_keyboard_file"
             android:title="导入配置文件"
-            android:summary="这是导入按钮位置相关配置\n选择一个配置文件，覆盖默认选择的布局方案。"
-            android:dependency="checkbox_enable_keyboard"
+            android:summary="此处是按钮位置、大小等配置\n选择一个配置文件，覆盖默认选择的布局方案。"
             />
 
         <Preference
             android:key="export_keyboard_file"
             android:title="导出配置文件"
             android:summary="导出默认选择的布局方案，此处是按钮位置、大小等配置"
-            android:dependency="checkbox_enable_keyboard"
+            />
+
+        <Preference
+            android:key="import_keyboard_user_list_file"
+            android:title="导入APP内虚拟按键列表配置"
+            android:summary="会覆盖APP内虚拟按键列表的内容。"
+            />
+
+        <Preference
+            android:key="export_keyboard_user_list_file"
+            android:title="导出APP内虚拟按键列表配置"
+            android:summary="导出APP内虚拟按键列表的内容。"
             />
 
     </PreferenceCategory>
@@ -727,6 +661,66 @@
             />
 
     </PreferenceCategory>
+
+    <PreferenceCategory android:title="主屏幕设置"
+        android:key="category_axixi_screen">
+
+        <CheckBoxPreference
+            android:key="checkbox_enable_screen_bg"
+            android:title="使用自定义背景图"
+            android:summary="不勾选则使用默认背景,安卓10以上支持"
+            android:defaultValue="false" />
+
+        <Preference
+            android:key="import_image_file_key"
+            android:title="设置主屏幕背景图"
+            android:summary="选择一张图片，旋转屏幕生效~\n容错率不是很高，所以图片大小和类型别太过分，小心崩溃~\n如果崩溃了清除数据可解决~"
+            />
+
+        <CheckBoxPreference
+            android:key="checkbox_enable_screen_obscure"
+            android:title="背景图高斯模糊"
+            android:summary="自定义背景图是否进行高斯模糊处理，安卓12以上支持。"
+            android:defaultValue="true" />
+
+        <EditTextPreference
+            android:key="change_screen_label_key"
+            android:defaultValue="@string/app_label"
+            android:singleLine="true"
+            android:dialogTitle="设置主屏幕左侧文本"
+            android:summary="输入你喜欢的文本"
+            android:dialogMessage="输入你喜欢的文本~"
+            android:title="设置主屏幕左侧文本" />
+
+        <CheckBoxPreference
+            android:key="checkbox_enable_screen_hide_logo"
+            android:title="隐藏Logo图标"
+            android:summary="隐藏首页APP的logo"
+            android:defaultValue="false" />
+
+        <CheckBoxPreference
+            android:key="checkbox_enable_pass_menu"
+            android:title="忽略掉应用列表菜单选项"
+            android:summary="开启此功能，点击图标可直接进入串流界面，无需再点击弹出的菜单选项。"
+            android:defaultValue="false" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="关于"
+        android:key="category_axi_about">
+
+        <com.limelight.preferences.WebLauncherPreference
+            android:title="软件版本更新"
+            android:summary="跳转到github获取releases"
+            url="https://github.com/Axixi2233/moonlight-android/releases"/>
+
+        <com.limelight.preferences.WebLauncherPreference
+            android:title="关于作者"
+            android:summary="跳转到B站阿西西的日常个人主页"
+            url="https://space.bilibili.com/16893379"/>
+
+    </PreferenceCategory>
+
 
     <!--PreferenceCategory android:title="@string/category_help"
         android:key="category_help">
