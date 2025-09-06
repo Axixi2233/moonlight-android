@@ -4,7 +4,6 @@ import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.util.Log;
 
-import com.limelight.LimeLog;
 import com.limelight.nvstream.input.ControllerPacket;
 
 import java.nio.ByteBuffer;
@@ -99,6 +98,7 @@ public class DualSenseController extends AbstractDualSenseController {
       float lsy = normalizeThumbStickAxis(axes1);
       float rsx = normalizeThumbStickAxis(axes2);
       float rsy = normalizeThumbStickAxis(axes3);
+
       float l2axis = normalizeTriggerAxis(axes4);
       float r2axis = normalizeTriggerAxis(axes5);
 
@@ -161,26 +161,36 @@ public class DualSenseController extends AbstractDualSenseController {
 //      int touch12 = buffer.get(39) & 0xFF;
 //      int touch13 = buffer.get(40) & 0xFF;
 //
-//      touch0active = (touch00 & 0x80) == 0;
-//      touch0id = touch00 & 0x7F;
-//      touch0x = ((touch02 & 0x0F) << 8) | touch01;
-//      touch0y = (touch03 << 4) | ((touch02 & 0xF0) >> 4);
-//
-////        Log.d("DualController", "touch0active: " + touch0active);
-////        Log.d("DualController", "touch0id: " + touch0id);
-////        Log.d("DualController", "touch0x: " + touch0x);
-////        Log.d("DualController", "touch0y: " + touch0y);
-//
-//      touch1active = (touch10 & 0x80) == 0;
-//      touch1id = touch10 & 0x7F;
-//      touch1x = ((touch12 & 0x0F) << 8) | touch11;
-//      touch1y = (touch13 << 4) | ((touch12 & 0xF0) >> 4);
-
-//        Log.d("DualController", "touch1active: " + touch1active);
-
+//      boolean touch0active = (touch00 & 0x80) == 0;
+//      int touch0id = touch00 & 0x7F;
+//      int touch0x = ((touch02 & 0x0F) << 8) | touch01;
+//      int touch0y = (touch03 << 4) | ((touch02 & 0xF0) >> 4);
+//      if(touch0active){
+////         LimeLog.info("axi->touch0active:"+touch0active);
+////         LimeLog.info("axi->touch0id:"+touch0id);
+////         LimeLog.info("axi->touch0x:"+touch0x);
+////         LimeLog.info("axi->touch0y:"+touch0y);
+////         t0x = normalizeTouchValue(touch0x, 0, 1920);
+////         t0y = normalizeTouchValue(touch0y, 0, 1080);
+//      }
+//      boolean touch1active = (touch10 & 0x80) == 0;
+//      int touch1id = touch10 & 0x7F;
+//      int touch1x = ((touch12 & 0x0F) << 8) | touch11;
+//      int touch1y = (touch13 << 4) | ((touch12 & 0xF0) >> 4);
+//      if(touch1active){
+//         LimeLog.info("axi->touch1active:"+touch1active);
+//         LimeLog.info("axi->touch1id:"+touch1id);
+//         LimeLog.info("axi->touch1x:"+touch1x);
+//         LimeLog.info("axi->touch1y:"+touch1y);
+//      }
       // Return true to send input
       return true;
    }
+
+   private float normalizeTouchValue(float value, float min, float max) {
+      return (value - min) / (max - min);
+   }
+
 
    @Override
    protected boolean doInit() {

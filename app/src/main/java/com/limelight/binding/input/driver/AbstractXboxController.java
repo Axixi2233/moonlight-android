@@ -13,6 +13,8 @@ import com.limelight.nvstream.jni.MoonBridge;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.List;
 
 public abstract class AbstractXboxController extends AbstractController {
     protected final UsbDevice device;
@@ -95,8 +97,10 @@ public abstract class AbstractXboxController extends AbstractController {
             }
         };
     }
+    private List<UsbInterface> ifaces=new ArrayList<>();
 
     public boolean start() {
+        ifaces.clear();
         // Force claim all interfaces
         for (int i = 0; i < device.getInterfaceCount(); i++) {
             UsbInterface iface = device.getInterface(i);
@@ -104,6 +108,8 @@ public abstract class AbstractXboxController extends AbstractController {
             if (!connection.claimInterface(iface, true)) {
                 LimeLog.warning("Failed to claim interfaces");
                 return false;
+            }else{
+                ifaces.add(iface);
             }
         }
 
@@ -160,7 +166,13 @@ public abstract class AbstractXboxController extends AbstractController {
             inputThread.interrupt();
             inputThread = null;
         }
-
+        if(!ifaces.isEmpty()&&connection!=null){
+            for (int i = 0; i < ifaces.size(); i++) {
+                UsbInterface iface = ifaces.get(i);
+                connection.releaseInterface(iface);
+            }
+            ifaces.clear();
+        }
         // Close the USB connection
         connection.close();
 

@@ -13,6 +13,8 @@ import com.limelight.nvstream.jni.MoonBridge;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
 public class ProConController extends AbstractController {
@@ -208,13 +210,17 @@ public class ProConController extends AbstractController {
         byte[] data = new byte[]{(byte)(enable ? 0x01 : 0x00)};
         return sendSubcommand((byte)0x48, data, new byte[PACKET_SIZE]);
     }
+    private List<UsbInterface> ifaces=new ArrayList<>();
 
     public boolean start() {
+        ifaces.clear();
         for (int i = 0; i < device.getInterfaceCount(); i++) {
             UsbInterface iface = device.getInterface(i);
             if (!connection.claimInterface(iface, true)) {
                 LimeLog.warning("Failed to claim interfaces");
                 return false;
+            }else{
+                ifaces.add(iface);
             }
         }
 
@@ -250,6 +256,13 @@ public class ProConController extends AbstractController {
             inputThread = null;
         }
 
+        if(!ifaces.isEmpty()&&connection!=null){
+            for (int i = 0; i < ifaces.size(); i++) {
+                UsbInterface iface = ifaces.get(i);
+                connection.releaseInterface(iface);
+            }
+            ifaces.clear();
+        }
 //        for (int i = 0; i < device.getInterfaceCount(); i++) {
 //            UsbInterface iface = device.getInterface(i);
 //            connection.releaseInterface(iface);

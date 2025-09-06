@@ -13,6 +13,8 @@ import com.limelight.nvstream.jni.MoonBridge;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.List;
 
 public abstract class AbstractDualSenseController extends AbstractController {
     protected final UsbDevice device;
@@ -101,7 +103,7 @@ public abstract class AbstractDualSenseController extends AbstractController {
         int count = device.getInterfaceCount();
         for (int i = 0; i < count; i++) {
             UsbInterface intf = device.getInterface(i);
-            if (intf.getInterfaceClass() == UsbConstants.USB_CLASS_HID) {
+            if (intf.getInterfaceClass() == UsbConstants.USB_CLASS_HID && intf.getEndpointCount()>=2) {
                 Log.d("DualSenseController", "Found HID interface: " + i);
                 return intf;
             }
@@ -109,7 +111,10 @@ public abstract class AbstractDualSenseController extends AbstractController {
         return null;
     }
 
+    private List<UsbInterface> ifaces=new ArrayList<>();
+
     public boolean start() {
+        ifaces.clear();
         Log.d("DualSenseController", "start");
         // Force claim all interfaces
         for (int i = 0; i < device.getInterfaceCount(); i++) {
@@ -118,6 +123,8 @@ public abstract class AbstractDualSenseController extends AbstractController {
             if (!connection.claimInterface(iface, true)) {
                 Log.d("DualSenseController", "Failed to claim interfaces");
                 return false;
+            }else{
+                ifaces.add(iface);
             }
         }
         Log.d("DualSenseController", "getInterfaceCount:" + device.getInterfaceCount());
@@ -177,6 +184,14 @@ public abstract class AbstractDualSenseController extends AbstractController {
         if (inputThread != null) {
             inputThread.interrupt();
             inputThread = null;
+        }
+
+        if(!ifaces.isEmpty()&&connection!=null){
+            for (int i = 0; i < ifaces.size(); i++) {
+                UsbInterface iface = ifaces.get(i);
+                connection.releaseInterface(iface);
+            }
+            ifaces.clear();
         }
 
         // Close the USB connection

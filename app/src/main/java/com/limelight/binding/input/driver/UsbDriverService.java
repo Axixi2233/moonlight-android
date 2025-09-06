@@ -142,6 +142,11 @@ public class UsbDriverService extends Service implements UsbDriverListener {
         public void stop() {
             UsbDriverService.this.stop();
         }
+
+        public void changeUSBFlag(boolean flag){
+            prefConfig.bindAllUsb=flag;
+        }
+
     }
 
     private void handleUsbDeviceState(UsbDevice device) {
@@ -207,6 +212,8 @@ public class UsbDriverService extends Service implements UsbDriverListener {
             }
             else if (DualSenseController.canClaimDevice(device)) {
                 controller = new DualSenseController(device, connection, nextDeviceId++, this);
+            }else if (Dualshock4Controller.canClaimDevice(device)) {
+                controller = new Dualshock4Controller(device, connection, nextDeviceId++, this);
             }
             else {
                 // Unreachable
@@ -299,7 +306,8 @@ public class UsbDriverService extends Service implements UsbDriverListener {
                 // We must not call isRecognizedInputDevice() because wireless controllers don't share the same product ID as the dongle
                 ((!kernelSupportsXbox360W() || claimAllAvailable) && Xbox360WirelessDongle.canClaimDevice(device)) ||
                 ((!isRecognizedInputDevice(device) || claimAllAvailable) && ProConController.canClaimDevice(device)) ||
-                ((!isRecognizedInputDevice(device) || claimAllAvailable) && DualSenseController.canClaimDevice(device));
+                ((!isRecognizedInputDevice(device) || claimAllAvailable) && DualSenseController.canClaimDevice(device))||
+                ((!isRecognizedInputDevice(device) || claimAllAvailable) && Dualshock4Controller.canClaimDevice(device));
     }
 
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
