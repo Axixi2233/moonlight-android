@@ -159,11 +159,12 @@ public class DigitalButton extends VirtualControllerElement {
         rect.bottom = getHeight() - rect.top;
 
         //皮肤选择 官方皮肤
-        if(PreferenceConfiguration.readPreferences(getContext()).enableOnScreenStyleOfficial){
+        if(PreferenceConfiguration.readPreferences(getContext()).gamepad_skin==0){
             paint.setStyle(Paint.Style.STROKE);
             //方形
             if(PreferenceConfiguration.readPreferences(getContext()).enableKeyboardSquare){
-                canvas.drawRect(rect,paint);
+//                canvas.drawRect(rect,paint);
+                canvas.drawRoundRect(rect, 15, 15, paint);
             }else{
                 canvas.drawOval(rect, paint);
             }

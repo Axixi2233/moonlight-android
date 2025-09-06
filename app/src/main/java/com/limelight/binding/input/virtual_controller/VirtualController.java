@@ -8,10 +8,13 @@ import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Vibrator;
-import android.util.DisplayMetrics;
+import android.text.TextUtils;
+import android.view.Gravity;
 import android.view.View;
-import android.widget.Button;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.RadioGroup;
 import android.widget.Toast;
 
 import com.limelight.LimeLog;
@@ -38,7 +41,8 @@ public class VirtualController {
         Active,
         MoveButtons,
         ResizeButtons,
-        DisableEnableButtons
+        DisableEnableButtons,
+        NONE
     }
 
     private static final boolean _PRINT_DEBUG_INFORMATION = false;
@@ -59,55 +63,122 @@ public class VirtualController {
     ControllerMode currentMode = ControllerMode.Active;
     ControllerInputContext inputContext = new ControllerInputContext();
 
-    private Button buttonConfigure = null;
+    private View buttonConfigure = null;
 
     private List<VirtualControllerElement> elements = new ArrayList<>();
 
     private Vibrator vibrator;
 
-    public VirtualController(final ControllerHandler controllerHandler, FrameLayout layout, final Context context) {
+    private PreferenceConfiguration prefConfig;
+
+    private boolean isShow=true;
+
+    private ImageView iv_game_virtual_pad;
+    private RadioGroup rg_game_virtual_pad;
+
+    public VirtualController(final ControllerHandler controllerHandler, FrameLayout layout, final Context context,PreferenceConfiguration prefConfig) {
         this.controllerHandler = controllerHandler;
         this.frame_layout = layout;
         this.context = context;
         this.handler = new Handler(Looper.getMainLooper());
-
+        this.prefConfig=prefConfig;
         this.vibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
 
-        buttonConfigure = new Button(context);
-        buttonConfigure.setAlpha(0.25f);
-        buttonConfigure.setFocusable(false);
-        buttonConfigure.setBackgroundResource(R.drawable.ic_settings);
-        buttonConfigure.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String message;
+//        buttonConfigure = new Button(context);
+//        buttonConfigure.setAlpha(0.25f);
+//        buttonConfigure.setFocusable(false);
+//        buttonConfigure.setBackgroundResource(R.drawable.ic_settings);
+//        buttonConfigure.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                if (currentMode == ControllerMode.Active) {
+//                    switchMode(ControllerMode.DisableEnableButtons);
+//                } else if (currentMode == ControllerMode.DisableEnableButtons){
+//                    switchMode(ControllerMode.MoveButtons);
+//                } else if (currentMode == ControllerMode.MoveButtons) {
+//                    switchMode(ControllerMode.ResizeButtons);
+//                } else {
+//                    switchMode(ControllerMode.Active);
+//                }
+//            }
+//        });
+        buttonConfigure=View.inflate(context,R.layout.ax_gamepad_top_view,null);
+        initTopView();
+    }
 
-                if (currentMode == ControllerMode.Active) {
-                    currentMode = ControllerMode.DisableEnableButtons;
-                    showElements();
-                    message = "Entering configuration mode (Disable/Enable buttons)";
-                } else if (currentMode == ControllerMode.DisableEnableButtons){
-                    currentMode = ControllerMode.MoveButtons;
-                    showEnabledElements();
-                    message = "Entering configuration mode (Move buttons)";
-                } else if (currentMode == ControllerMode.MoveButtons) {
-                    currentMode = ControllerMode.ResizeButtons;
-                    message = "Entering configuration mode (Resize buttons)";
-                } else {
-                    currentMode = ControllerMode.Active;
-                    VirtualControllerConfigurationLoader.saveProfile(VirtualController.this, context);
-                    message = "Exiting configuration mode";
-                }
 
-                Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
-
-                buttonConfigure.invalidate();
-
-                for (VirtualControllerElement element : elements) {
-                    element.invalidate();
-                }
+    private void initTopView(){
+        iv_game_virtual_pad= buttonConfigure.findViewById(R.id.iv_game_virtual_pad);
+        rg_game_virtual_pad= buttonConfigure.findViewById(R.id.rg_game_virtual_pad);
+        rg_game_virtual_pad.setOnCheckedChangeListener((group1, checkedId) -> {
+            if(checkedId==R.id.btn_game_virtual_move){
+                switchMode(ControllerMode.MoveButtons);
+                return;
+            }
+            if(checkedId==R.id.btn_game_virtual_zoom){
+                switchMode(ControllerMode.ResizeButtons);
+                return;
+            }
+            if(checkedId==R.id.btn_game_virtual_disable){
+                switchMode(ControllerMode.DisableEnableButtons);
+                return;
+            }
+            if(checkedId==R.id.btn_game_virtual_nomall){
+                switchMode(ControllerMode.Active);
+                return;
             }
         });
+        iv_game_virtual_pad.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(rg_game_virtual_pad.getVisibility()==View.GONE){
+                    iv_game_virtual_pad.setImageResource(R.drawable.ic_axi_game_pad_top_left);
+                    rg_game_virtual_pad.setVisibility(View.VISIBLE);
+                }else{
+                    iv_game_virtual_pad.setImageResource(R.drawable.ic_axi_game_pad_top_right);
+                    rg_game_virtual_pad.setVisibility(View.GONE);
+                }
+
+            }
+        });
+    }
+
+
+    public void switchMode(ControllerMode currentMode){
+        this.currentMode=currentMode;
+        String message="";
+        switch (currentMode){
+            case Active:
+                message="正常模式~";
+                buttonConfigure.setVisibility(View.GONE);
+                VirtualControllerConfigurationLoader.saveProfile(VirtualController.this, context);
+                break;
+            case MoveButtons:
+                message="位移模式~";
+                buttonConfigure.setVisibility(View.VISIBLE);
+                rg_game_virtual_pad.check(R.id.btn_game_virtual_move);
+                showEnabledElements();
+                break;
+            case ResizeButtons:
+                buttonConfigure.setVisibility(View.VISIBLE);
+                rg_game_virtual_pad.check(R.id.btn_game_virtual_zoom);
+                message="缩放模式~";
+                break;
+            case DisableEnableButtons:
+                buttonConfigure.setVisibility(View.VISIBLE);
+                rg_game_virtual_pad.check(R.id.btn_game_virtual_disable);
+                message="禁用模式~";
+                showElements();
+                break;
+        }
+        if(TextUtils.isEmpty(message)){
+            return;
+        }
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+        buttonConfigure.invalidate();
+        for (VirtualControllerElement element : elements) {
+            element.invalidate();
+        }
 
     }
 
@@ -119,18 +190,19 @@ public class VirtualController {
         for (VirtualControllerElement element : elements) {
             element.setVisibility(View.GONE);
         }
-
+        isShow=false;
         buttonConfigure.setVisibility(View.GONE);
     }
 
     public void show() {
         showEnabledElements();
-
-        buttonConfigure.setVisibility(View.VISIBLE);
+        isShow=true;
+        this.currentMode = ControllerMode.Active;
+//        buttonConfigure.setVisibility(View.VISIBLE);
     }
 
     public int switchShowHide() {
-        if (buttonConfigure.getVisibility() == View.VISIBLE) {
+        if (isShow) {
             hide();
             return 0;
         } else {
@@ -188,16 +260,16 @@ public class VirtualController {
     public void refreshLayout() {
         removeElements();
 
-        DisplayMetrics screen = context.getResources().getDisplayMetrics();
-
-        int buttonSize = (int)(screen.heightPixels*0.06f);
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(buttonSize, buttonSize);
-        params.leftMargin = 15;
-        params.topMargin = 15;
+//        DisplayMetrics screen = context.getResources().getDisplayMetrics();
+//        int buttonSize = (int)(screen.heightPixels*0.06f);
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+//        params.leftMargin = 15;
+//        params.topMargin = 15;
+//        params.gravity= Gravity.CENTER_HORIZONTAL;
         frame_layout.addView(buttonConfigure, params);
-
+        buttonConfigure.setVisibility(View.GONE);
         // Start with the default layout
-        VirtualControllerConfigurationLoader.createDefaultLayout(this, context);
+        VirtualControllerConfigurationLoader.createDefaultLayout(this, context,prefConfig);
 
         // Apply user preferences onto the default layout
         VirtualControllerConfigurationLoader.loadFromPreferences(this, context);
@@ -236,7 +308,7 @@ public class VirtualController {
         handler.removeCallbacks(delayedRetransmitRunnable);
 
         sendControllerInputContextInternal();
-        if (PreferenceConfiguration.readPreferences(context).enableKeyboardVibrate && vibrator.hasVibrator()) {
+        if (prefConfig.enableKeyboardVibrate && vibrator.hasVibrator()) {
             //摇杆不震动
             if(inputContext.inputMap!=0||inputContext.leftTrigger!=0x00||inputContext.rightTrigger!=0x00) {
                 vibrator.vibrate(10);

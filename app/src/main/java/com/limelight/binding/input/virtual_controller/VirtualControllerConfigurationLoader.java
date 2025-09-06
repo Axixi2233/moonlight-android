@@ -7,6 +7,7 @@ package com.limelight.binding.input.virtual_controller;
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.util.DisplayMetrics;
 
 import com.limelight.R;
@@ -219,18 +220,17 @@ public class VirtualControllerConfigurationLoader {
     private static final int GUIDE_X = START_X-BACK_X;
     private static final int GUIDE_Y = START_BACK_Y;
 
-    public static void createDefaultLayout(final VirtualController controller, final Context context) {
+    public static void createDefaultLayout(final VirtualController controller, final Context context,PreferenceConfiguration config) {
 
         DisplayMetrics screen = context.getResources().getDisplayMetrics();
-        PreferenceConfiguration config = PreferenceConfiguration.readPreferences(context);
-
         // Displace controls on the right by this amount of pixels to account for different aspect ratios
         int rightDisplacement = screen.widthPixels - screen.heightPixels * 16 / 9;
 
         int height = screen.heightPixels;
-
         // NOTE: Some of these getPercent() expressions seem like they can be combined
         // into a single call. Due to floating point rounding, this isn't actually possible.
+
+        int skin=config.gamepad_skin;
 
         if (!config.onlyL3R3)
         {
@@ -244,7 +244,7 @@ public class VirtualControllerConfigurationLoader {
             controller.addElement(createDigitalButton(
                     VirtualControllerElement.EID_A,
                     !config.flipFaceButtons ? ControllerPacket.A_FLAG : ControllerPacket.B_FLAG, 0, 1,
-                    !config.flipFaceButtons ? "A" : "B", R.drawable.facebutton_a,R.drawable.facebutton_a_press, controller, context),
+                    !config.flipFaceButtons ? "A" : "B", skin==1?R.drawable.facebutton_a:R.mipmap.face_ps_cross_normal,skin==1?R.drawable.facebutton_a_press:R.mipmap.face_ps_cross_press, controller, context),
                     screenScale(BUTTON_BASE_X, height) + rightDisplacement,
                     screenScale(BUTTON_BASE_Y + 2 * BUTTON_SIZE, height),
                     screenScale(BUTTON_SIZE, height),
@@ -254,7 +254,7 @@ public class VirtualControllerConfigurationLoader {
             controller.addElement(createDigitalButton(
                     VirtualControllerElement.EID_B,
                     config.flipFaceButtons ? ControllerPacket.A_FLAG : ControllerPacket.B_FLAG, 0, 1,
-                    config.flipFaceButtons ? "A" : "B", R.drawable.facebutton_b,R.drawable.facebutton_b_press, controller, context),
+                    config.flipFaceButtons ? "A" : "B", skin==1?R.drawable.facebutton_b:R.mipmap.face_ps_circle_normal,skin==1?R.drawable.facebutton_b_press:R.mipmap.face_ps_circle_press, controller, context),
                     screenScale(BUTTON_BASE_X + BUTTON_SIZE, height) + rightDisplacement,
                     screenScale(BUTTON_BASE_Y + BUTTON_SIZE, height),
                     screenScale(BUTTON_SIZE, height),
@@ -264,7 +264,7 @@ public class VirtualControllerConfigurationLoader {
             controller.addElement(createDigitalButton(
                     VirtualControllerElement.EID_X,
                     !config.flipFaceButtons ? ControllerPacket.X_FLAG : ControllerPacket.Y_FLAG, 0, 1,
-                    !config.flipFaceButtons ? "X" : "Y", R.drawable.facebutton_x,R.drawable.facebutton_x_press, controller, context),
+                    !config.flipFaceButtons ? "X" : "Y", skin==1?R.drawable.facebutton_x:R.mipmap.face_ps_square_normal,skin==1?R.drawable.facebutton_x_press:R.mipmap.face_ps_square_press, controller, context),
                     screenScale(BUTTON_BASE_X - BUTTON_SIZE, height) + rightDisplacement,
                     screenScale(BUTTON_BASE_Y + BUTTON_SIZE, height),
                     screenScale(BUTTON_SIZE, height),
@@ -274,7 +274,7 @@ public class VirtualControllerConfigurationLoader {
             controller.addElement(createDigitalButton(
                     VirtualControllerElement.EID_Y,
                     config.flipFaceButtons ? ControllerPacket.X_FLAG : ControllerPacket.Y_FLAG, 0, 1,
-                    config.flipFaceButtons ? "X" : "Y", R.drawable.facebutton_y,R.drawable.facebutton_y_press, controller, context),
+                    config.flipFaceButtons ? "X" : "Y", skin==1?R.drawable.facebutton_y:R.mipmap.face_ps_triangle_normal,skin==1?R.drawable.facebutton_y_press:R.mipmap.face_ps_triangle_press, controller, context),
                     screenScale(BUTTON_BASE_X, height) + rightDisplacement,
                     screenScale(BUTTON_BASE_Y, height),
                     screenScale(BUTTON_SIZE, height),
@@ -282,7 +282,7 @@ public class VirtualControllerConfigurationLoader {
             );
 
             controller.addElement(createLeftTrigger(
-                    1, "LT", R.drawable.facebutton_zl,R.drawable.facebutton_zl_press, controller, context),
+                    1, "LT", skin==1?R.drawable.facebutton_zl:R.mipmap.face_ps_l2_normal, skin==1?R.drawable.facebutton_zl_press:R.mipmap.face_ps_l2_press, controller, context),
                     screenScale(TRIGGER_L_BASE_X, height),
                     screenScale(TRIGGER_BASE_Y, height),
                     screenScale(TRIGGER_WIDTH, height),
@@ -290,7 +290,7 @@ public class VirtualControllerConfigurationLoader {
             );
 
             controller.addElement(createRightTrigger(
-                    1, "RT", R.drawable.facebutton_zr,R.drawable.facebutton_zr_press, controller, context),
+                    1, "RT", skin==1?R.drawable.facebutton_zr:R.mipmap.face_ps_r2_normal,skin==1?R.drawable.facebutton_zr_press:R.mipmap.face_ps_r2_press, controller, context),
                     screenScale(TRIGGER_R_BASE_X + TRIGGER_DISTANCE, height) + rightDisplacement,
                     screenScale(TRIGGER_BASE_Y, height),
                     screenScale(TRIGGER_WIDTH, height),
@@ -299,7 +299,7 @@ public class VirtualControllerConfigurationLoader {
 
             controller.addElement(createDigitalButton(
                     VirtualControllerElement.EID_LB,
-                    ControllerPacket.LB_FLAG, 0, 1, "LB", R.drawable.facebutton_l,R.drawable.facebutton_l_press, controller, context),
+                    ControllerPacket.LB_FLAG, 0, 1, "LB", skin==1?R.drawable.facebutton_l:R.mipmap.face_ps_l1_normal,skin==1?R.drawable.facebutton_l_press:R.mipmap.face_ps_l1_press, controller, context),
                     screenScale(TRIGGER_L_BASE_X + TRIGGER_DISTANCE, height),
                     screenScale(TRIGGER_BASE_Y, height),
                     screenScale(TRIGGER_WIDTH, height),
@@ -308,7 +308,7 @@ public class VirtualControllerConfigurationLoader {
 
             controller.addElement(createDigitalButton(
                     VirtualControllerElement.EID_RB,
-                    ControllerPacket.RB_FLAG, 0, 1, "RB", R.drawable.facebutton_r,R.drawable.facebutton_r_press, controller, context),
+                    ControllerPacket.RB_FLAG, 0, 1, "RB", skin==1?R.drawable.facebutton_r:R.mipmap.face_ps_r1_normal,skin==1?R.drawable.facebutton_r_press:R.mipmap.face_ps_r1_press, controller, context),
                     screenScale(TRIGGER_R_BASE_X, height) + rightDisplacement,
                     screenScale(TRIGGER_BASE_Y, height),
                     screenScale(TRIGGER_WIDTH, height),
@@ -364,25 +364,25 @@ public class VirtualControllerConfigurationLoader {
             }
             controller.addElement(createDigitalButton(
                     VirtualControllerElement.EID_BACK,
-                    ControllerPacket.BACK_FLAG, 0, 2, "BACK", R.drawable.facebutton_minus,R.drawable.facebutton_minus_press, controller, context),
+                    ControllerPacket.BACK_FLAG, 0, 2, "BACK", skin==1?R.drawable.facebutton_minus:R.mipmap.face_ps_share_normal,skin==1?R.drawable.facebutton_minus_press:R.mipmap.face_ps_share_press, controller, context),
                     screenScale(BACK_X, height),
                     screenScale(START_BACK_Y, height),
                     screenScale(START_BACK_WIDTH, height),
-                    screenScale(START_BACK_HEIGHT, height)
+                    screenScale(START_BACK_WIDTH, height)
             );
 
             controller.addElement(createDigitalButton(
                     VirtualControllerElement.EID_START,
-                    ControllerPacket.PLAY_FLAG, 0, 3, "START", R.drawable.facebutton_plus,R.drawable.facebutton_plus_press, controller, context),
+                    ControllerPacket.PLAY_FLAG, 0, 3, "START", skin==1?R.drawable.facebutton_plus:R.mipmap.face_ps_menu_normal, skin==1?R.drawable.facebutton_plus_press:R.mipmap.face_ps_menu_press, controller, context),
                     screenScale(START_X, height) + rightDisplacement,
                     screenScale(START_BACK_Y, height),
                     screenScale(START_BACK_WIDTH, height),
-                    screenScale(START_BACK_HEIGHT, height)
+                    screenScale(START_BACK_WIDTH, height)
             );
 
             controller.addElement(createDigitalButton(
                             VirtualControllerElement.EID_LSB,
-                            ControllerPacket.LS_CLK_FLAG, 0, 1, "L3", R.drawable.facebutton_l3,R.drawable.facebutton_l3_press, controller, context),
+                            ControllerPacket.LS_CLK_FLAG, 0, 1, "L3", skin==1?R.drawable.facebutton_l3:R.mipmap.face_ps_l3_normal,skin==1?R.drawable.facebutton_l3_press:R.mipmap.face_ps_l3_press, controller, context),
                     screenScale(TRIGGER_L_BASE_X, height),
                     screenScale(L3_R3_BASE_Y, height),
                     screenScale(TRIGGER_WIDTH, height),
@@ -391,7 +391,7 @@ public class VirtualControllerConfigurationLoader {
 
             controller.addElement(createDigitalButton(
                             VirtualControllerElement.EID_RSB,
-                            ControllerPacket.RS_CLK_FLAG, 0, 1, "R3", R.drawable.facebutton_r3,R.drawable.facebutton_r3_press, controller, context),
+                            ControllerPacket.RS_CLK_FLAG, 0, 1, "R3", skin==1?R.drawable.facebutton_r3:R.mipmap.face_ps_r3_normal,skin==1?R.drawable.facebutton_r3_press:R.mipmap.face_ps_r3_press, controller, context),
                     screenScale(TRIGGER_R_BASE_X + TRIGGER_DISTANCE, height) + rightDisplacement,
                     screenScale(L3_R3_BASE_Y, height),
                     screenScale(TRIGGER_WIDTH, height),
@@ -400,7 +400,7 @@ public class VirtualControllerConfigurationLoader {
 
             controller.addElement(createDigitalButton(
                             VirtualControllerElement.EID_TOUCHPAD,
-                            ControllerPacket.TOUCHPAD_FLAG, 0, 1, "触控板", R.drawable.facebutton_touchpad_press,R.drawable.facebutton_touchpad, controller, context),
+                            ControllerPacket.TOUCHPAD_FLAG, 0, 1, "触控板", R.mipmap.face_ps_touchpad_normal,R.mipmap.face_ps_touchpad_press, controller, context),
                     screenScale(50, height),
                     screenScale(50, height),
                     screenScale(20, height),
@@ -459,6 +459,8 @@ public class VirtualControllerConfigurationLoader {
     public static void loadFromPreferences(final VirtualController controller, final Context context) {
         SharedPreferences pref = context.getSharedPreferences(OSC_PREFERENCE, Activity.MODE_PRIVATE);
 
+        int scaleFactor = PreferenceManager.getDefaultSharedPreferences(context).getInt("virtualGamePadScaleFactor",100);
+
         for (VirtualControllerElement element : controller.getElements()) {
             String prefKey = ""+element.elementId;
 
@@ -473,6 +475,7 @@ public class VirtualControllerConfigurationLoader {
                     pref.edit().remove(prefKey).apply();
                 }
             }
+            element.zoomViewWidthHeight(scaleFactor*0.01f);
         }
     }
 }

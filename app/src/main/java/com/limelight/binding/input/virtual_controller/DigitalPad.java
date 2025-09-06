@@ -53,7 +53,8 @@ public class DigitalPad extends VirtualControllerElement {
         paint.setTextAlign(Paint.Align.CENTER);
         paint.setStrokeWidth(getDefaultStrokeWidth());
         //虚拟手柄皮肤 yuzu
-        if(!PreferenceConfiguration.readPreferences(getContext()).enableOnScreenStyleOfficial) {
+        int gamePadSkin=PreferenceConfiguration.readPreferences(getContext()).gamepad_skin;
+        if(gamePadSkin!=0) {
             int oscOpacity=PreferenceConfiguration.readPreferences(getContext()).oscOpacity;
 
             paint.setColor(isPressed() ? pressedColor:getDefaultColor());
@@ -71,21 +72,21 @@ public class DigitalPad extends VirtualControllerElement {
             }
 
             if (direction == DIGITAL_PAD_DIRECTION_NO_DIRECTION) {
-                Drawable d = getResources().getDrawable(R.drawable.facebutton_dpad);
+                Drawable d = getResources().getDrawable(gamePadSkin==1?R.drawable.facebutton_dpad:R.mipmap.face_ps_dpad_normal);
                 d.setBounds(5, 5, getWidth() - 5, getHeight() - 5);
                 d.setAlpha((int) (oscOpacity*2.55));
                 d.draw(canvas);
             }
 
             if (direction == DIGITAL_PAD_DIRECTION_UP) {
-                Drawable d = getResources().getDrawable(R.drawable.facebutton_dpad_up);
+                Drawable d = getResources().getDrawable(gamePadSkin==1?R.drawable.facebutton_dpad_up:R.mipmap.face_ps_dpad_up_press);
                 d.setBounds(5, 5, getWidth() - 5, getHeight() - 5);
                 d.setAlpha((int) (oscOpacity*2.55));
                 d.draw(canvas);
             }
 
             if (direction == DIGITAL_PAD_DIRECTION_DOWN) {
-                Drawable d = getResources().getDrawable(R.drawable.facebutton_dpad_up);
+                Drawable d = getResources().getDrawable(gamePadSkin==1?R.drawable.facebutton_dpad_up:R.mipmap.face_ps_dpad_up_press);
                 Drawable newD=rotateDrawable(d,180);
                 newD.setBounds(5, 5, getWidth() - 5, getHeight() - 5);
                 newD.setAlpha((int) (oscOpacity*2.55));
@@ -93,7 +94,7 @@ public class DigitalPad extends VirtualControllerElement {
             }
 
             if (direction == DIGITAL_PAD_DIRECTION_LEFT) {
-                Drawable d = getResources().getDrawable(R.drawable.facebutton_dpad_up);
+                Drawable d = getResources().getDrawable(gamePadSkin==1?R.drawable.facebutton_dpad_up:R.mipmap.face_ps_dpad_up_press);
                 Drawable newD=rotateDrawable(d,270);
                 newD.setBounds(5, 5, getWidth() - 5, getHeight() - 5);
                 newD.setAlpha((int) (oscOpacity*2.55));
@@ -101,7 +102,7 @@ public class DigitalPad extends VirtualControllerElement {
             }
 
             if (direction == DIGITAL_PAD_DIRECTION_RIGHT) {
-                Drawable d = getResources().getDrawable(R.drawable.facebutton_dpad_up);
+                Drawable d = getResources().getDrawable(gamePadSkin==1?R.drawable.facebutton_dpad_up:R.mipmap.face_ps_dpad_up_press);
                 Drawable newD=rotateDrawable(d,90);
                 newD.setBounds(5, 5, getWidth() - 5, getHeight() - 5);
                 newD.setAlpha((int) (oscOpacity*2.55));
@@ -109,7 +110,7 @@ public class DigitalPad extends VirtualControllerElement {
             }
             //right up
             if((direction & DIGITAL_PAD_DIRECTION_RIGHT) > 0 && (direction & DIGITAL_PAD_DIRECTION_UP) > 0){
-                Drawable d = getResources().getDrawable(R.drawable.facebutton_dpad_up_right);
+                Drawable d = getResources().getDrawable(gamePadSkin==1?R.drawable.facebutton_dpad_up_right:R.mipmap.face_ps_dpad_up_left_press);
                 Drawable newD=rotateDrawable(d,90);
                 newD.setBounds(5, 5, getWidth() - 5, getHeight() - 5);
                 newD.setAlpha((int) (oscOpacity*2.55));
@@ -117,14 +118,14 @@ public class DigitalPad extends VirtualControllerElement {
             }
 
             if((direction & DIGITAL_PAD_DIRECTION_LEFT) > 0 && (direction & DIGITAL_PAD_DIRECTION_UP) > 0){
-                Drawable d = getResources().getDrawable(R.drawable.facebutton_dpad_up_right);
+                Drawable d = getResources().getDrawable(gamePadSkin==1?R.drawable.facebutton_dpad_up_right:R.mipmap.face_ps_dpad_up_left_press);
                 d.setBounds(5, 5, getWidth() - 5, getHeight() - 5);
                 d.setAlpha((int) (oscOpacity*2.55));
                 d.draw(canvas);
             }
 
             if((direction & DIGITAL_PAD_DIRECTION_RIGHT) > 0 && (direction & DIGITAL_PAD_DIRECTION_DOWN) > 0){
-                Drawable d = getResources().getDrawable(R.drawable.facebutton_dpad_up_right);
+                Drawable d = getResources().getDrawable(gamePadSkin==1?R.drawable.facebutton_dpad_up_right:R.mipmap.face_ps_dpad_up_left_press);
                 Drawable newD=rotateDrawable(d,180);
                 newD.setBounds(5, 5, getWidth() - 5, getHeight() - 5);
                 newD.setAlpha((int) (oscOpacity*2.55));
@@ -132,7 +133,7 @@ public class DigitalPad extends VirtualControllerElement {
             }
 
             if((direction & DIGITAL_PAD_DIRECTION_LEFT) > 0 && (direction & DIGITAL_PAD_DIRECTION_DOWN) > 0){
-                Drawable d = getResources().getDrawable(R.drawable.facebutton_dpad_up_right);
+                Drawable d = getResources().getDrawable(gamePadSkin==1?R.drawable.facebutton_dpad_up_right:R.mipmap.face_ps_dpad_up_left_press);
                 Drawable newD=rotateDrawable(d,270);
                 newD.setBounds(5, 5, getWidth() - 5, getHeight() - 5);
                 newD.setAlpha((int) (oscOpacity*2.55));

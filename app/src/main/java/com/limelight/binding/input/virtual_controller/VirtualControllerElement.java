@@ -15,6 +15,7 @@ import android.view.View;
 import android.widget.FrameLayout;
 
 import com.limelight.Game;
+import com.limelight.preferences.PreferenceConfiguration;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -74,6 +75,7 @@ public abstract class VirtualControllerElement extends View {
 
         this.virtualController = controller;
         this.elementId = elementId;
+        this.normalColor= PreferenceConfiguration.readPreferences(context).virtualkeyViewNormalColor;
     }
 
     protected void moveElement(int pressed_x, int pressed_y, int x, int y) {
@@ -356,6 +358,14 @@ public abstract class VirtualControllerElement extends View {
         layoutParams.height = configuration.getInt("HEIGHT");
         enabled = configuration.getBoolean("ENABLED");
         setVisibility(enabled ? VISIBLE: GONE);
+        requestLayout();
+    }
+
+
+    public void zoomViewWidthHeight(float scaleFactor){
+        FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) getLayoutParams();
+        layoutParams.width = (int) (layoutParams.width*scaleFactor);
+        layoutParams.height = (int) (layoutParams.height*scaleFactor);
         requestLayout();
     }
 }

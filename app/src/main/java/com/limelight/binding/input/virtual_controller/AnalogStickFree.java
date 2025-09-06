@@ -209,6 +209,9 @@ public class AnalogStickFree extends VirtualControllerElement {
     private void notifyOnDoubleClick() {
         _DBG("double click");
         // notify listeners
+        if(PreferenceConfiguration.readPreferences(getContext()).disableRockerClickL3R3){
+            return;
+        }
         for (AnalogStickListener listener : listeners) {
             listener.onDoubleClick();
         }
@@ -217,6 +220,9 @@ public class AnalogStickFree extends VirtualControllerElement {
     private void notifyOnRevoke() {
         _DBG("revoke");
         // notify listeners
+        if(PreferenceConfiguration.readPreferences(getContext()).disableRockerClickL3R3){
+            return;
+        }
         for (AnalogStickListener listener : listeners) {
             listener.onRevoke();
         }
