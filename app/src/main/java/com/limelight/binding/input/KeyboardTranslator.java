@@ -87,8 +87,14 @@ public class KeyboardTranslator implements InputManager.InputDeviceListener {
     public static final int VK_F4 = 115;
 
     public static final int VK_P = 80;
+    public static final int VK_O = 79;
 
+    public static final int VK_DEL=46;
 
+    public static final int VK_N = 78;
+
+    public static final int VK_L = 76;
+    public static final int VK_E = 69;
     private static class KeyboardMapping {
         private final InputDevice device;
         private final int[] deviceKeyCodeToQwertyKeyCode;

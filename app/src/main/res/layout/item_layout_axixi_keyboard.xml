@@ -1,0 +1,1142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="200dp"
+    android:padding="3dp"
+    android:background="#212121"
+    android:orientation="vertical">
+
+<!--    <LinearLayout-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="match_parent"-->
+<!--        android:layout_weight="100"-->
+<!--        android:orientation="horizontal">-->
+
+<!--        <TextView-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="match_parent"-->
+<!--            android:layout_weight="100"-->
+<!--            android:background="@drawable/bg_ax_keyboard_button"-->
+<!--            android:gravity="center"-->
+<!--            android:tag="143"-->
+<!--            android:text="Num"-->
+<!--            android:textColor="@android:color/white"-->
+<!--            android:textSize="12sp" />-->
+
+<!--        <TextView-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="match_parent"-->
+<!--            android:layout_weight="100"-->
+<!--            android:background="@drawable/bg_ax_keyboard_button"-->
+<!--            android:gravity="center"-->
+<!--            android:tag="157"-->
+<!--            android:text="加"-->
+<!--            android:textColor="@android:color/white"-->
+<!--            android:textSize="12sp" />-->
+
+<!--        <TextView-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="match_parent"-->
+<!--            android:layout_weight="100"-->
+<!--            android:background="@drawable/bg_ax_keyboard_button"-->
+<!--            android:gravity="center"-->
+<!--            android:tag="156"-->
+<!--            android:text="减"-->
+<!--            android:textColor="@android:color/white"-->
+<!--            android:textSize="12sp" />-->
+
+<!--        <TextView-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="match_parent"-->
+<!--            android:layout_weight="100"-->
+<!--            android:background="@drawable/bg_ax_keyboard_button"-->
+<!--            android:gravity="center"-->
+<!--            android:tag="155"-->
+<!--            android:text="乘"-->
+<!--            android:textColor="@android:color/white"-->
+<!--            android:textSize="12sp" />-->
+
+<!--        <TextView-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="match_parent"-->
+<!--            android:layout_weight="100"-->
+<!--            android:background="@drawable/bg_ax_keyboard_button"-->
+<!--            android:gravity="center"-->
+<!--            android:tag="154"-->
+<!--            android:text="除"-->
+<!--            android:textColor="@android:color/white"-->
+<!--            android:textSize="12sp" />-->
+
+<!--        <TextView-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="match_parent"-->
+<!--            android:layout_weight="100"-->
+<!--            android:background="@drawable/bg_ax_keyboard_button"-->
+<!--            android:gravity="center"-->
+<!--            android:tag="158"-->
+<!--            android:text="点"-->
+<!--            android:textColor="@android:color/white"-->
+<!--            android:textSize="12sp" />-->
+
+<!--        <TextView-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="match_parent"-->
+<!--            android:layout_weight="100"-->
+<!--            android:background="@drawable/bg_ax_keyboard_button"-->
+<!--            android:gravity="center"-->
+<!--            android:tag="144"-->
+<!--            android:text="数0"-->
+<!--            android:textColor="@android:color/white"-->
+<!--            android:textSize="12sp" />-->
+
+<!--        <TextView-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="match_parent"-->
+<!--            android:layout_weight="100"-->
+<!--            android:background="@drawable/bg_ax_keyboard_button"-->
+<!--            android:gravity="center"-->
+<!--            android:tag="145"-->
+<!--            android:text="数1"-->
+<!--            android:textColor="@android:color/white"-->
+<!--            android:textSize="12sp" />-->
+
+<!--        <TextView-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="match_parent"-->
+<!--            android:layout_weight="100"-->
+<!--            android:background="@drawable/bg_ax_keyboard_button"-->
+<!--            android:gravity="center"-->
+<!--            android:tag="146"-->
+<!--            android:text="数2"-->
+<!--            android:textColor="@android:color/white"-->
+<!--            android:textSize="12sp" />-->
+
+<!--        <TextView-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="match_parent"-->
+<!--            android:layout_weight="100"-->
+<!--            android:background="@drawable/bg_ax_keyboard_button"-->
+<!--            android:gravity="center"-->
+<!--            android:tag="147"-->
+<!--            android:text="数3"-->
+<!--            android:textColor="@android:color/white"-->
+<!--            android:textSize="12sp" />-->
+
+<!--        <TextView-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="match_parent"-->
+<!--            android:layout_weight="100"-->
+<!--            android:background="@drawable/bg_ax_keyboard_button"-->
+<!--            android:gravity="center"-->
+<!--            android:tag="148"-->
+<!--            android:text="数4"-->
+<!--            android:textColor="@android:color/white"-->
+<!--            android:textSize="12sp" />-->
+
+<!--        <TextView-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="match_parent"-->
+<!--            android:layout_weight="100"-->
+<!--            android:background="@drawable/bg_ax_keyboard_button"-->
+<!--            android:gravity="center"-->
+<!--            android:tag="149"-->
+<!--            android:text="数5"-->
+<!--            android:textColor="@android:color/white"-->
+<!--            android:textSize="12sp" />-->
+
+<!--        <TextView-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="match_parent"-->
+<!--            android:layout_weight="100"-->
+<!--            android:background="@drawable/bg_ax_keyboard_button"-->
+<!--            android:gravity="center"-->
+<!--            android:tag="150"-->
+<!--            android:text="数6"-->
+<!--            android:textColor="@android:color/white"-->
+<!--            android:textSize="12sp" />-->
+
+<!--        <TextView-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="match_parent"-->
+<!--            android:layout_weight="100"-->
+<!--            android:background="@drawable/bg_ax_keyboard_button"-->
+<!--            android:gravity="center"-->
+<!--            android:tag="151"-->
+<!--            android:text="数7"-->
+<!--            android:textColor="@android:color/white"-->
+<!--            android:textSize="12sp" />-->
+
+<!--        <TextView-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="match_parent"-->
+<!--            android:layout_weight="100"-->
+<!--            android:background="@drawable/bg_ax_keyboard_button"-->
+<!--            android:gravity="center"-->
+<!--            android:tag="152"-->
+<!--            android:text="数8"-->
+<!--            android:textColor="@android:color/white"-->
+<!--            android:textSize="12sp" />-->
+
+<!--        <TextView-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="match_parent"-->
+<!--            android:layout_weight="100"-->
+<!--            android:background="@drawable/bg_ax_keyboard_button"-->
+<!--            android:gravity="center"-->
+<!--            android:tag="153"-->
+<!--            android:text="数9"-->
+<!--            android:textColor="@android:color/white"-->
+<!--            android:textSize="12sp" />-->
+
+<!--    </LinearLayout>-->
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="100"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="150"
+            android:layout_marginRight="5dp"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="111"
+            android:text="ESC"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="131"
+            android:text="F1"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="132"
+            android:text="F2"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="133"
+            android:text="F3"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="134"
+            android:text="F4"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="135"
+            android:text="F5"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="136"
+            android:text="F6"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="137"
+            android:text="F7"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="138"
+            android:text="F8"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="139"
+            android:text="F9"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="140"
+            android:text="F10"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="141"
+            android:text="F11"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="142"
+            android:text="F12"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:layout_marginLeft="5dp"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="124"
+            android:text="Ins"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="112"
+            android:text="Del"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="100"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="90"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="68"
+            android:text="~`"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="8"
+            android:text="1"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+        <!-- 继续更新其他 TextView 的 android:tag 值 -->
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="9"
+            android:text="2"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="10"
+            android:text="3"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+        <!-- 以此类推，更新其他 TextView 的 android:tag 值 -->
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="11"
+            android:text="4"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="12"
+            android:text="5"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="13"
+            android:text="6"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="14"
+            android:text="7"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="15"
+            android:text="8"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="16"
+            android:text="9"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="7"
+            android:text="0"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="69"
+            android:text="_-"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="70"
+            android:text="+="
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="150"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="67"
+            android:text="⌫"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="100"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="140"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="61"
+            android:text="Tab"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="45"
+            android:text="Q"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="51"
+            android:text="W"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="33"
+            android:text="E"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="46"
+            android:text="R"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="48"
+            android:text="T"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="53"
+            android:text="Y"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="49"
+            android:text="U"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="37"
+            android:text="I"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="43"
+            android:text="O"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="44"
+            android:text="P"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="71"
+            android:text="{["
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="72"
+            android:text="}]"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="73"
+            android:text="|\\"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="100"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="160"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="115"
+            android:text="Caps"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="29"
+            android:text="A"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="47"
+            android:text="S"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="32"
+            android:text="D"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="34"
+            android:text="F"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="35"
+            android:text="G"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="36"
+            android:text="H"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="38"
+            android:text="J"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="39"
+            android:text="K"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="40"
+            android:text="L"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="74"
+            android:text=":;"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="75"
+            android:text="&quot;'"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="160"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="66"
+            android:text="Enter"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="100"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="160"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="59"
+            android:text="Shift"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="54"
+            android:text="Z"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="52"
+            android:text="X"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="31"
+            android:text="C"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="50"
+            android:text="V"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="30"
+            android:text="B"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="42"
+            android:text="N"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="41"
+            android:text="M"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="55"
+            android:text="&lt;,"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="56"
+            android:text=">."
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="76"
+            android:text="&#63;/"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="103"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="19"
+            android:text="↑"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="103"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="60"
+            android:text="Shift"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="100"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="105"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="113"
+            android:text="Ctrl"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="105"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="117"
+            android:text="Win"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="105"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="57"
+            android:text="Alt"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="310"
+            android:layout_marginLeft="5dp"
+            android:layout_marginRight="5dp"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="62"
+            android:text="空格"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+<!--        <TextView-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="match_parent"-->
+<!--            android:layout_weight="100"-->
+<!--            android:background="@drawable/bg_ax_keyboard_button"-->
+<!--            android:gravity="center"-->
+<!--            android:tag="58"-->
+<!--            android:text="Alt"-->
+<!--            android:textColor="@android:color/white"
+            android:textSize="12sp" />-->
+
+<!--        <TextView-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="match_parent"-->
+<!--            android:layout_weight="100"-->
+<!--            android:background="@drawable/bg_ax_keyboard_button"-->
+<!--            android:gravity="center"-->
+<!--            android:tag="114"-->
+<!--            android:text="Ctrl"-->
+<!--            android:textColor="@android:color/white"
+            android:textSize="12sp" />-->
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="98"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="122"
+            android:text="Home"
+            android:textColor="@android:color/white"
+            android:textSize="10sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="98"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="123"
+            android:text="End"
+            android:textColor="@android:color/white"
+            android:textSize="10sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="98"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="92"
+            android:text="PgUp"
+            android:textColor="@android:color/white"
+            android:textSize="10sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="98"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="93"
+            android:textColor="@android:color/white"
+            android:text="PgDn"
+            android:textSize="10sp" />
+
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="21"
+            android:text="←"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="20"
+            android:text="↓"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="22"
+            android:text="→"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+</LinearLayout>

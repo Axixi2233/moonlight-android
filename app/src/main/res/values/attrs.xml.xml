@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="DpadView">
+        <attr name="normalColor" format="color" />
+        <attr name="pressedColor" format="color" />
+        <attr name="arrowSize" format="dimension" />
+    </declare-styleable>
+</resources>

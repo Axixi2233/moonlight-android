@@ -7,6 +7,9 @@ import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
+import android.graphics.drawable.Drawable;
+
+import com.limelight.R;
 
 public class SpinnerDialog implements Runnable,OnCancelListener {
     private final String title;
@@ -80,6 +83,7 @@ public class SpinnerDialog implements Runnable,OnCancelListener {
             progress.setTitle(title);
             progress.setMessage(message);
             progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+            progress.setIndeterminateDrawable(activity.getResources().getDrawable(R.drawable.ic_axi_progress_bg));
             progress.setOnCancelListener(this);
 
             // If we want to finish the activity when this is killed, make it cancellable

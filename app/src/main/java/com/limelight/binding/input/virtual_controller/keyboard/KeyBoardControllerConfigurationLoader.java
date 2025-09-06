@@ -4,6 +4,7 @@
 
 package com.limelight.binding.input.virtual_controller.keyboard;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -13,9 +14,13 @@ import android.support.v4.content.FileProvider;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
+import android.view.View;
 
 import com.limelight.BuildConfig;
+import com.limelight.Game;
 import com.limelight.LimeLog;
+import com.limelight.R;
 import com.limelight.preferences.PreferenceConfiguration;
 import com.limelight.utils.FileUriUtils;
 
@@ -25,6 +30,9 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.InputStream;
+import java.util.Map;
+
+import static com.limelight.ui.gamemenu.GameListKeyBoardFragment.PREF_KEYBOARD_LIST_NAME;
 
 public class KeyBoardControllerConfigurationLoader {
     public static final String OSC_PREFERENCE = "keyboard_axi_list";
@@ -121,7 +129,7 @@ public class KeyBoardControllerConfigurationLoader {
 
     private static KeyBoardDigitalButton createDigitalButton(
             final String elementId,
-            final int keyShort,
+            final Object keyShort,
             final int type,
             final int layer,
             final String text,
@@ -131,26 +139,85 @@ public class KeyBoardControllerConfigurationLoader {
         KeyBoardDigitalButton button = new KeyBoardDigitalButton(controller, elementId, layer, context);
         button.setText(text);
         button.setIcon(icon);
-
+        if(type==1){
+            switch ((Integer) keyShort){
+                case 1://左
+                    button.setIcon(R.drawable.ic_axi_mouse_left);
+                    button.setIconPress(R.drawable.ic_axi_mouse_left_s);
+                    break;
+                case 3://右
+                    button.setIcon(R.drawable.ic_axi_mouse_right);
+                    if(elementId.startsWith("m_s_")){
+                        button.setIcon(R.drawable.ic_axi_mouse_right_2);
+                    }
+                    button.setIconPress(R.drawable.ic_axi_mouse_right_s);
+                    break;
+                case 2://中
+                    button.setIcon(R.drawable.ic_axi_mouse_middle);
+                    button.setIconPress(R.drawable.ic_axi_mouse_middle_s);
+                    break;
+                case 4:
+                case 5://滚轮上下
+                    button.setPadding(20,20,20,20);
+                    button.setIcon((Integer) keyShort==4?R.drawable.ic_axi_mouse_up:R.drawable.ic_axi_mouse_down);
+                    button.setIconPress((Integer) keyShort==4?R.drawable.ic_axi_mouse_up:R.drawable.ic_axi_mouse_down);
+                    break;
+            }
+        }
         if(elementId.startsWith("m_s_")||elementId.startsWith("key_s_")){
             button.setEnableSwitchDown(true);
         }
-
+        Runnable repeater = new Runnable() {
+            @Override
+            public void run() {
+                if ((Integer) keyShort == 4) {
+                    Game.instance.mouseHighResScroll(true);
+                } else {
+                    Game.instance.mouseHighResScroll(false);
+                }
+                button.postDelayed(this, 100);
+            }
+        };
         button.addDigitalButtonListener(new KeyBoardDigitalButton.DigitalButtonListener() {
             @Override
             public void onClick() {
-                KeyEvent keyEvent = new KeyEvent(KeyEvent.ACTION_DOWN, keyShort);
+                if(type==1){
+                    switch ((Integer)keyShort){
+                        case 4:
+                        case 5:
+                            button.post(repeater);
+                            return;
+                    }
+                }
+                if(type==4){
+                    controller.sendAssembleKey((String) keyShort,KeyEvent.ACTION_DOWN);
+                    return;
+                }
+                KeyEvent keyEvent = new KeyEvent(KeyEvent.ACTION_DOWN, (Integer) keyShort);
                 keyEvent.setSource(type);
                 controller.sendKeyEvent(keyEvent);
             }
 
             @Override
             public void onLongClick() {
+
             }
 
             @Override
             public void onRelease() {
-                KeyEvent keyEvent = new KeyEvent(KeyEvent.ACTION_UP, keyShort);
+                if(type==1){
+                    switch ((Integer)keyShort){
+                        case 4:
+                        case 5:
+                            button.removeCallbacks(repeater);
+                            return;
+                    }
+                }
+                if(type==4){
+                    controller.sendAssembleKey((String) keyShort,KeyEvent.ACTION_UP);
+                    return;
+                }
+                KeyEvent keyEvent = new KeyEvent(KeyEvent.ACTION_UP, (Integer) keyShort);
                 keyEvent.setSource(type);
                 controller.sendKeyEvent(keyEvent);
 
@@ -176,7 +243,18 @@ public class KeyBoardControllerConfigurationLoader {
         button.addDigitalButtonListener(new KeyBoardTouchPadButton.DigitalButtonListener() {
             @Override
             public void onClick() {
-                int code=keyShort==9?3:1;
+                if(keyShort==13){
+                    return;
+                }
+                int code=1;
+                switch (keyShort){
+                    case 9:
+                        code=3;
+                        break;
+                    case 12:
+                        code=2;
+                        break;
+                }
                 KeyEvent keyEvent = new KeyEvent(KeyEvent.ACTION_DOWN, code);
                 keyEvent.setSource(type);
                 controller.sendKeyEvent(keyEvent);
@@ -193,7 +271,18 @@ public class KeyBoardControllerConfigurationLoader {
 
             @Override
             public void onRelease() {
-                int code=keyShort==9?3:1;
+                if(keyShort==13){
+                    return;
+                }
+                int code=1;
+                switch (keyShort){
+                    case 9:
+                        code=3;
+                        break;
+                    case 12:
+                        code=2;
+                        break;
+                }
                 KeyEvent keyEvent = new KeyEvent(KeyEvent.ACTION_UP, code);
                 keyEvent.setSource(type);
                 controller.sendKeyEvent(keyEvent);
@@ -204,11 +293,9 @@ public class KeyBoardControllerConfigurationLoader {
         return button;
     }
 
-    public static void createDefaultLayout(final KeyBoardController controller, final Context context) {
+    public static void createDefaultLayout(final KeyBoardController controller, final Context context,PreferenceConfiguration config) {
 
         DisplayMetrics screen = context.getResources().getDisplayMetrics();
-
-        PreferenceConfiguration config = PreferenceConfiguration.readPreferences(context);
 
         int height = screen.heightPixels;
 
@@ -237,7 +324,16 @@ public class KeyBoardControllerConfigurationLoader {
         }
         if(TextUtils.isEmpty(result)){
             try {
-                InputStream is = context.getAssets().open("config/keyboard.json");
+                String fileName="config/keyboard.json";
+                switch (config.virtualKeyboardFileUsed){
+                    case 1:
+                        fileName="config/keyboard_1.json";
+                        break;
+                    case 2:
+                        fileName="config/keyboard_2.json";
+                        break;
+                }
+                InputStream is = context.getAssets().open(fileName);
                 int lenght = is.available();
                 byte[] buffer = new byte[lenght];
                 is.read(buffer);
@@ -313,6 +409,25 @@ public class KeyBoardControllerConfigurationLoader {
                 }
             }
 
+            //组合按键
+//            JSONArray keyAssembleList=jsonObject1.optJSONArray("keyAssemble");
+//            if(keyAssembleList!=null&&keyAssembleList.length()>0){
+//                for (int i = 0; i < keyAssembleList.length(); i++) {
+//                    JSONObject obj = keyAssembleList.getJSONObject(i);
+//                    obj.put("type", 4);
+//                    keystrokeList.put(obj);
+//                }
+//            }
+            //组合按键
+            SharedPreferences pref = context.getSharedPreferences(PREF_KEYBOARD_LIST_NAME, Activity.MODE_PRIVATE);
+            Map<String,String> map= (Map<String, String>) pref.getAll();
+            for (Map.Entry<String, String> entry : map.entrySet()) {
+                String value = entry.getValue();
+                JSONObject obj = new JSONObject(value);
+                obj.put("type", 4);
+                keystrokeList.put(obj);
+            }
+
             double buttonSum = 14.0;
 
             //普通按键
@@ -328,10 +443,28 @@ public class KeyBoardControllerConfigurationLoader {
 
                     int switchButton=obj.optInt("switchButton");
 
-                    String elementId = type == 0 ? "key_" + code : "m_" + code;
+                    String codes=obj.optString("codes");
 
-                    if(switchButton==1){
-                        elementId=type == 0 ? "key_s_" + code : "m_s_" + code;
+                    String elementId;
+
+                    switch (type){
+                        case 1:
+                            if(switchButton==1){
+                                elementId = "m_s_" + code;
+                            }else{
+                                elementId = "m_" + code;
+                            }
+                            break;
+                        case 4:
+                            elementId = obj.optString("id");
+                            break;
+                        default:
+                            if(switchButton==1){
+                                elementId = "key_s_" + code;
+                            }else{
+                                elementId = "key_" + code;
+                            }
+                            break;
                     }
 
                     int lastIndex = (int) (i / buttonSum);
@@ -340,13 +473,16 @@ public class KeyBoardControllerConfigurationLoader {
 
                     int y = screenScale(BUTTON_SIZE + lastIndex * BUTTON_SIZE, height);
 
-                    if(TextUtils.equals("m_9",elementId)||TextUtils.equals("m_10",elementId)||TextUtils.equals("m_11",elementId)){
+                    if(TextUtils.equals("m_9",elementId)||TextUtils.equals("m_10",elementId)
+                            ||TextUtils.equals("m_11",elementId)
+                            ||TextUtils.equals("m_12",elementId)
+                            ||TextUtils.equals("m_13",elementId)){
                         controller.addElement(createDigitalTouchButton(elementId, code, type, 1, name, -1, controller, context),
                                 x, y,
                                 w, w
                         );
                     }else{
-                        controller.addElement(createDigitalButton(elementId, code, type, 1, name, -1, controller, context),
+                        controller.addElement(createDigitalButton(elementId, type==4?codes:code, type, 1, name, -1, controller, context),
                                 x, y,
                                 w, w
                         );

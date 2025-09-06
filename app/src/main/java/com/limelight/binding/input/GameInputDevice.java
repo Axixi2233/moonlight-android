@@ -8,7 +8,6 @@ import java.util.List;
  * Description
  * Date: 2024-01-16
  * Time: 15:26
- * User: Genng(genng1991@gmail.com)
  */
 public interface GameInputDevice {
 

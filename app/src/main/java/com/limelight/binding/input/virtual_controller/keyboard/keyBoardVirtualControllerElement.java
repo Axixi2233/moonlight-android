@@ -16,6 +16,7 @@ import android.widget.FrameLayout;
 
 import com.limelight.Game;
 import com.limelight.binding.input.virtual_controller.VirtualController;
+import com.limelight.preferences.PreferenceConfiguration;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -45,7 +46,7 @@ public abstract class keyBoardVirtualControllerElement extends View {
     private final Paint paint = new Paint();
 
     private int normalColor = 0xF0888888;
-    protected int pressedColor = 0xA3DCDCDE;
+    protected int pressedColor = 0x805C5CAD;
     private int configMoveColor = 0xF0FF0000;
     private int configResizeColor = 0xF0FF00FF;
     private int configSelectedColor = 0xF000FF00;
@@ -72,6 +73,7 @@ public abstract class keyBoardVirtualControllerElement extends View {
 
         this.virtualController = controller;
         this.elementId = elementId;
+        this.normalColor= PreferenceConfiguration.readPreferences(context).virtualkeyViewNormalColor;
     }
 
     protected void moveElement(int pressed_x, int pressed_y, int x, int y) {
@@ -315,8 +317,7 @@ public abstract class keyBoardVirtualControllerElement extends View {
     public void setOpacity(int opacity) {
         int hexOpacity = opacity * 255 / 100;
         this.normalColor = (hexOpacity << 24) | (normalColor & 0x00FFFFFF);
-        this.pressedColor = (hexOpacity << 24) | (pressedColor & 0x00FFFFFF);
-
+//        this.pressedColor = (hexOpacity << 24) | (pressedColor & 0x00FFFFFF);
         invalidate();
     }
 

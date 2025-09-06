@@ -10,12 +10,14 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
+import android.text.TextUtils;
 import android.view.MotionEvent;
 
 import com.limelight.binding.input.virtual_controller.VirtualController;
 import com.limelight.binding.input.virtual_controller.VirtualControllerElement;
 import com.limelight.preferences.PreferenceConfiguration;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,6 +50,7 @@ public class KeyBoardDigitalButton extends keyBoardVirtualControllerElement {
     private List<DigitalButtonListener> listeners = new ArrayList<>();
     private String text = "";
     private int icon = -1;
+    private int iconPress=-1;
     private long timerLongClickTimeout = 3000;
     private final Runnable longClickRunnable = new Runnable() {
         @Override
@@ -136,12 +139,13 @@ public class KeyBoardDigitalButton extends keyBoardVirtualControllerElement {
         this.icon = id;
         invalidate();
     }
-
+    public void setIconPress(int iconPress) {
+        this.iconPress = iconPress;
+    }
     @Override
     protected void onElementDraw(Canvas canvas) {
         // set transparent background
         canvas.drawColor(Color.TRANSPARENT);
-
         paint.setTextSize(getPercent(getWidth(), 25));
         paint.setTextAlign(Paint.Align.CENTER);
         paint.setStrokeWidth(getDefaultStrokeWidth());
@@ -154,21 +158,29 @@ public class KeyBoardDigitalButton extends keyBoardVirtualControllerElement {
         rect.right = getWidth() - rect.left;
         rect.bottom = getHeight() - rect.top;
 
+        if (icon != -1) {
+            if(PreferenceConfiguration.readPreferences(getContext()).enableKeyboardSquare){
+                canvas.drawRoundRect(rect, 15, 15, paint);
+            }else{
+                canvas.drawOval(rect, paint);
+            }
+            int oscOpacity=PreferenceConfiguration.readPreferences(getContext()).oscOpacity;
+            Drawable d = getResources().getDrawable(isPressed()?iconPress:icon);
+            d.setBounds(15, 15, getWidth() - 15, getHeight() - 15);
+            d.setAlpha((int) (oscOpacity*2.55));
+            d.draw(canvas);
+            return;
+        }
         if(PreferenceConfiguration.readPreferences(getContext()).enableKeyboardSquare){
-            canvas.drawRect(rect,paint);
+//            canvas.drawRect(rect,paint);
+            canvas.drawRoundRect(rect, 15, 15, paint);
         }else{
             canvas.drawOval(rect, paint);
         }
+        paint.setStyle(Paint.Style.FILL_AND_STROKE);
+        paint.setStrokeWidth(getDefaultStrokeWidth()/2);
+        canvas.drawText(text, getPercent(getWidth(), 50), getPercent(getHeight(), 63), paint);
 
-        if (icon != -1) {
-            Drawable d = getResources().getDrawable(icon);
-            d.setBounds(5, 5, getWidth() - 5, getHeight() - 5);
-            d.draw(canvas);
-        } else {
-            paint.setStyle(Paint.Style.FILL_AND_STROKE);
-            paint.setStrokeWidth(getDefaultStrokeWidth()/2);
-            canvas.drawText(text, getPercent(getWidth(), 50), getPercent(getHeight(), 63), paint);
-        }
     }
 
     private void onClickCallback() {

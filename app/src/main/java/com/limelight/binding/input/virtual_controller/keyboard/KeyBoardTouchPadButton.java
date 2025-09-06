@@ -14,6 +14,7 @@ import android.text.TextUtils;
 import android.view.MotionEvent;
 
 import com.limelight.LimeLog;
+import com.limelight.R;
 import com.limelight.preferences.PreferenceConfiguration;
 
 import java.util.ArrayList;
@@ -140,7 +141,7 @@ public class KeyBoardTouchPadButton extends keyBoardVirtualControllerElement {
         invalidate();
     }
 
-    int pressedColor = 0x2BF5F5F9;
+    int pressedColor = 0x805C5CAD;
 
     PreferenceConfiguration preferenceConfiguration;
 
@@ -149,7 +150,7 @@ public class KeyBoardTouchPadButton extends keyBoardVirtualControllerElement {
         // set transparent background
         canvas.drawColor(Color.TRANSPARENT);
 
-        paint.setTextSize(getPercent(getWidth(), 25));
+        paint.setTextSize(getPercent(getWidth(), 15));
         paint.setTextAlign(Paint.Align.CENTER);
         paint.setStrokeWidth(getDefaultStrokeWidth());
 
@@ -160,17 +161,27 @@ public class KeyBoardTouchPadButton extends keyBoardVirtualControllerElement {
         rect.left = rect.top = paint.getStrokeWidth();
         rect.right = getWidth() - rect.left;
         rect.bottom = getHeight() - rect.top;
+//        canvas.drawRect(rect, paint);
 
-        canvas.drawRect(rect, paint);
+        canvas.drawRoundRect(rect, 15, 15, paint);
 
         if (icon != -1) {
-            Drawable d = getResources().getDrawable(icon);
+            int oscOpacity=PreferenceConfiguration.readPreferences(getContext()).oscOpacity;
+            Drawable d = getResources().getDrawable(isPressed()? R.mipmap.face_ps_touchpad_press:R.mipmap.face_ps_touchpad_normal);
             d.setBounds(5, 5, getWidth() - 5, getHeight() - 5);
+            d.setAlpha((int) (oscOpacity*2.55));
             d.draw(canvas);
+            boolean bIsMoving = virtualController.getControllerMode() == KeyBoardController.ControllerMode.MoveButtons;
+            boolean bIsResizing = virtualController.getControllerMode() == KeyBoardController.ControllerMode.ResizeButtons;
+            boolean bIsEnable = virtualController.getControllerMode() == KeyBoardController.ControllerMode.DisableEnableButtons;
+            if (bIsMoving || bIsResizing || bIsEnable) {
+                paint.setStyle(Paint.Style.STROKE);
+                canvas.drawRect(rect,paint);
+            }
         } else {
             paint.setStyle(Paint.Style.FILL_AND_STROKE);
-            paint.setStrokeWidth(getDefaultStrokeWidth() / 2);
-            canvas.drawText(text, getPercent(getWidth(), 50), getPercent(getHeight(), 63), paint);
+            paint.setStrokeWidth((float) getDefaultStrokeWidth() / 2);
+            canvas.drawText(text, getPercent(getWidth(), 50), getPercent(getHeight(), 60), paint);
         }
     }
 
@@ -247,7 +258,7 @@ public class KeyBoardTouchPadButton extends keyBoardVirtualControllerElement {
                 }
                 if (event.getEventTime() - originalTouchTime > 100 && !isPressed()) {
                     setPressed(true);
-                    if(TextUtils.equals(elementId,"m_9")||TextUtils.equals(elementId,"m_11")){
+                    if(TextUtils.equals(elementId,"m_9")||TextUtils.equals(elementId,"m_11")||TextUtils.equals(elementId,"m_12")){
                         onClickCallback();
                     }
                 }
