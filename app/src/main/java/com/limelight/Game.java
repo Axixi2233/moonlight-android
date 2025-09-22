@@ -76,6 +76,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.util.Rational;
+import android.util.TypedValue;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.InputDevice;
@@ -287,7 +288,6 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
         performanceRumble=findViewById(R.id.performanceRumble);
         switchPerformanceRumbleHUD();
-
         //光标是否显示
         cursorVisible=prefConfig.enableMouseLocalCursor;
 
@@ -472,7 +472,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         });
 
         performanceOverlayLite.setClickable(prefConfig.enablePerfOverlayLiteDialog);
-
+        setPerformanceOverlayZoom();
 
         decoderRenderer = new MediaCodecDecoderRenderer(
                 this,
@@ -3444,6 +3444,11 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     //设置性能信息是否可以点击
     public void switchPerformanceLiteHudclick(){
         performanceOverlayLite.setClickable(prefConfig.enablePerfOverlayLiteDialog);
+    }
+
+    public void setPerformanceOverlayZoom(){
+        performanceOverlayLite.setTextSize(TypedValue.COMPLEX_UNIT_SP,prefConfig.gameSettingPrefZoom*0.1f);
+        performanceOverlayBig.setTextSize(TypedValue.COMPLEX_UNIT_SP,prefConfig.gameSettingPrefZoom*0.13f);
     }
 
     //设置ds5手柄的自适应扳机

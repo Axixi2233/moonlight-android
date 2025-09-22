@@ -7,11 +7,14 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.ImageButton;
 import android.widget.RadioGroup;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.limelight.R;
 import com.limelight.preferences.PreferenceConfiguration;
 import com.limelight.ui.BaseFragmentDialog.BaseGameMenuDialog;
+
+import static com.limelight.preferences.PreferenceConfiguration.TOUCH_SENSITIVITY;
 
 /**
  * 游戏菜单-杂项
@@ -50,6 +53,9 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
     private CheckBox btn_game_force_gyro_left_trgger;
     private CheckBox btn_game_force_gyro_switch;
 
+    private SeekBar sb_game_setting_pref_zoom;
+
+    private TextView tx_game_setting_pref_zoom;
     @Override
     public void bindView(View v) {
         super.bindView(v);
@@ -70,6 +76,8 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
         btn_game_force_gyro=v.findViewById(R.id.btn_game_force_gyro);
         btn_game_force_gyro_left_trgger=v.findViewById(R.id.btn_game_force_gyro_left_trgger);
         btn_game_force_gyro_switch=v.findViewById(R.id.btn_game_force_gyro_switch);
+        sb_game_setting_pref_zoom=v.findViewById(R.id.sb_game_setting_pref_zoom);
+        tx_game_setting_pref_zoom=v.findViewById(R.id.tx_game_setting_pref_zoom);
         if(!TextUtils.isEmpty(title)){
             tx_title.setText(title);
         }
@@ -77,6 +85,7 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
         initControl();
         initTouchNumber();
         initFloatBall();
+        initPrefZoom();
         ibtn_back.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -254,6 +263,28 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
                 setSetting("gameForceGyroXYSwitch",isChecked);
             }
         });
+
+        sb_game_setting_pref_zoom.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                prefConfig.gameSettingPrefZoom=progress;
+                saveSetting("game_setting_pref_zoom",progress);
+                initPrefZoom();
+                if(onClick!=null){
+                    onClick.click(3,false);
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
     }
 
 
@@ -355,6 +386,11 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
         btn_game_force_gyro.setChecked(prefConfig.gameForceGyro);
         btn_game_force_gyro_left_trgger.setChecked(prefConfig.gameForceGyroLeftTrigger);
         btn_game_force_gyro_switch.setChecked(prefConfig.gameForceGyroXYSwitch);
+    }
+
+    private void initPrefZoom(){
+        tx_game_setting_pref_zoom.setText("性能信息 缩放："+prefConfig.gameSettingPrefZoom+"%");
+        sb_game_setting_pref_zoom.setProgress(prefConfig.gameSettingPrefZoom);
     }
 
     @Override

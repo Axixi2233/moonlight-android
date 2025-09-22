@@ -421,6 +421,7 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
                     if(game==null){
                         return;
                     }
+                    //悬浮球
                     if(index==0){
                         if(flag){
                             game.showFloatView();
@@ -429,14 +430,22 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
                         game.hideFloatView();
                         return;
                     }
+                    //显示震动信息
                     if(index==1){
                         game.switchPerformanceRumbleHUD();
                         return;
                     }
-
+                    //性能信息点击
                     if(index==2){
                         game.switchPerformanceLiteHudclick();
+                        return;
                     }
+                    //性能信息缩放
+                    if(index==3){
+                        game.setPerformanceOverlayZoom();
+                        return;
+                    }
+
 
                 }
             });

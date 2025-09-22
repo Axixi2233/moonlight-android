@@ -75,7 +75,7 @@
         <android.support.v7.widget.AppCompatTextView
             android:id="@+id/performanceOverlayLite"
             tools:text="延迟/解码：109ms/7ms 丢包率：69% FPS：60"
-            android:textSize="10dp"
+            android:textSize="10sp"
             android:layout_marginTop="4dp"
             android:background="@drawable/ic_hud_bg"
             android:paddingLeft="5dp"
@@ -86,9 +86,6 @@
             android:paddingBottom="2dp"
             android:visibility="gone"
             tools:visibility="visible"
-            android:autoSizeTextType="uniform"
-            android:autoSizeMinTextSize="5dp"
-            android:autoSizeMaxTextSize="10dp"
             android:maxLines="1"
             android:textAppearance="?android:attr/textAppearanceLarge"
             android:layout_gravity="center_horizontal"

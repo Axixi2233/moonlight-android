@@ -381,6 +381,9 @@ public class PreferenceConfiguration {
     //握把震动联动扳机震动
     public boolean gameTriggerRumbleLink;
 
+    //性能信息缩放比例
+    public int gameSettingPrefZoom;
+
     public static boolean isNativeResolution(int width, int height) {
         // It's not a native resolution if it matches an existing resolution option
         if (width == 640 && height == 360) {
@@ -965,6 +968,8 @@ public class PreferenceConfiguration {
         config.gameForceGyro=prefs.getBoolean("gameForceGyro",false);
         config.gameForceGyroXYSwitch=prefs.getBoolean("gameForceGyroXYSwitch",true);
         config.gameTriggerRumbleLink=prefs.getBoolean("gameTriggerRumbleLink",false);
+
+        config.gameSettingPrefZoom=prefs.getInt("game_setting_pref_zoom",100);
 
         return config;
     }
