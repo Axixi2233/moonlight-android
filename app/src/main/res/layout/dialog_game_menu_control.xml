@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:background="@color/gameMenuBgColor"
     android:orientation="vertical"
-    android:paddingBottom="10dp"
+    android:paddingBottom="0dp"
     android:paddingLeft="10dp"
     android:paddingRight="10dp"
     android:paddingTop="10dp">
@@ -51,6 +51,7 @@
         android:layout_height="wrap_content">
 
         <LinearLayout
+            android:layout_marginBottom="10dp"
             android:orientation="vertical"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">

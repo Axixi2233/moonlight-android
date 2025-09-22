@@ -88,7 +88,7 @@
 
     <ScrollView
         android:id="@+id/leftView"
-        android:paddingBottom="10dp"
+        android:paddingBottom="0dp"
         android:paddingLeft="10dp"
         android:paddingRight="10dp"
         android:paddingTop="10dp"
@@ -98,6 +98,7 @@
         android:layout_height="match_parent">
 
     <LinearLayout
+        android:layout_marginBottom="10dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">

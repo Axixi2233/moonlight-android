@@ -3,6 +3,7 @@ package com.limelight.ui.BaseFragmentDialog;
 import android.app.DialogFragment;
 import android.app.FragmentManager;
 import android.content.res.Configuration;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.LayoutRes;
 import android.view.Gravity;
@@ -35,10 +36,13 @@ public abstract class BaseGameMenuFragmentDialog extends DialogFragment {
 //        // If we're going to use immersive mode, we want to have
 //        // the entire screen
         getDialog().getWindow().getDecorView().setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
-                        View.SYSTEM_UI_FLAG_FULLSCREEN|
-                        View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION |
-                        View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+        );
 //
         getDialog().setCanceledOnTouchOutside(getCancelOutside());
 
@@ -79,6 +83,15 @@ public abstract class BaseGameMenuFragmentDialog extends DialogFragment {
             params.gravity = Gravity.BOTTOM;
         }
         window.setAttributes(params);
+
+//        getDialog().getWindow().getDecorView().setSystemUiVisibility(
+//                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+//                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+//                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+//                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+//                        | View.SYSTEM_UI_FLAG_FULLSCREEN
+//                        | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+//        );
     }
 
     public int getViewSize() {

@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:background="@color/gameMenuBgColor"
     android:orientation="vertical"
-    android:paddingBottom="10dp"
+    android:paddingBottom="0dp"
     android:paddingLeft="10dp"
     android:paddingRight="10dp"
     android:paddingTop="10dp">
@@ -38,6 +38,7 @@
 
         <LinearLayout
             android:orientation="vertical"
+            android:layout_marginBottom="10dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
@@ -492,6 +493,32 @@
                         android:textSize="8dp" />
 
                 </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="性能信息 缩放：100%"
+                    android:textStyle="italic|bold"
+                    android:visibility="visible"
+                    android:id="@+id/tx_game_setting_pref_zoom"
+                    android:textColor="@android:color/white"
+                    android:textSize="8dp" />
+
+                <SeekBar
+                    android:max="230"
+                    android:min="50"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginRight="5dp"
+                    android:padding="0dp"
+                    android:thumbOffset="0dp"
+                    android:progress="100"
+                    android:splitTrack="false"
+                    android:id="@+id/sb_game_setting_pref_zoom"
+                    android:thumb="@android:color/transparent"
+                    android:progressDrawable="@drawable/ic_game_menu_seek_bg"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
 
 
             </LinearLayout>
