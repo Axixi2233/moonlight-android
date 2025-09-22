@@ -84,6 +84,7 @@
             android:drawablePadding="2dp"
             tools:drawableLeft="@drawable/icon_axi_wifi"
             android:paddingBottom="2dp"
+            android:gravity="center_vertical"
             android:visibility="gone"
             tools:visibility="visible"
             android:maxLines="1"
