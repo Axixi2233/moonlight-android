@@ -5,7 +5,7 @@
 ### B站(https://space.bilibili.com/16893379) 、Youtube(https://www.youtube.com/@AxixiTV)
 
 此项目版本主要实现如下功能：<br>
-1、全新游戏菜单UI
+1、全新游戏菜单UI<br>
 2、自定义虚拟按键 支持导入导出<br>
 3、自定义分辨率<br>
 4、自定义码率<br>
