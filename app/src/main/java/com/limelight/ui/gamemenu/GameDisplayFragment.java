@@ -65,6 +65,8 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
 
     private RadioGroup rg_game_display_lowlatency;
 
+    private RadioGroup rg_game_display_ignore_hdr;
+
     private int width;
 
     private int height;
@@ -104,6 +106,8 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
         rg_game_display_enforce=v.findViewById(R.id.rg_game_display_enforce);
         rg_game_display_lowlatency=v.findViewById(R.id.rg_game_display_lowlatency);
 
+        rg_game_display_ignore_hdr=v.findViewById(R.id.rg_game_display_ignore_hdr);
+
         if(!TextUtils.isEmpty(title)){
             tx_title.setText(title);
         }
@@ -122,6 +126,7 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
         initLock();
         initAudio();
         initHDR();
+        initIgnoreHDR();
         initLowLatency();
         initVD();
         initVideoFormat();
@@ -255,6 +260,21 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
                 }
             }
         });
+
+        rg_game_display_ignore_hdr.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(RadioGroup group, int checkedId) {
+                if(checkedId==R.id.rbt_game_display_ignore_hdr_1){
+                    saveIgnoreHDR(true);
+                    return;
+                }
+                if(checkedId==R.id.rbt_game_display_ignore_hdr_2){
+                    saveIgnoreHDR(false);
+                    return;
+                }
+            }
+        });
+
     }
 
     private void initEnfoce() {
@@ -294,6 +314,12 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
         boolean hdrFlag=PreferenceManager.getDefaultSharedPreferences(getActivity()).getBoolean("checkbox_enable_hdr",false);
         rg_game_display_hdr.check(hdrFlag?R.id.rbt_game_display_hdr_1:R.id.rbt_game_display_hdr_2);
     }
+    private void initIgnoreHDR(){
+        boolean hdrFlag=PreferenceManager.getDefaultSharedPreferences(getActivity()).getBoolean("ignoreCheckHDR",false);
+        rg_game_display_ignore_hdr.check(hdrFlag?R.id.rbt_game_display_ignore_hdr_1:R.id.rbt_game_display_ignore_hdr_2);
+    }
+
+
     private void initLowLatency(){
         boolean lowFlag=PreferenceManager.getDefaultSharedPreferences(getActivity()).getBoolean("enable_lowLatency_experiment",false);
         rg_game_display_lowlatency.check(lowFlag?R.id.rbt_game_display_lowlatency_1:R.id.rbt_game_display_lowlatency_2);
@@ -394,6 +420,13 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
         PreferenceManager.getDefaultSharedPreferences(getActivity())
                 .edit()
                 .putBoolean("enable_lowLatency_experiment",value)
+                .commit();
+    }
+
+    private void saveIgnoreHDR(boolean value){
+        PreferenceManager.getDefaultSharedPreferences(getActivity())
+                .edit()
+                .putBoolean("ignoreCheckHDR",value)
                 .commit();
     }
 

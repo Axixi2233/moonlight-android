@@ -11,7 +11,7 @@ android {
         minSdk 21
         targetSdk 34
 
-        versionName "12.1-250916-axi"
+        versionName "12.1-2501218-axi"
         versionCode = 314
 
         // Generate native debug symbols to allow Google Play to symbolicate our native crashes
@@ -49,6 +49,7 @@ android {
             }
 
             applicationId "com.limelight"
+//            applicationId "com.miHoYo.GenshinImpact"
             dimension "root"
             buildConfigField "boolean", "ROOT_BUILD", "false"
         }

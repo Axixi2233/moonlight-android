@@ -117,13 +117,13 @@ public class Dualshock4Controller extends AbstractDualSenseController {
       final float G_TO_MS2 = 9.81f;
 
       // 读取 IMU 数据
-      int gyrox = buffer.getShort(14);
-      int gyroy = buffer.getShort(16);
-      int gyroz = buffer.getShort(18);
+      int gyrox = buffer.getShort(13);
+      int gyroy = buffer.getShort(15);
+      int gyroz = buffer.getShort(17);
 
-      int accelx = buffer.getShort(20);
-      int accely = buffer.getShort(22);
-      int accelz = buffer.getShort(24);
+      int accelx = buffer.getShort(19);
+      int accely = buffer.getShort(21);
+      int accelz = buffer.getShort(23);
 
       // 转换陀螺仪数据到 deg/s
       float gyroX_dps = gyrox * GYRO_SCALE;

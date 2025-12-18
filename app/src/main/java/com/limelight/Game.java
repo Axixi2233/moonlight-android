@@ -428,34 +428,38 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
         // Check if the user has enabled HDR
         boolean willStreamHdr = false;
-        if (prefConfig.enableHdr) {
-            // Start our HDR checklist
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                Display display = getWindowManager().getDefaultDisplay();
-                Display.HdrCapabilities hdrCaps = display.getHdrCapabilities();
+        if(prefConfig.ignoreCheckHDR){
+            willStreamHdr=true;
+        }else{
+            if (prefConfig.enableHdr) {
+                // Start our HDR checklist
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    Display display = getWindowManager().getDefaultDisplay();
+                    Display.HdrCapabilities hdrCaps = display.getHdrCapabilities();
 
-                // We must now ensure our display is compatible with HDR10
-                if (hdrCaps != null) {
-                    // getHdrCapabilities() returns null on Lenovo Lenovo Mirage Solo (vega), Android 8.0
-                    for (int hdrType : hdrCaps.getSupportedHdrTypes()) {
-                        if (hdrType == Display.HdrCapabilities.HDR_TYPE_HDR10) {
-                            willStreamHdr = true;
-                            break;
+                    // We must now ensure our display is compatible with HDR10
+                    if (hdrCaps != null) {
+                        // getHdrCapabilities() returns null on Lenovo Lenovo Mirage Solo (vega), Android 8.0
+                        for (int hdrType : hdrCaps.getSupportedHdrTypes()) {
+                            if (hdrType == Display.HdrCapabilities.HDR_TYPE_HDR10) {
+                                willStreamHdr = true;
+                                break;
+                            }
                         }
                     }
-                }
 
-                if (!willStreamHdr) {
-                    // Nope, no HDR for us :(
-                    Toast.makeText(this, "Display does not support HDR10", Toast.LENGTH_LONG).show();
+                    if (!willStreamHdr) {
+                        // Nope, no HDR for us :(
+                        Toast.makeText(this, "Display does not support HDR10", Toast.LENGTH_LONG).show();
+                    }
                 }
-            }
-            else {
-                Toast.makeText(this, "HDR requires Android 7.0 or later", Toast.LENGTH_LONG).show();
+                else {
+                    Toast.makeText(this, "HDR requires Android 7.0 or later", Toast.LENGTH_LONG).show();
+                }
             }
         }
 
-                // Check if the user has enabled performance stats overlay
+        // Check if the user has enabled performance stats overlay
         if (prefConfig.enablePerfOverlay) {
             performanceOverlayView.setVisibility(View.VISIBLE);
             if(prefConfig.enablePerfOverlayLite){

@@ -42,7 +42,7 @@ public class Xbox360Controller extends AbstractXboxController {
             0x2dc8, // 8BitDo
             0x413d, // 小鸡启明星
             0x3537, // 小鸡启明星6300固件
-            0x37d7, // 飞智八爪鱼5
+            0x11c0, // lead joy
     };
 
     public static boolean canClaimDevice(UsbDevice device) {
