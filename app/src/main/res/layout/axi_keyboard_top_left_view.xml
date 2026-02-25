@@ -121,11 +121,12 @@
             android:padding="4dp"
             android:textSize="11sp"
             android:id="@+id/cb_round"
+            android:buttonTint="#8C99E6"
             android:text="方形按钮" />
 
         <TextView
             android:text="删除"
-            android:textSize="11sp"
+            android:textSize="12sp"
             android:layout_marginTop="4dp"
             android:layout_marginLeft="5dp"
             android:layout_marginRight="5dp"
@@ -138,7 +139,7 @@
 
         <TextView
             android:text="取消"
-            android:textSize="11sp"
+            android:textSize="12sp"
             android:gravity="center"
             android:layout_marginTop="4dp"
             android:layout_marginLeft="5dp"

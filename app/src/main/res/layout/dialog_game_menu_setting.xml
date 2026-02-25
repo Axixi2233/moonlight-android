@@ -500,6 +500,33 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
+                    android:text="强制体感灵敏度：120%"
+                    android:textStyle="italic|bold"
+                    android:visibility="visible"
+                    android:id="@+id/tx_game_setting_gyro_sensitivity"
+                    android:textColor="@android:color/white"
+                    android:textSize="8dp" />
+
+                <SeekBar
+                    android:max="200"
+                    android:min="50"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginRight="5dp"
+                    android:padding="0dp"
+                    android:thumbOffset="0dp"
+                    android:progress="100"
+                    android:splitTrack="false"
+                    android:id="@+id/sb_game_setting_gyro_sensitivity"
+                    android:thumb="@android:color/transparent"
+                    android:progressDrawable="@drawable/ic_game_menu_seek_bg"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
                     android:text="性能信息 缩放：100%"
                     android:textStyle="italic|bold"
                     android:visibility="visible"

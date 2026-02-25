@@ -36,14 +36,24 @@
             android:layout_marginRight="10dp"
             android:id="@+id/lv_right"
             android:padding="15dp"
+            android:gravity="center_vertical"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content">
+
+            <ImageButton
+                android:id="@+id/axiButton"
+                android:background="@drawable/ic_game_menu_btn_side_selector"
+                android:src="@drawable/ic_game_controller"
+                android:layout_marginRight="8dp"
+                android:scaleType="centerInside"
+                android:layout_width="48dp"
+                android:layout_height="48dp"/>
 
             <ImageButton
                 android:id="@+id/manuallyAddPc"
                 android:background="@drawable/ic_game_menu_btn_side_selector"
                 android:src="@drawable/ic_axi_app_add"
-                android:layout_marginRight="5dp"
+                android:layout_marginRight="8dp"
                 android:layout_width="48dp"
                 android:scaleType="centerInside"
                 android:layout_height="48dp"/>
@@ -51,18 +61,10 @@
             <ImageButton
                 android:id="@+id/helpButton"
                 android:background="@drawable/ic_game_menu_btn_side_selector"
-                android:src="@drawable/ic_axi_app_help"
-                android:layout_marginRight="5dp"
+                android:src="@drawable/ic_axi_app_about"
+                android:layout_marginRight="8dp"
                 android:scaleType="centerInside"
-                android:layout_width="48dp"
-                android:layout_height="48dp"/>
-
-            <ImageButton
-                android:id="@+id/axiButton"
-                android:background="@drawable/ic_game_menu_btn_side_selector"
-                android:src="@drawable/ic_game_controller"
-                android:layout_marginRight="5dp"
-                android:scaleType="centerInside"
+                android:padding="6dp"
                 android:layout_width="48dp"
                 android:layout_height="48dp"/>
 

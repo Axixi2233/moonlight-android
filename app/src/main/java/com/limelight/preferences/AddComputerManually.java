@@ -1,21 +1,18 @@
 package com.limelight.preferences;
 
-import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
-import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import com.limelight.BaseActivity;
 import com.limelight.SrvResolver;
-import com.limelight.binding.PlatformBinding;
 import com.limelight.computers.ComputerManagerService;
 import com.limelight.R;
 import com.limelight.nvstream.http.ComputerDetails;
@@ -279,6 +276,7 @@ public class AddComputerManually extends Activity {
         setContentView(R.layout.activity_add_computer_manually);
 
         UiHelper.notifyNewRootView(this);
+        UiHelper.notifyNewRootViewImmersive(this);
 
         this.hostText = findViewById(R.id.hostTextView);
         hostText.setImeOptions(EditorInfo.IME_ACTION_DONE);

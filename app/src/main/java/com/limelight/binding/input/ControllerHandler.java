@@ -1408,11 +1408,8 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         }
         else {
             //强制体感模拟右摇杆
-            if(prefConfig.gameForceGyro&&originalContext.sensorStick){
-                originalContext.sensorStick=false;
-                if(prefConfig.gameForceGyroLeftTrigger&&(leftTrigger & 0xFF) !=255){
-                    return;
-                }
+            if(PreferenceConfiguration.readPreferences(activityContext).gameForceGyro){
+                sensorLeftTrigger=leftTrigger;
             }
             conn.sendControllerInput(controllerNumber, getActiveControllerMask(),
                     inputMap,
@@ -1421,6 +1418,8 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                     rightStickX, rightStickY);
         }
     }
+
+    private short sensorLeftTrigger=0x00;
 
     private final int REMAP_IGNORE = -1;
     private final int REMAP_CONSUME = -2;
@@ -2424,7 +2423,14 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                     }
                 }
                 //强制体感
-                if (prefConfig.gameForceGyro) {
+                if (PreferenceConfiguration.readPreferences(activityContext).gameForceGyro) {
+                    //按下左扳机生效
+                    if((PreferenceConfiguration.readPreferences(activityContext).gameForceGyroLeftTrigger && (sensorLeftTrigger & 0xFF) < 200 )){
+                        context.rightStickX = 0x0000;
+                        context.rightStickY = 0x0000;
+                        sendControllerInputPacket(context);
+                        return;
+                    }
                     if (motionType == MoonBridge.LI_MOTION_TYPE_GYRO) {
                         // --- 1. 修正坐标轴映射 ---
                         // 游戏习惯：
@@ -2435,15 +2441,15 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
 
                         if (deviceRotation == Surface.ROTATION_90 || deviceRotation == Surface.ROTATION_270) {
                             // 横屏模式
-                            gyroX = sensorEvent.values[1]; // 左右转动 (Yaw/Roll)
-                            gyroY = sensorEvent.values[0]; // 前后俯仰 (Pitch) -> 这是你之前缺失的关键轴
+                            gyroX = sensorEvent.values[0]; // 左右转动 (Yaw/Roll)
+                            gyroY = sensorEvent.values[1]; // 前后俯仰 (Pitch)
                         } else {
                             // 竖屏模式
-                            gyroX = sensorEvent.values[0];
-                            gyroY = sensorEvent.values[1];
+                            gyroX = sensorEvent.values[1];
+                            gyroY = sensorEvent.values[0];
                         }
                         // 处理用户设置的反转
-                        if (prefConfig.gameForceGyroXYSwitch) {
+                        if (PreferenceConfiguration.readPreferences(activityContext).gameForceGyroXYSwitch) {
                             float temp = gyroX;
                             gyroX = gyroY;
                             gyroY = temp;
@@ -2459,7 +2465,6 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                         // --- 4. 限制范围并发送 ---
                         context.rightStickX = (short) (clamp(filterGyroX) * 0x7FFF);
                         context.rightStickY = (short) (clamp(filterGyroY) * 0x7FFF);
-                        context.sensorStick = true;
                         sendControllerInputPacket(context);
                     }
                     return;
@@ -2488,7 +2493,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
     }
     private final float SMOOTH_ALPHA = 0.3f; // 稍微提高响应速度
     private float filterGyroX = 0, filterGyroY = 0;
-    private final float GYRO_SENSITIVITY = 1.2f; // 总灵敏度缩放
+//    private final float GYRO_SENSITIVITY = 1.2f; // 总灵敏度缩放
     /**
      * 优化单轴算法：死区 -> 线性放大 -> 指数曲线
      */
@@ -2503,6 +2508,8 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
 
         // 2. 响应曲线：1.5 次方比 2.0 次方在小范围更灵敏，不会“肉”
         float curved = (float) Math.pow(normalized, 1.5);
+
+        float GYRO_SENSITIVITY=PreferenceConfiguration.readPreferences(activityContext).gameForceGyroSensitivity*0.01f;
 
         // 3. 基础输出补偿：只要超过死区，就给一个 0.05 的起步分，防止游戏识别不到
         float out = (curved + 0.05f) * sensitivity * GYRO_SENSITIVITY;
@@ -3221,7 +3228,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         public short leftStickX = 0x0000;
         public short leftStickY = 0x0000;
 
-        public boolean sensorStick = false;
+        public byte sensorLeftTrigger =  0x00;
 
         public boolean mouseEmulationActive;
         public int mouseEmulationLastInputMap;

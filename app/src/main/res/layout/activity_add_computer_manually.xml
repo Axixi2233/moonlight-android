@@ -6,29 +6,44 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
+    android:background="@drawable/bg_gradient_axi_main"
     tools:context=".preferences.AddComputerManually" >
 
-    <TextView
-        android:id="@+id/manuallyAddPcText"
-        android:text="@string/title_add_pc"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:preferKeepClear="true"
-        android:layout_centerHorizontal="true"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:layout_alignParentTop="true"/>
+    <RelativeLayout
+        android:id="@+id/rv_top_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/manuallyAddPcText"
+            android:text="@string/title_add_pc"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:preferKeepClear="true"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_centerHorizontal="true"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            />
+
+    </RelativeLayout>
 
     <EditText
         android:id="@+id/hostTextView"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/manuallyAddPcText"
+        android:layout_height="35dp"
+        android:layout_below="@+id/rv_top_view"
         android:layout_toLeftOf="@+id/addPcButton"
         android:layout_toStartOf="@+id/addPcButton"
         android:layout_marginTop="25dp"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
+        android:textColorHint="@android:color/white"
         android:ems="10"
+        android:textSize="12sp"
+        android:background="@drawable/ic_game_menu_btn_selector"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
         android:singleLine="true"
         android:preferKeepClear="true"
         android:inputType="textNoSuggestions"
@@ -39,10 +54,13 @@
 
     <Button
         android:id="@+id/addPcButton"
+        android:background="@drawable/ic_game_menu_btn_selector"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="35dp"
         android:layout_marginTop="25dp"
-        android:layout_below="@+id/manuallyAddPcText"
+        android:layout_marginLeft="10dp"
+        android:textSize="13sp"
+        android:layout_below="@+id/rv_top_view"
         android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true"
         android:preferKeepClear="true"
@@ -52,7 +70,7 @@
         android:id="@+id/getPcButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="25dp"
+        android:layout_marginTop="15dp"
         android:layout_below="@+id/addPcButton"
         android:layout_alignParentLeft="true"
         android:preferKeepClear="true"
@@ -61,12 +79,26 @@
 
     <Button
         android:id="@+id/razerPort"
+        android:background="@drawable/ic_game_menu_btn_selector"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="25dp"
+        android:layout_height="35dp"
+        android:layout_marginTop="15dp"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:textSize="13sp"
         android:layout_below="@+id/addPcButton"
         android:layout_alignParentLeft="true"
         android:preferKeepClear="true"
         android:text="追加Razer雷游端口号"/>
+
+    <TextView
+        android:layout_marginTop="15dp"
+        android:textSize="12sp"
+        android:layout_below="@+id/razerPort"
+        android:text="@string/axi_add_computer_tips"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+
 	
 </RelativeLayout>

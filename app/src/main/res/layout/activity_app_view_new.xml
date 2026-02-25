@@ -12,6 +12,7 @@
         android:visibility="gone"
         tools:visibility="visible"
         android:layout_height="match_parent"/>
+
     <RelativeLayout
         android:id="@+id/rv_top_view"
         android:layout_width="match_parent"

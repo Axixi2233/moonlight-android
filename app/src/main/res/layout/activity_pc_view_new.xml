@@ -39,31 +39,34 @@
             android:layout_height="48dp">
 
             <ImageButton
+                android:id="@+id/axiButton"
+                android:background="@drawable/ic_game_menu_btn_side_selector"
+                android:src="@drawable/ic_game_controller"
+                android:layout_marginRight="8dp"
+                android:scaleType="centerInside"
+                android:padding="3dp"
+                android:layout_width="35dp"
+                android:layout_height="35dp"/>
+
+            <ImageButton
                 android:id="@+id/manuallyAddPc"
                 android:background="@drawable/ic_game_menu_btn_side_selector"
                 android:src="@drawable/ic_axi_app_add"
-                android:layout_marginRight="4dp"
-                android:layout_width="32dp"
+                android:layout_marginRight="8dp"
+                android:padding="2.5dp"
+                android:layout_width="35dp"
                 android:scaleType="centerInside"
-                android:layout_height="32dp"/>
+                android:layout_height="35dp"/>
 
             <ImageButton
                 android:id="@+id/helpButton"
                 android:background="@drawable/ic_game_menu_btn_side_selector"
-                android:src="@drawable/ic_axi_app_help"
-                android:layout_marginRight="4dp"
+                android:src="@drawable/ic_axi_app_about"
+                android:layout_marginRight="8dp"
                 android:scaleType="centerInside"
-                android:layout_width="34dp"
-                android:layout_height="34dp"/>
-
-            <ImageButton
-                android:id="@+id/axiButton"
-                android:background="@drawable/ic_game_menu_btn_side_selector"
-                android:src="@drawable/ic_game_controller"
-                android:layout_marginRight="4dp"
-                android:scaleType="centerInside"
-                android:layout_width="32dp"
-                android:layout_height="32dp"/>
+                android:padding="3dp"
+                android:layout_width="35dp"
+                android:layout_height="35dp"/>
 
             <ImageButton
                 android:id="@+id/settingsButton"

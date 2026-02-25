@@ -641,6 +641,11 @@
             android:summary="版本信息·获取更新·关注作者"
             url="about"/>
 
+        <com.limelight.preferences.WebLauncherPreference
+            android:title="Moonlight帮助指南"
+            android:summary="官方使用文档"
+            url="https://github.com/moonlight-stream/moonlight-docs/wiki/Setup-Guide"/>
+
     </PreferenceCategory>
 
 

@@ -30,121 +30,203 @@
 
     </RelativeLayout>
 
-    <LinearLayout
-        android:orientation="vertical"
+
+    <ScrollView
+        android:scrollbars="none"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="match_parent">
 
         <LinearLayout
-            android:layout_margin="15dp"
-            android:background="@drawable/axi_gameplay_gamepad_item_bg"
             android:orientation="vertical"
-            android:paddingTop="25dp"
-            android:paddingBottom="25dp"
-            android:gravity="center_horizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-            <ImageView
-                android:id="@+id/iv_logo"
-                android:src="@mipmap/ic_app_axi"
-                android:layout_width="65dp"
-                android:layout_height="65dp"/>
+            <LinearLayout
+                android:layout_margin="15dp"
+                android:background="@drawable/axi_gameplay_gamepad_item_bg"
+                android:orientation="vertical"
+                android:paddingTop="25dp"
+                android:paddingBottom="25dp"
+                android:gravity="center_horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <ImageView
+                    android:id="@+id/iv_logo"
+                    android:src="@mipmap/ic_app_axi"
+                    android:layout_width="65dp"
+                    android:layout_height="65dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/app_label"
+                    android:id="@+id/tv_info"
+                    android:textStyle="bold"
+                    android:layout_marginTop="8dp"
+                    android:textColor="@android:color/white"
+                    android:textSize="17sp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="随时随地，畅联你的电脑！"
+                    android:layout_marginTop="5dp"
+                    android:textColor="@android:color/white"
+                    android:textSize="8sp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="版本号：1.0.0"
+                    android:textStyle="bold"
+                    android:id="@+id/tv_version"
+                    android:layout_marginTop="5dp"
+                    android:textColor="@android:color/white"
+                    android:textSize="10sp"/>
+
+                <TextView
+                    android:onClick="onClick"
+                    android:id="@+id/iv_get"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/about_update_text"
+                    android:textStyle="bold"
+                    android:padding="4dp"
+                    android:layout_marginTop="3dp"
+                    android:textColor="@android:color/white"
+                    android:textSize="9sp"/>
+
+
+            </LinearLayout>
+
+
+            <LinearLayout
+                android:layout_marginLeft="15dp"
+                android:layout_marginRight="15dp"
+                android:layout_marginBottom="15dp"
+                android:background="@drawable/axi_gameplay_gamepad_item_bg"
+                android:orientation="vertical"
+                android:padding="12dp"
+                android:gravity="center_horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="常见问题"
+                    android:textStyle="bold"
+                    android:layout_gravity="center_horizontal"
+                    android:textColor="@android:color/white"
+                    android:textSize="11sp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/axi_question_1"
+                    android:layout_gravity="center_horizontal"
+                    android:textColor="@android:color/white"
+                    android:layout_marginTop="3dp"
+                    android:textStyle="bold"
+                    android:textSize="9sp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingLeft="15dp"
+                    android:layout_marginTop="3dp"
+                    android:text="@string/axi_question_answer_1"
+                    android:layout_gravity="center_horizontal"
+                    android:textColor="@android:color/white"
+                    android:textSize="9sp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/axi_question_2"
+                    android:layout_gravity="center_horizontal"
+                    android:textColor="@android:color/white"
+                    android:layout_marginTop="3dp"
+                    android:textStyle="bold"
+                    android:textSize="9sp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingLeft="15dp"
+                    android:layout_marginTop="3dp"
+                    android:text="@string/axi_question_answer_2"
+                    android:layout_gravity="center_horizontal"
+                    android:textColor="@android:color/white"
+                    android:textSize="9sp"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="未完待续......."
+                    android:layout_gravity="center_horizontal"
+                    android:textColor="@android:color/white"
+                    android:layout_marginTop="3dp"
+                    android:textStyle="bold"
+                    android:textSize="9sp"/>
+
+            </LinearLayout>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/app_label"
-                android:id="@+id/tv_info"
+                android:text="在这里找到开发者"
                 android:textStyle="bold"
-                android:layout_marginTop="8dp"
-                android:textColor="@android:color/white"
-                android:textSize="17sp"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="随时随地，畅联你的电脑！"
-                android:layout_marginTop="5dp"
-                android:textColor="@android:color/white"
-                android:textSize="8sp"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="版本号：1.0.0"
-                android:textStyle="bold"
-                android:id="@+id/tv_version"
-                android:layout_marginTop="5dp"
-                android:textColor="@android:color/white"
-                android:textSize="10sp"/>
-
-            <TextView
-                android:onClick="onClick"
-                android:id="@+id/iv_get"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/about_update_text"
-                android:textStyle="bold"
-                android:padding="4dp"
-                android:layout_marginTop="3dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="20dp"
                 android:textColor="@android:color/white"
                 android:textSize="9sp"/>
 
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="15dp"
+                android:layout_gravity="center_horizontal"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:onClick="onClick"
+                    android:id="@+id/iv_bili"
+                    android:src="@mipmap/axi_gameplay_icon_bili"
+                    android:layout_width="25dp"
+                    android:layout_height="25dp"/>
+
+                <ImageView
+                    android:onClick="onClick"
+                    android:id="@+id/iv_xhs"
+                    android:src="@mipmap/axi_gameplay_icon_xhs"
+                    android:layout_width="25dp"
+                    android:layout_marginLeft="15dp"
+                    android:layout_marginRight="15dp"
+                    android:layout_height="25dp"/>
+
+                <ImageView
+                    android:onClick="onClick"
+                    android:id="@+id/iv_douyin"
+                    android:layout_marginRight="15dp"
+                    android:src="@mipmap/axi_gameplay_icon_douyin"
+                    android:layout_width="26dp"
+                    android:layout_height="26dp"/>
+
+                <ImageView
+                    android:onClick="onClick"
+                    android:id="@+id/iv_github"
+                    android:src="@drawable/ic_github_axi"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"/>
+
+            </LinearLayout>
 
         </LinearLayout>
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="在这里找到开发者"
-            android:textStyle="bold"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="20dp"
-            android:textColor="@android:color/white"
-            android:textSize="9sp"/>
+    </ScrollView>
 
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:layout_gravity="center_horizontal"
-            android:orientation="horizontal">
-
-            <ImageView
-                android:onClick="onClick"
-                android:id="@+id/iv_bili"
-                android:src="@mipmap/axi_gameplay_icon_bili"
-                android:layout_width="25dp"
-                android:layout_height="25dp"/>
-
-            <ImageView
-                android:onClick="onClick"
-                android:id="@+id/iv_xhs"
-                android:src="@mipmap/axi_gameplay_icon_xhs"
-                android:layout_width="25dp"
-                android:layout_marginLeft="15dp"
-                android:layout_marginRight="15dp"
-                android:layout_height="25dp"/>
-
-            <ImageView
-                android:onClick="onClick"
-                android:id="@+id/iv_douyin"
-                android:layout_marginRight="15dp"
-                android:src="@mipmap/axi_gameplay_icon_douyin"
-                android:layout_width="26dp"
-                android:layout_height="26dp"/>
-
-            <ImageView
-                android:onClick="onClick"
-                android:id="@+id/iv_github"
-                android:src="@drawable/ic_github_axi"
-                android:layout_width="24dp"
-                android:layout_height="24dp"/>
-
-        </LinearLayout>
-
-    </LinearLayout>
 
 
 </LinearLayout>

@@ -60,6 +60,11 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
     private TextView tx_game_setting_pref_magin_top;
 
     private TextView tx_game_setting_pref_zoom;
+
+    private TextView tx_game_setting_gyro_sensitivity;
+
+    private SeekBar sb_game_setting_gyro_sensitivity;
+
     @Override
     public void bindView(View v) {
         super.bindView(v);
@@ -86,6 +91,9 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
         tx_game_setting_pref_magin_top=v.findViewById(R.id.tx_game_setting_pref_magin_top);
         sb_game_setting_pref_magin_top=v.findViewById(R.id.sb_game_setting_pref_magin_top);
 
+        tx_game_setting_gyro_sensitivity=v.findViewById(R.id.tx_game_setting_gyro_sensitivity);
+        sb_game_setting_gyro_sensitivity=v.findViewById(R.id.sb_game_setting_gyro_sensitivity);
+
         if(!TextUtils.isEmpty(title)){
             tx_title.setText(title);
         }
@@ -95,6 +103,7 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
         initFloatBall();
         initPrefZoom();
         initPrefMagin();
+        initGyroSensitivity();
         ibtn_back.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -319,6 +328,25 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
 
             }
         });
+
+        sb_game_setting_gyro_sensitivity.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                prefConfig.gameForceGyroSensitivity=progress;
+                saveSetting("gameForceGyroSensitivity",progress);
+                initGyroSensitivity();
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
     }
 
 
@@ -423,13 +451,18 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
     }
 
     private void initPrefZoom(){
-        tx_game_setting_pref_zoom.setText("性能信息 缩放："+prefConfig.gameSettingPrefZoom+"%");
+        tx_game_setting_pref_zoom.setText("性能信息·缩放："+prefConfig.gameSettingPrefZoom+"%");
         sb_game_setting_pref_zoom.setProgress(prefConfig.gameSettingPrefZoom);
     }
 
     private void initPrefMagin(){
-        tx_game_setting_pref_magin_top.setText("性能信息 边距："+prefConfig.performanceOverlayLiteMaginTop);
+        tx_game_setting_pref_magin_top.setText("性能信息·边距："+prefConfig.performanceOverlayLiteMaginTop);
         sb_game_setting_pref_magin_top.setProgress(prefConfig.performanceOverlayLiteMaginTop);
+    }
+
+    private void initGyroSensitivity(){
+        tx_game_setting_gyro_sensitivity.setText("强制体感·灵敏度："+prefConfig.gameForceGyroSensitivity);
+        sb_game_setting_gyro_sensitivity.setProgress(prefConfig.gameForceGyroSensitivity);
     }
 
     @Override

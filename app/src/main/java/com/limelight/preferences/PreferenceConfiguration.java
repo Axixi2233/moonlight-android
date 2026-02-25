@@ -371,6 +371,8 @@ public class PreferenceConfiguration {
     public boolean gameForceGyroLeftTrigger;
     //强制体感反转xy轴方向
     public boolean gameForceGyroXYSwitch;
+    //强制体感灵敏度
+    public int gameForceGyroSensitivity;
 
     //握把震动联动扳机震动
     public boolean gameTriggerRumbleLink;
@@ -963,6 +965,9 @@ public class PreferenceConfiguration {
         config.gameForceGyroLeftTrigger=prefs.getBoolean("gameForceGyroLeftTrigger",false);
         config.gameForceGyro=prefs.getBoolean("gameForceGyro",false);
         config.gameForceGyroXYSwitch=prefs.getBoolean("gameForceGyroXYSwitch",true);
+
+        config.gameForceGyroSensitivity=prefs.getInt("gameForceGyroSensitivity",120);
+
         config.gameTriggerRumbleLink=prefs.getBoolean("gameTriggerRumbleLink",false);
 
         config.gameSettingPrefZoom=prefs.getInt("game_setting_pref_zoom",100);

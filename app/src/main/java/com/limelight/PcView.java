@@ -182,9 +182,6 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
         if(!TextUtils.isEmpty(pref.screenLabel)){
             tx_label.setText(pref.screenLabel);
         }
-        tx_label.setOnClickListener(v -> {
-            startActivity(new Intent(this,AboutActivity.class));
-        });
         // Setup the list view
         ImageButton settingsButton = findViewById(R.id.settingsButton);
         ImageButton addComputerButton = findViewById(R.id.manuallyAddPc);
@@ -207,7 +204,8 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
         helpButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                HelpLauncher.launchSetupGuide(PcView.this);
+                startActivity(new Intent(PcView.this,AboutActivity.class));
+//                HelpLauncher.launchSetupGuide(PcView.this);
             }
         });
 
