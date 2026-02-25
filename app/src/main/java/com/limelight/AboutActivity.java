@@ -37,22 +37,27 @@ public class AboutActivity extends BaseActivity implements View.OnClickListener 
 
     @Override
     public void onClick(View v) {
-        if(v.getId()== cn.axi.gamepad.an.R.id.iv_get){
+        if(v.getId()== R.id.iv_get){
             getToUrl("https://pan.quark.cn/s/9a334d831290");
             return;
         }
 
-        if(v.getId()== cn.axi.gamepad.an.R.id.iv_douyin){
+        if(v.getId()== R.id.iv_douyin){
             getToUrl("https://v.douyin.com/zm9GLKUfBW8/");
             return;
         }
 
-        if(v.getId()== cn.axi.gamepad.an.R.id.iv_xhs){
+        if(v.getId()== R.id.iv_xhs){
             getToUrl("https://www.xiaohongshu.com/user/profile/5d21be61000000001600b878");
             return;
         }
-        if(v.getId()== cn.axi.gamepad.an.R.id.iv_bili){
+        if(v.getId()== R.id.iv_bili){
             getToUrl("https://space.bilibili.com/16893379");
+            return;
+        }
+
+        if(v.getId()== R.id.iv_github){
+            getToUrl("https://github.com/Axixi2233/moonlight-android/releases");
             return;
         }
     }

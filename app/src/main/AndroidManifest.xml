@@ -48,7 +48,7 @@
         android:dataExtractionRules="@xml/backup_rules_s"
         android:networkSecurityConfig="@xml/network_security_config"
         android:isGame="true"
-        android:banner="@drawable/atv_banner"
+        android:banner="@drawable/atv_banner_axi"
         android:appCategory="game"
         android:icon="@mipmap/ic_app_axi"
         android:installLocation="auto"

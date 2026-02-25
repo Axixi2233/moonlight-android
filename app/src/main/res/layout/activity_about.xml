@@ -130,9 +130,17 @@
             <ImageView
                 android:onClick="onClick"
                 android:id="@+id/iv_douyin"
+                android:layout_marginRight="15dp"
                 android:src="@mipmap/axi_gameplay_icon_douyin"
-                android:layout_width="25dp"
-                android:layout_height="25dp"/>
+                android:layout_width="26dp"
+                android:layout_height="26dp"/>
+
+            <ImageView
+                android:onClick="onClick"
+                android:id="@+id/iv_github"
+                android:src="@drawable/ic_github_axi"
+                android:layout_width="24dp"
+                android:layout_height="24dp"/>
 
         </LinearLayout>
 
