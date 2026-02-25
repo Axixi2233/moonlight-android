@@ -51,7 +51,7 @@
             android:key="enable_lowLatency_experiment"
             android:title="优化解码低延迟模式(Beta)"
             android:summary="(实验性) 高通8Gen1及以上和联发科9300及以下芯片机型生效。"
-            android:defaultValue="false" />
+            android:defaultValue="true" />
 
         <CheckBoxPreference
             android:key="checkbox_stretch_video"

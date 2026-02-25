@@ -936,7 +936,7 @@ public class PreferenceConfiguration {
 
         config.virtualGamePadScaleFactor=prefs.getInt("virtualGamePadScaleFactor",100);
 
-        config.lowLatencyExperiment=prefs.getBoolean("enable_lowLatency_experiment",false);
+        config.lowLatencyExperiment=prefs.getBoolean("enable_lowLatency_experiment",true);
 
         config.mouseGamePadSensitity=prefs.getInt("mouse_gamepad_sensitity",100);
 
