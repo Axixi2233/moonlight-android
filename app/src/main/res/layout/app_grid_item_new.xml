@@ -10,7 +10,7 @@
     <com.limelight.ui.RoundedImageView
         android:id="@+id/grid_image"
         android:scaleType="centerCrop"
-        android:src="@drawable/app_icon"
+        android:src="@drawable/app_icon_axi"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
 

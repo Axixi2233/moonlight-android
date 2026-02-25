@@ -23,9 +23,10 @@ public class KeyBoardAnalogStickButtonFree extends keyAnalogStickFree {
     }
 
     public KeyBoardAnalogStickButtonFree(KeyBoardController controller, String elementId, Context context,
-                                         int[] keyInfo) {
+                                         int[] keyInfo,String[] textTipValues) {
         super(controller, context, elementId);
 
+        setTextTipValues(textTipValues);
         for (int i = 0; i < keyInfo.length; i++) {
             stickSender[i]=keyInfo[i];
         }

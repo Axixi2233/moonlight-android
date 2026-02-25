@@ -2,10 +2,13 @@ package com.limelight.preferences;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Build;
 import android.preference.Preference;
+import android.text.TextUtils;
 import android.util.AttributeSet;
 
+import com.limelight.AboutActivity;
 import com.limelight.utils.HelpLauncher;
 
 public class WebLauncherPreference extends Preference {
@@ -39,6 +42,10 @@ public class WebLauncherPreference extends Preference {
 
     @Override
     public void onClick() {
+        if(TextUtils.equals("about",url)){
+            getContext().startActivity(new Intent(getContext(), AboutActivity.class));
+            return;
+        }
         HelpLauncher.launchUrl(getContext(), url);
     }
 }

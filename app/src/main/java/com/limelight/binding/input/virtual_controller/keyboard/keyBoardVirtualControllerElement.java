@@ -8,6 +8,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.util.DisplayMetrics;
 import android.view.MotionEvent;
@@ -17,6 +18,9 @@ import android.widget.FrameLayout;
 import com.limelight.Game;
 import com.limelight.binding.input.virtual_controller.VirtualController;
 import com.limelight.preferences.PreferenceConfiguration;
+import com.limelight.ui.gamemenu.GameKeyboardUpdateFragment;
+import com.limelight.ui.gamemenu.bean.GameMenuQuickBean;
+import com.limelight.utils.UiHelper;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -24,32 +28,19 @@ import org.json.JSONObject;
 public abstract class keyBoardVirtualControllerElement extends View {
     protected static boolean _PRINT_DEBUG_INFORMATION = false;
 
-    public static final int EID_DPAD = 1;
-    public static final int EID_LT = 2;
-    public static final int EID_RT = 3;
-    public static final int EID_LB = 4;
-    public static final int EID_RB = 5;
-    public static final int EID_A = 6;
-    public static final int EID_B = 7;
-    public static final int EID_X = 8;
-    public static final int EID_Y = 9;
-    public static final int EID_BACK = 10;
-    public static final int EID_START = 11;
-    public static final int EID_LS = 12;
-    public static final int EID_RS = 13;
-    public static final int EID_LSB = 14;
-    public static final int EID_RSB = 15;
-
     protected KeyBoardController virtualController;
     protected final String elementId;
 
     private final Paint paint = new Paint();
 
     private int normalColor = 0xF0888888;
+    protected int textColor = 0xFFFFFFFF;
     protected int pressedColor = 0x805C5CAD;
+    protected int strokeColor = 0xB3ADADAD;
+
     private int configMoveColor = 0xF0FF0000;
     private int configResizeColor = 0xF0FF00FF;
-    private int configSelectedColor = 0xF000FF00;
+    private int configSelectedColor = Color.parseColor("#FFABABFF");
 
     private int configDisabledColor = 0xF0AAAAAA;
 
@@ -60,13 +51,13 @@ public abstract class keyBoardVirtualControllerElement extends View {
     float position_pressed_y = 0;
 
     public boolean enabled = true;
-    private enum Mode {
+    protected enum Mode {
         Normal,
         Resize,
         Move
     }
 
-    private Mode currentMode = Mode.Normal;
+    protected Mode currentMode = Mode.Normal;
 
     protected keyBoardVirtualControllerElement(KeyBoardController controller, Context context, String elementId) {
         super(context);
@@ -119,37 +110,6 @@ public abstract class keyBoardVirtualControllerElement extends View {
         super.onDraw(canvas);
     }
 
-    /*
-    protected void actionShowNormalColorChooser() {
-        AmbilWarnaDialog colorDialog = new AmbilWarnaDialog(getContext(), normalColor, true, new AmbilWarnaDialog.OnAmbilWarnaListener() {
-            @Override
-            public void onCancel(AmbilWarnaDialog dialog)
-            {}
-
-            @Override
-            public void onOk(AmbilWarnaDialog dialog, int color) {
-                normalColor = color;
-                invalidate();
-            }
-        });
-        colorDialog.show();
-    }
-
-    protected void actionShowPressedColorChooser() {
-        AmbilWarnaDialog colorDialog = new AmbilWarnaDialog(getContext(), normalColor, true, new AmbilWarnaDialog.OnAmbilWarnaListener() {
-            @Override
-            public void onCancel(AmbilWarnaDialog dialog) {
-            }
-
-            @Override
-            public void onOk(AmbilWarnaDialog dialog, int color) {
-                pressedColor = color;
-                invalidate();
-            }
-        });
-        colorDialog.show();
-    }
-    */
 
     protected void actionEnableMove() {
         currentMode = Mode.Move;
@@ -165,70 +125,30 @@ public abstract class keyBoardVirtualControllerElement extends View {
     }
 
     protected int getDefaultColor() {
-        if (virtualController.getControllerMode() == KeyBoardController.ControllerMode.MoveButtons)
-            return configMoveColor;
-        else if (virtualController.getControllerMode() == KeyBoardController.ControllerMode.ResizeButtons)
-            return configResizeColor;
-        else if (virtualController.getControllerMode() == KeyBoardController.ControllerMode.DisableEnableButtons)
-            return enabled ? configSelectedColor: configDisabledColor;
-        else
+        if(virtualController.getControllerMode() == KeyBoardController.ControllerMode.MoveButtons
+                &&virtualController.getCurrentIndex()==(Integer) getTag()){
+            return configSelectedColor;
+        }else{
             return normalColor;
+        }
+//        if (virtualController.getControllerMode() == KeyBoardController.ControllerMode.MoveButtons)
+//            return configMoveColor;
+//        else if (virtualController.getControllerMode() == KeyBoardController.ControllerMode.ResizeButtons)
+//            return configResizeColor;
+//        else if (virtualController.getControllerMode() == KeyBoardController.ControllerMode.DisableEnableButtons)
+//            return enabled ? configSelectedColor: configDisabledColor;
+//        else
+//            return normalColor;
     }
 
     protected int getDefaultStrokeWidth() {
-        DisplayMetrics screen = getResources().getDisplayMetrics();
-        return (int)(screen.heightPixels*0.004f);
+//        DisplayMetrics screen = getResources().getDisplayMetrics();
+//        return (int)(screen.heightPixels*0.004f);
+        return UiHelper.dpToPx(getContext(),1);
     }
 
-    protected void showConfigurationDialog() {
-        AlertDialog.Builder alertBuilder = new AlertDialog.Builder(getContext());
-
-        alertBuilder.setTitle("Configuration");
-
-        CharSequence functions[] = new CharSequence[]{
-                "Move",
-                "Resize",
-            /*election
-            "Set n
-            Disable color sormal color",
-            "Set pressed color",
-            */
-                "Cancel"
-        };
-
-        alertBuilder.setItems(functions, new DialogInterface.OnClickListener() {
-
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                switch (which) {
-                    case 0: { // move
-                        actionEnableMove();
-                        break;
-                    }
-                    case 1: { // resize
-                        actionEnableResize();
-                        break;
-                    }
-                /*
-                case 2: { // set default color
-                    actionShowNormalColorChooser();
-                    break;
-                }
-                case 3: { // set pressed color
-                    actionShowPressedColorChooser();
-                    break;
-                }
-                */
-                    default: { // cancel
-                        actionCancel();
-                        break;
-                    }
-                }
-            }
-        });
-        AlertDialog alert = alertBuilder.create();
-        // show menu
-        alert.show();
+    protected boolean isNomal(){
+        return virtualController.getControllerMode() == KeyBoardController.ControllerMode.Active;
     }
 
     @Override
@@ -246,6 +166,9 @@ public abstract class keyBoardVirtualControllerElement extends View {
             return onElementTouchEvent(event);
         }
 
+        if(onItem!=null){
+            onItem.click((Integer) this.getTag());
+        }
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN: {
                 position_pressed_x = event.getX();
@@ -316,7 +239,11 @@ public abstract class keyBoardVirtualControllerElement extends View {
 
     public void setOpacity(int opacity) {
         int hexOpacity = opacity * 255 / 100;
+        // 计算 1.5 倍透明度并确保不超过 255
+        int textHexOpacity = Math.min(255, (int)(hexOpacity * 1.5f));
         this.normalColor = (hexOpacity << 24) | (normalColor & 0x00FFFFFF);
+        this.textColor=(textHexOpacity << 24) | (textColor & 0x00FFFFFF);
+        this.strokeColor=(hexOpacity << 24) | (textColor & 0x00FFFFFF);
 //        this.pressedColor = (hexOpacity << 24) | (pressedColor & 0x00FFFFFF);
         invalidate();
     }
@@ -359,6 +286,22 @@ public abstract class keyBoardVirtualControllerElement extends View {
 
     protected  void actionDisableEnableButton(){
         enabled = !enabled;
+    }
+
+    protected int shapeType;
+
+    public void setShapeType(int shapeType) {
+        this.shapeType = shapeType;
+    }
+
+    private onItem onItem;
+
+    public interface onItem{
+        void click(int tag);
+    }
+
+    public void setOnClick(onItem onItem) {
+        this.onItem = onItem;
     }
 
 }

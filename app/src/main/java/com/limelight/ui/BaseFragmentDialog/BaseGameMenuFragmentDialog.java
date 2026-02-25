@@ -82,6 +82,12 @@ public abstract class BaseGameMenuFragmentDialog extends DialogFragment {
             }
             params.gravity = Gravity.BOTTOM;
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            WindowManager.LayoutParams lp = window.getAttributes();
+            // 设置为 SHORT_EDGES，允许内容延伸进刘海
+            lp.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+            window.setAttributes(lp);
+        }
         window.setAttributes(params);
 
 //        getDialog().getWindow().getDecorView().setSystemUiVisibility(

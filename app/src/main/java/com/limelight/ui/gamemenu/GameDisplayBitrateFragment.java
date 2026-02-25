@@ -41,6 +41,20 @@ public class GameDisplayBitrateFragment extends BaseGameMenuDialog implements Vi
         initViewData();
         ibtn_back.setOnClickListener(this);
         v.findViewById(R.id.btn_right).setOnClickListener(this);
+
+        for (int i = 0; i < 7; i++) {
+            TextView textView=v.findViewWithTag(""+i);
+            textView.setOnClickListener(v1 -> {
+                String txt=textView.getText().toString().trim();
+                txt=txt.replace("mbps","");
+                if(onClick==null){
+                    return;
+                }
+                onClick.click(Integer.parseInt(txt));
+                dismiss();
+            });
+        }
+
     }
 
     private void initViewData() {

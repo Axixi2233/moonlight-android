@@ -24,4 +24,7 @@ public class ControllerPacket {
     public static final int PADDLE4_FLAG  = 0x080000;
     public static final int TOUCHPAD_FLAG = 0x100000; // Touchpad buttons on Sony controllers
     public static final int MISC_FLAG     = 0x200000; // Share/Mic/Capture/Mute buttons on various controllers
+
+    public static final int PADDLE5_FLAG  = 0x120000;
+    public static final int PADDLE6_FLAG  = 0x140000;
 }

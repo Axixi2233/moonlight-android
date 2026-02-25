@@ -308,7 +308,7 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
         if(v.getId()==R.id.bt_quick_list){
             GameListQuickFragment fragment=new GameListQuickFragment();
             fragment.setWidth(UiHelper.dpToPx(getActivity(),364));
-            fragment.setTitle("快捷键(字体加粗项可长按删除)");
+            fragment.setTitle("快捷键(字体倾斜项可长按删除)");
             if(game!=null){
                 fragment.setEnableClearDefaultSpecial(game.prefConfig.enableClearDefaultSpecial);
             }
@@ -445,7 +445,16 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
                         game.setPerformanceOverlayZoom();
                         return;
                     }
-
+                    //模拟体感
+                    if(index==4){
+                        game.setMotionForceGyro();
+                        return;
+                    }
+                    //性能信息 边距
+                    if(index==5){
+                        game.setPerformanceOverlayLiteMagin();
+                        return;
+                    }
 
                 }
             });
@@ -458,7 +467,7 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
             GameMenuVirtualViewFragment fragment=new GameMenuVirtualViewFragment();
             fragment.setWidth(UiHelper.dpToPx(getActivity(),364));
             fragment.setTitle("虚拟手柄与虚拟按键");
-            fragment.setGamePadMode(game==null? VirtualController.ControllerMode.NONE:game.getVirtualControllerMode());
+            fragment.setGamePadMode(game==null? KeyBoardController.ControllerMode.NONE:game.getVirtualControllerMode());
             fragment.setGameKeyMode(game==null? KeyBoardController.ControllerMode.NONE:game.getVirtualKeyControllerMode());
             fragment.setPrefConfig(game==null?new PreferenceConfiguration():game.prefConfig);
             fragment.setOnClick(new GameMenuVirtualViewFragment.onClick() {
@@ -472,7 +481,7 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
                 }
 
                 @Override
-                public void switchModeGamePad(String name, VirtualController.ControllerMode mode) {
+                public void switchModeGamePad(String name, KeyBoardController.ControllerMode mode) {
                     if(game==null){
                         return;
                     }

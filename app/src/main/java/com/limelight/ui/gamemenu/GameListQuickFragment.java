@@ -5,8 +5,11 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
+import android.graphics.Rect;
+import android.os.Build;
 import android.text.TextUtils;
 import android.view.View;
+import android.view.WindowMetrics;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ImageButton;
@@ -30,6 +33,7 @@ import java.util.Map;
 
 import static com.limelight.GameMenu.KEY_NAME;
 import static com.limelight.GameMenu.PREF_NAME;
+import static com.limelight.ui.gamemenu.GameListKeyBoardFragment.PREF_KEYBOARD_LIST_NAME;
 
 /**
  * Description
@@ -79,13 +83,24 @@ public class GameListQuickFragment extends BaseGameMenuDialog {
             @Override
             public void onClick(View v) {
                 GameKeyboardUpdateFragment fragment=new GameKeyboardUpdateFragment();
-                fragment.setWidth(getActivity().getResources().getDisplayMetrics().widthPixels);
+                if(isLandscape(getActivity())){
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        WindowMetrics windowMetrics = getActivity().getWindowManager().getCurrentWindowMetrics();
+                        Rect bounds = windowMetrics.getBounds();
+                        fragment.setWidth(bounds.width());
+                    }else{
+                        fragment.setWidth(getActivity().getResources().getDisplayMetrics().widthPixels);
+                    }
+                }else{
+                    fragment.setWidth((getActivity().getResources().getDisplayMetrics().heightPixels*2)/3);
+                }
                 fragment.setDimAmount(0.8f);
                 fragment.setTitle("设置快捷键");
                 fragment.setKeyFrom(1);
                 fragment.setOnClick(new GameKeyboardUpdateFragment.onClick() {
                     @Override
-                    public void click(String data) {
+                    public void click(GameMenuQuickBean bean) {
+                        saveKeyBoardListData(getActivity(),bean);
                         updateData();
                     }
                 });
@@ -222,6 +237,10 @@ public class GameListQuickFragment extends BaseGameMenuDialog {
         return quickBeans;
     }
 
+    public boolean isLandscape(Context context) {
+        return context.getResources().getDisplayMetrics().widthPixels>context.getResources().getDisplayMetrics().heightPixels;
+    }
+
     public void removeKeyBoardListData(Context context,GameMenuQuickBean bean){
         SharedPreferences pref = context.getSharedPreferences(PREF_QUICK_LIST_NAME, Activity.MODE_PRIVATE);
         pref.edit().remove(bean.getId()).apply();
@@ -229,4 +248,9 @@ public class GameListQuickFragment extends BaseGameMenuDialog {
 
     public static final String PREF_QUICK_LIST_NAME="quick_axi_keyAssemble";
     public static final String PREF_QUICK_LIST_KEY="quick_assemble_key_";
+
+    public void saveKeyBoardListData(Context context,GameMenuQuickBean bean){
+        SharedPreferences pref = context.getSharedPreferences(PREF_QUICK_LIST_NAME, Activity.MODE_PRIVATE);
+        pref.edit().putString(bean.getId(),new Gson().toJson(bean)).apply();
+    }
 }

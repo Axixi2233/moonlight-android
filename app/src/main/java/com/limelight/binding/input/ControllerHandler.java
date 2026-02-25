@@ -2423,34 +2423,43 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                             break;
                     }
                 }
-
                 //强制体感
-                if(prefConfig.gameForceGyro){
-                    if(motionType == MoonBridge.LI_MOTION_TYPE_GYRO) {
-                        // 原始陀螺仪数据 (rad/s)
-                        float rawX = -sensorEvent.values[x]; // 左右
-                        float rawY = -sensorEvent.values[y]; // 上下
-                        //反转
-                        if(prefConfig.gameForceGyroXYSwitch){
-                            rawX = -sensorEvent.values[y];
-                            rawY = -sensorEvent.values[x];
+                if (prefConfig.gameForceGyro) {
+                    if (motionType == MoonBridge.LI_MOTION_TYPE_GYRO) {
+                        // --- 1. 修正坐标轴映射 ---
+                        // 游戏习惯：
+                        // 左右看 (RightStick X) -> 对应手机的 Y轴 (values[1]) 或 Z轴 (values[2])
+                        // 上下看 (RightStick Y) -> 对应手机的 X轴 (values[0])
+                        float gyroX, gyroY;
+                        int deviceRotation = activityContext.getWindowManager().getDefaultDisplay().getRotation();
+
+                        if (deviceRotation == Surface.ROTATION_90 || deviceRotation == Surface.ROTATION_270) {
+                            // 横屏模式
+                            gyroX = sensorEvent.values[1]; // 左右转动 (Yaw/Roll)
+                            gyroY = sensorEvent.values[0]; // 前后俯仰 (Pitch) -> 这是你之前缺失的关键轴
+                        } else {
+                            // 竖屏模式
+                            gyroX = sensorEvent.values[0];
+                            gyroY = sensorEvent.values[1];
                         }
-                        // 灵敏度
-                        float mappedX = rawX * 0.8f;
-                        float mappedY = rawY * 0.9f;
-
-                        // 限制范围 [-1, 1]
-                        mappedX = Math.max(-1f, Math.min(1f, mappedX));
-                        mappedY = Math.max(-1f, Math.min(1f, mappedY));
-
-                        // 死区处理
-                        if (Math.abs(mappedX) < 0.05f) mappedX = 0;
-                        if (Math.abs(mappedY) < 0.05f) mappedY = 0;
-
-                        // 平滑处理 (低通滤波)
-                        context.rightStickX = (short) (mappedX* 0x7FFE);
-                        context.rightStickY = (short) (mappedY* 0x7FFE);
-                        context.sensorStick=true;
+                        // 处理用户设置的反转
+                        if (prefConfig.gameForceGyroXYSwitch) {
+                            float temp = gyroX;
+                            gyroX = gyroY;
+                            gyroY = temp;
+                        }
+                        // --- 2. 独立轴向处理逻辑 ---
+                        // 核心改动：先处理死区，确保微小信号能活下来，再进行指数放大
+                        float finalX = optimizeAxis(gyroX, 1.2f); // 适当增加横向灵敏度
+                        float finalY = optimizeAxis(gyroY, 1.0f);
+                        // --- 3. 平滑滤波 (低通) ---
+                        // SMOOTH_ALPHA 建议 0.25f 左右
+                        filterGyroX = filterGyroX + SMOOTH_ALPHA * (finalX - filterGyroX);
+                        filterGyroY = filterGyroY + SMOOTH_ALPHA * (finalY - filterGyroY);
+                        // --- 4. 限制范围并发送 ---
+                        context.rightStickX = (short) (clamp(filterGyroX) * 0x7FFF);
+                        context.rightStickY = (short) (clamp(filterGyroY) * 0x7FFF);
+                        context.sensorStick = true;
                         sendControllerInputPacket(context);
                     }
                     return;
@@ -2477,6 +2486,34 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             public void onAccuracyChanged(Sensor sensor, int accuracy) {}
         };
     }
+    private final float SMOOTH_ALPHA = 0.3f; // 稍微提高响应速度
+    private float filterGyroX = 0, filterGyroY = 0;
+    private final float GYRO_SENSITIVITY = 1.2f; // 总灵敏度缩放
+    /**
+     * 优化单轴算法：死区 -> 线性放大 -> 指数曲线
+     */
+    private float optimizeAxis(float raw, float sensitivity) {
+        float absVal = Math.abs(raw);
+        float deadzone = 0.015f; // 极小的死区
+
+        if (absVal < deadzone) return 0;
+
+        // 1. 软死区映射：让数值从 0 开始平滑增长
+        float normalized = (absVal - deadzone) / (1.0f - deadzone);
+
+        // 2. 响应曲线：1.5 次方比 2.0 次方在小范围更灵敏，不会“肉”
+        float curved = (float) Math.pow(normalized, 1.5);
+
+        // 3. 基础输出补偿：只要超过死区，就给一个 0.05 的起步分，防止游戏识别不到
+        float out = (curved + 0.05f) * sensitivity * GYRO_SENSITIVITY;
+
+        return raw > 0 ? out : -out;
+    }
+
+    private float clamp(float val) {
+        return Math.max(-1f, Math.min(1f, val));
+    }
+
 
     public void handleSetMotionEventState(final short controllerNumber, final byte motionType, short reportRateHz) {
         if (stopped) {

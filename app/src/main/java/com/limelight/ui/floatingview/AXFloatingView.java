@@ -38,7 +38,7 @@ public class AXFloatingView extends AXFloatingMagnetView {
                 RelativeLayout.LayoutParams.WRAP_CONTENT,
                 RelativeLayout.LayoutParams.WRAP_CONTENT);
         params.gravity = Gravity.TOP | Gravity.START;
-        params.setMargins(8, 50, params.rightMargin, params.bottomMargin);
+        params.setMargins(8, 220, params.rightMargin, params.bottomMargin);
         return params;
     }
 

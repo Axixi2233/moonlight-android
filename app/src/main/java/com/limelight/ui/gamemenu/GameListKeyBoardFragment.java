@@ -78,7 +78,8 @@ public class GameListKeyBoardFragment extends BaseGameMenuDialog {
                 fragment.setTitle("组合键");
                 fragment.setOnClick(new GameKeyboardUpdateFragment.onClick() {
                     @Override
-                    public void click(String data) {
+                    public void click(GameMenuQuickBean bean) {
+                        saveKeyBoardListData(getActivity(),bean);
                         updateData();
                     }
                 });
@@ -164,4 +165,9 @@ public class GameListKeyBoardFragment extends BaseGameMenuDialog {
 
     public static final String PREF_KEYBOARD_LIST_NAME="keyboard_axi_keyAssemble";
     public static final String PREF_KEYBOARD_LIST_KEY="assemble_key_";
+
+    public void saveKeyBoardListData(Context context,GameMenuQuickBean bean){
+        SharedPreferences pref = context.getSharedPreferences(PREF_KEYBOARD_LIST_NAME, Activity.MODE_PRIVATE);
+        pref.edit().putString(bean.getId(),new Gson().toJson(bean)).apply();
+    }
 }

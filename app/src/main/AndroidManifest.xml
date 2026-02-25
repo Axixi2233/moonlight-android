@@ -50,7 +50,7 @@
         android:isGame="true"
         android:banner="@drawable/atv_banner"
         android:appCategory="game"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/ic_app_axi"
         android:installLocation="auto"
         android:gwpAsanMode="always"
         android:localeConfig="@xml/locales_config"
@@ -214,10 +214,9 @@
             <meta-data android:name="WindowManagerPreference:FreeformWindowOrientation" android:value="landscape" />
         </activity>
 
-
-        <activity android:name=".AxiTestActivity"
+        <activity android:name=".AboutActivity"
             android:launchMode="singleTask"
-            android:theme="@style/BaseActivityTheme"/>
+            android:theme="@style/AxiGamePlayTheme.GamePad"/>
 
         <!-- 无障碍 实体键盘 屏蔽某些快捷键 -->
         <service

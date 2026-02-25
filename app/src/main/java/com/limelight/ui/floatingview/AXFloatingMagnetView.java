@@ -74,7 +74,7 @@ public class AXFloatingMagnetView extends FrameLayout {
             public void run() {
                 // 修改透明度和位置
                 mMoveAnimator.stop();
-                animate().alpha(0.3f).setDuration(100).start();
+                animate().alpha(0.35f).setDuration(100).start();
                 float x=isNearestLeft? (float) -getWidth() /2:getX()+ (float) getWidth() /2;
                 animate().translationX(x).setDuration(100).start();
                 if(PreferenceConfiguration.readPreferences(getContext()).axFloatingPostionAuto){

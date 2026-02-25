@@ -80,7 +80,7 @@ public class PreferenceConfiguration {
     private static final String CHECKBOX_ENABLE_KEYBOARD = "checkbox_enable_keyboard";
 
     //屏幕特殊按键 震动
-    private static final String CHECKBOX_ENABLE_KEYBOARD_VIBRATE = "checkbox_vibrate_keyboard";
+    public static final String CHECKBOX_ENABLE_KEYBOARD_VIBRATE = "checkbox_vibrate_keyboard";
 
     //自动摇杆
     private static final String CHECKBOX_CHECKBOX_ENABLE_ANALOG_STICK_NEW="checkbox_enable_analog_stick_new";
@@ -95,7 +95,7 @@ public class PreferenceConfiguration {
     private static final boolean DEFAULT_DISABLE_TOASTS = false;
     private static final boolean DEFAULT_HOST_AUDIO = false;
     private static final int DEFAULT_DEADZONE = 7;
-    private static final int DEFAULT_OPACITY = 90;
+    private static final int DEFAULT_OPACITY = 38;
     public static final String DEFAULT_LANGUAGE = "default";
     private static final boolean DEFAULT_MULTI_CONTROLLER = true;
     private static final boolean DEFAULT_USB_DRIVER = true;
@@ -277,9 +277,6 @@ public class PreferenceConfiguration {
     //禁用扳机死区
     public boolean disableTriggerDeadzone;
 
-    //显示手柄调试入口图标
-    public boolean enableGamePadIcon;
-
     //反转左右握把震动顺序
     public boolean enableFlipRumbleFF;
 
@@ -306,9 +303,6 @@ public class PreferenceConfiguration {
 
     //忽略应用列表的弹出菜单
     public boolean passAppMenu;
-
-    //隐藏首页logo
-    public boolean hide_screen_logo;
 
     //虚拟按键正常模式的颜色
     public int virtualkeyViewNormalColor;
@@ -386,6 +380,9 @@ public class PreferenceConfiguration {
 
     //忽略校验HDR
     public boolean ignoreCheckHDR;
+
+    //解锁屏幕方向锁定
+    public boolean autoScreenOrientation;
 
     public static boolean isNativeResolution(int width, int height) {
         // It's not a native resolution if it matches an existing resolution option
@@ -890,12 +887,10 @@ public class PreferenceConfiguration {
         config.uiThemeColorWhite=prefs.getBoolean("checkbox_ui_theme_white",true);
         config.quickSoftKeyboardFingers=prefs.getInt("touch_number_quick_soft_keyboard",0);
 
-        config.enableAXFloating=prefs.getBoolean("checkbox_enable_ax_floating",false);
+        config.enableAXFloating=prefs.getBoolean("checkbox_enable_ax_floating",true);
         config.axFloatingOperate =prefs.getInt("ax_floating_operate",0);
 
         config.disableTriggerDeadzone=prefs.getBoolean("checkbox_disable_trigger_deadzone",false);
-
-        config.enableGamePadIcon=prefs.getBoolean("checkbox_enable_axi_test",true);
 
         config.enableFlipRumbleFF=prefs.getBoolean("checkbox_flip_rumble_ff",false);
 
@@ -917,9 +912,7 @@ public class PreferenceConfiguration {
 
         config.passAppMenu=prefs.getBoolean("checkbox_enable_pass_menu",false);
 
-        config.hide_screen_logo=prefs.getBoolean("checkbox_enable_screen_hide_logo",false);
-
-        config.virtualkeyViewNormalColor=prefs.getInt("virtual_key_view_normal_color",0xF0888888);
+        config.virtualkeyViewNormalColor=prefs.getInt("virtual_key_view_normal_color",0xFF888888);
 
         config.virtualKeyboardFileUsed=prefs.getInt("virtual_Key_board_file_used",0);
 
@@ -975,6 +968,9 @@ public class PreferenceConfiguration {
         config.gameSettingPrefZoom=prefs.getInt("game_setting_pref_zoom",100);
 
         config.ignoreCheckHDR=prefs.getBoolean("ignoreCheckHDR",false);
+
+        config.autoScreenOrientation=prefs.getBoolean("checkbox_auto_screen_orientation",false);
+
         return config;
     }
 

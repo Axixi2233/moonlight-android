@@ -73,6 +73,8 @@ import org.xmlpull.v1.XmlPullParserException;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
+import cn.axi.gamepad.an.AxiGamePadIndexActivity;
+
 import static android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
 import static android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE;
 
@@ -154,8 +156,6 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
 
         PreferenceConfiguration pref=PreferenceConfiguration.readPreferences(this);
 
-        findViewById(R.id.iv_logo).setVisibility(pref.hide_screen_logo?View.GONE:View.VISIBLE);
-
         if(pref.enableScreenBg&&Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
             File imageFile=new File(getFilesDir().getAbsolutePath(),"axi_screen_bg.png");
             if(imageFile.exists()){
@@ -178,19 +178,19 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
         }else{
             imageView.setVisibility(View.GONE);
         }
+        TextView tx_label=findViewById(R.id.tx_label);
         if(!TextUtils.isEmpty(pref.screenLabel)){
-            TextView tx_label=findViewById(R.id.tx_label);
             tx_label.setText(pref.screenLabel);
         }
+        tx_label.setOnClickListener(v -> {
+            startActivity(new Intent(this,AboutActivity.class));
+        });
         // Setup the list view
         ImageButton settingsButton = findViewById(R.id.settingsButton);
         ImageButton addComputerButton = findViewById(R.id.manuallyAddPc);
         ImageButton helpButton = findViewById(R.id.helpButton);
         ImageButton axButton = findViewById(R.id.axiButton);
-
-        axButton.setVisibility(PreferenceConfiguration.readPreferences(this).enableGamePadIcon?View.VISIBLE:View.GONE);
-
-
+        axButton.setVisibility(View.VISIBLE);
         settingsButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -221,7 +221,7 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
         axButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i = new Intent(PcView.this, AxiTestActivity.class);
+                Intent i = new Intent(PcView.this, AxiGamePadIndexActivity.class);
                 startActivity(i);
             }
         });

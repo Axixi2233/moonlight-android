@@ -137,7 +137,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     private ControllerHandler controllerHandler;
     private KeyboardTranslator keyboardTranslator;
-    private VirtualController virtualController;
+    private KeyBoardController virtualController;
 
     private KeyBoardController keyBoardController;
 
@@ -662,8 +662,18 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             showSecondScreen();
         }
 
+        //强制体感
+        setMotionForceGyro();
+
         setPerformanceOverlayLiteMagin();
 
+        addPerformanceOverlayLiteLeftIcon();
+
+//        initFloatingView();
+
+    }
+
+    private void addPerformanceOverlayLiteLeftIcon(){
         NetworkInfo networkInfo=connManager.getActiveNetworkInfo();
         if(networkInfo==null){
             return;
@@ -672,22 +682,21 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         if(networkInfo.getType() == ConnectivityManager.TYPE_MOBILE){
             drawable = getResources().getDrawable(R.drawable.icon_axi_mobile);
         }
-        drawable.setBounds(0, 0, drawable.getMinimumWidth(),
-                drawable.getMinimumHeight());
+        int textSize = (int) performanceOverlayLite.getTextSize();
+        // 设置 Drawable 的宽和高与文字大小一致（或者按比例，如 0.8f）
+        drawable.setBounds(0, 0, textSize, textSize);
         performanceOverlayLite.setCompoundDrawables(drawable, null,null, null);
-//        initFloatingView();
-
     }
 
     private void initKeyboardController(){
-        keyBoardController=new KeyBoardController(controllerHandler,(FrameLayout)rootView, this,prefConfig);
+        keyBoardController=new KeyBoardController(controllerHandler,findViewById(R.id.fv_keyboard), this,prefConfig,false);
         keyBoardController.refreshLayout();
         keyBoardController.show();
     }
 
 
     private void initVirtualController(){
-        virtualController = new VirtualController(controllerHandler, (FrameLayout)rootView, this,prefConfig);
+        virtualController = new KeyBoardController(controllerHandler,findViewById(R.id.fv_game_pad), this,prefConfig,true);
         virtualController.refreshLayout();
         virtualController.show();
     }
@@ -765,6 +774,11 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT);
                 return;
             }
+            //解锁横竖屏切换
+            if(prefConfig.autoScreenOrientation){
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_USER);
+                return;
+            }
             // For regular displays, we always request landscape
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE);
         }
@@ -798,10 +812,12 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
                 if (virtualController != null) {
                     virtualController.hide();
+                    prefConfig.onscreenController=false;
                 }
 
                 if (keyBoardController != null) {
                     keyBoardController.hide();
+                    prefConfig.enableKeyboard=false;
                 }
 
                 if(keyBoardLayoutController!=null){
@@ -821,27 +837,17 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 isHidingOverlays = false;
 
                 // Restore overlays to previous state when leaving PiP
-
-                if (virtualController != null) {
-                    if(prefConfig.onscreenController){
-                        virtualController.show();
-                    }else{
-                        virtualController.hide();
-                    }
-                }
-
-                if (keyBoardController != null) {
-                    if(prefConfig.enableKeyboard){
-                        keyBoardController.show();
-                    }else{
-                        keyBoardController.hide();
-                    }
-                }
-
-//                if(keyBoardLayoutController!=null){
-//                    keyBoardLayoutController.show();
+//                if (virtualController != null) {
+//                    if(!prefConfig.onscreenController){
+//                        virtualController.hide();
+//                    }
 //                }
-
+//
+//                if (keyBoardController != null) {
+//                    if(!prefConfig.enableKeyboard){
+//                        keyBoardController.hide();
+//                    }
+//                }
                 if (prefConfig.enablePerfOverlay) {
                     performanceOverlayView.setVisibility(View.VISIBLE);
                 }
@@ -2340,9 +2346,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             else
             {
                 if (virtualController != null &&
-                        (virtualController.getControllerMode() == VirtualController.ControllerMode.MoveButtons ||
-                         virtualController.getControllerMode() == VirtualController.ControllerMode.ResizeButtons||
-                         virtualController.getControllerMode() == VirtualController.ControllerMode.DisableEnableButtons)) {
+                        (virtualController.getControllerMode() == KeyBoardController.ControllerMode.MoveButtons ||
+                         virtualController.getControllerMode() == KeyBoardController.ControllerMode.ResizeButtons||
+                         virtualController.getControllerMode() == KeyBoardController.ControllerMode.DisableEnableButtons)) {
                     // Ignore presses when the virtual controller is being configured
                     return true;
                 }
@@ -2899,7 +2905,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     @Override
     public void setMotionEventState(short controllerNumber, byte motionType, short reportRateHz) {
-//        LimeLog.info("axi-->: controllerNumber" + controllerNumber+"-motionType:"+motionType+"-reportRateHz:"+reportRateHz);
+        LimeLog.info("axi-->: controllerNumber" + controllerNumber+"-motionType:"+motionType+"-reportRateHz:"+reportRateHz);
         controllerHandler.handleSetMotionEventState(controllerNumber, motionType, reportRateHz);
     }
 
@@ -3239,7 +3245,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     }
 
     //切换虚拟手柄模式
-    public void switchVirtualController(VirtualController.ControllerMode mode){
+    public void switchVirtualController(KeyBoardController.ControllerMode mode){
         if(virtualController==null){
             Toast.makeText(this,"请先打开虚拟手柄开关！",Toast.LENGTH_SHORT).show();
             return;
@@ -3248,9 +3254,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     }
     //返回虚拟手柄当前的状态
-    public VirtualController.ControllerMode getVirtualControllerMode(){
+    public KeyBoardController.ControllerMode getVirtualControllerMode(){
         if(virtualController==null){
-            return VirtualController.ControllerMode.NONE;
+            return KeyBoardController.ControllerMode.NONE;
         }
         return virtualController.getControllerMode();
     }
@@ -3453,6 +3459,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     public void setPerformanceOverlayZoom(){
         performanceOverlayLite.setTextSize(TypedValue.COMPLEX_UNIT_SP,prefConfig.gameSettingPrefZoom*0.1f);
         performanceOverlayBig.setTextSize(TypedValue.COMPLEX_UNIT_SP,prefConfig.gameSettingPrefZoom*0.13f);
+        addPerformanceOverlayLiteLeftIcon();
     }
 
     //设置ds5手柄的自适应扳机
@@ -3460,6 +3467,14 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         controllerHandler.setDualSenseTrigger(prefConfig.ds5TriggerMode,
                 prefConfig.ds5TriggerStrength,
                 prefConfig.ds5TriggerFrequency,prefConfig.ds5TriggerStart,prefConfig.ds5TriggerEnd);
+    }
+
+    public void setMotionForceGyro(){
+        if(prefConfig.gameForceGyro){
+            if(controllerHandler!=null){
+                controllerHandler.handleSetMotionEventState((short) 0, MoonBridge.LI_MOTION_TYPE_GYRO, (short) 100);
+            }
+        }
     }
 
     public KeyBoardController getKeyBoardController(){

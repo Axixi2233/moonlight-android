@@ -454,6 +454,14 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
                     .putBoolean("checkbox_enable_exdisplay",exDiaplay)
                     .putBoolean(PreferenceConfiguration.CHECKBOX_ENABLE_PORTRAIT,direction)
                     .commit();
+            if(prefConfig!=null){
+                prefConfig.width=width;
+                prefConfig.height=height;
+                prefConfig.bitrate=bitrate;
+                prefConfig.fps=fps;
+                prefConfig.enablePortrait=direction;
+                prefConfig.enableExDisplay=exDiaplay;
+            }
             dismiss();
             onClick.click();
             return;

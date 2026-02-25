@@ -1,16 +1,9 @@
-/**
- * Created by Karim Mreisi.
- */
-
 package com.limelight.binding.input.virtual_controller.keyboard;
-
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.view.MotionEvent;
-
-import com.limelight.binding.input.virtual_controller.VirtualController;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -213,46 +206,93 @@ public class KeyAnalogStick extends keyBoardVirtualControllerElement {
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         // calculate new radius sizes depending
         radius_complete = getPercent(getCorrectWidth() / 2, 100) - 2 * getDefaultStrokeWidth();
-        radius_dead_zone = getPercent(getCorrectWidth() / 2, 30);
-        radius_analog_stick = getPercent(getCorrectWidth() / 2, 20);
+        radius_dead_zone = getPercent(getCorrectWidth() / 2, 5);
+        radius_analog_stick = getPercent(getCorrectWidth() / 2, 30);
 
         super.onSizeChanged(w, h, oldw, oldh);
     }
 
     @Override
     protected void onElementDraw(Canvas canvas) {
-        // set transparent background
+        // 1. 基础设置
         canvas.drawColor(Color.TRANSPARENT);
+        float centerX = getWidth() / 2f;
+        float centerY = getHeight() / 2f;
+        float strokeW = getDefaultStrokeWidth();
 
+        // 2. 绘制【外圆边框】 (新增部分)
+        // 边框通常使用不透明或高亮色，与背景区分开
         paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(getDefaultStrokeWidth());
+        paint.setStrokeWidth(getDefaultStrokeWidth()); // 边框宽度
+        paint.setColor(strokeColor); // 使用你定义的描边颜色
+        canvas.drawCircle(centerX, centerY, radius_complete, paint);
 
-        // draw outer circle
+        // 3. 绘制【背景填充圆】
+        // 将 Style 改回填充或原本逻辑
+        paint.setStyle(isNomal() ? Paint.Style.FILL : Paint.Style.STROKE);
+        paint.setStrokeWidth(strokeW);
         if (!isPressed() || click_state == CLICK_STATE.SINGLE) {
             paint.setColor(getDefaultColor());
         } else {
             paint.setColor(pressedColor);
         }
-        canvas.drawCircle(getWidth() / 2, getHeight() / 2, radius_complete, paint);
+        // 半径减去边框宽度的一半，防止填充溢出边框
+        canvas.drawCircle(centerX, centerY, radius_complete, paint);
 
+        // 4. 绘制方向文字 (WASD)
+        if(textTipValues.length>3){
+            drawDirectionText(canvas, centerX, centerY);
+        }
+
+        // 5. 绘制死区
         paint.setColor(getDefaultColor());
-        // draw dead zone
-        canvas.drawCircle(getWidth() / 2, getHeight() / 2, radius_dead_zone, paint);
+        paint.setStyle(Paint.Style.FILL);
+        canvas.drawCircle(centerX, centerY, radius_dead_zone, paint);
 
-        // draw stick depending on state
+        // 6. 绘制摇杆球 (Stick)
         switch (stick_state) {
-            case NO_MOVEMENT: {
+            case NO_MOVEMENT:
                 paint.setColor(getDefaultColor());
-                canvas.drawCircle(getWidth() / 2, getHeight() / 2, radius_analog_stick, paint);
+                canvas.drawCircle(centerX, centerY, radius_analog_stick, paint);
                 break;
-            }
             case MOVED_IN_DEAD_ZONE:
-            case MOVED_ACTIVE: {
+            case MOVED_ACTIVE:
                 paint.setColor(pressedColor);
                 canvas.drawCircle(position_stick_x, position_stick_y, radius_analog_stick, paint);
                 break;
-            }
         }
+    }
+
+
+    protected String[] textTipValues={"W","A","S","D"};
+
+    /**
+     * 辅助方法：在外圈绘制方向文字
+     */
+    private void drawDirectionText(Canvas canvas, float centerX, float centerY) {
+        // 设置文字画笔属性
+        paint.setStyle(Paint.Style.FILL);
+        paint.setTextAlign(Paint.Align.CENTER);
+        // 根据摇杆大小动态设置字体大小（外圆半径的 25%）
+        paint.setTextSize(radius_complete * 0.25f);
+        // 使用文本颜色，建议带点透明度避免太突兀
+        paint.setColor(textColor);
+
+        // 计算文字偏移距离：放在外圆半径的 70% 处，防止被摇杆球完全遮挡
+        float offset = radius_complete * 0.7f;
+
+        // FontMetrics 用于精准修正垂直居中
+        Paint.FontMetrics fontMetrics = paint.getFontMetrics();
+        float distance = (fontMetrics.bottom - fontMetrics.top) / 2 - fontMetrics.bottom;
+
+        // 绘制 W / 上
+        canvas.drawText(textTipValues[0], centerX, centerY - offset + distance, paint);
+        // 绘制 S / 下
+        canvas.drawText(textTipValues[2], centerX, centerY + offset + distance, paint);
+        // 绘制 A / 左
+        canvas.drawText(textTipValues[1], centerX - offset, centerY + distance, paint);
+        // 绘制 D / 右
+        canvas.drawText(textTipValues[3], centerX + offset, centerY + distance, paint);
     }
 
     private void updatePosition(long eventTime) {
@@ -347,5 +387,9 @@ public class KeyAnalogStick extends keyBoardVirtualControllerElement {
         invalidate();
         // accept the touch event
         return true;
+    }
+
+    public void setTextTipValues(String[] textTipValues) {
+        this.textTipValues = textTipValues;
     }
 }

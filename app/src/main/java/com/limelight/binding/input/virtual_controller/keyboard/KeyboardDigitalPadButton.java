@@ -14,13 +14,12 @@ import android.view.MotionEvent;
 import com.limelight.R;
 import com.limelight.binding.input.virtual_controller.VirtualController;
 import com.limelight.preferences.PreferenceConfiguration;
+import com.limelight.utils.UiHelper;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class KeyboardDigitalPadButton extends keyBoardVirtualControllerElement{
-
-    private String value;
 
     public final static int DIGITAL_PAD_DIRECTION_NO_DIRECTION = 0;
     int direction = DIGITAL_PAD_DIRECTION_NO_DIRECTION;
@@ -35,6 +34,8 @@ public class KeyboardDigitalPadButton extends keyBoardVirtualControllerElement{
 
     private final Paint paint = new Paint();
 
+    protected String[] textTipValues={"W","A","S","D"};
+
     protected KeyboardDigitalPadButton(KeyBoardController controller, Context context, String elementId) {
         super(controller, context, elementId);
     }
@@ -43,223 +44,92 @@ public class KeyboardDigitalPadButton extends keyBoardVirtualControllerElement{
         listeners.add(listener);
     }
 
-    @Override
-    protected void onElementDraw(Canvas canvas) {
-        // set transparent background
-        canvas.drawColor(Color.TRANSPARENT);
-
-        paint.setTextSize(getPercent(getCorrectWidth(), 20));
-        paint.setTextAlign(Paint.Align.CENTER);
-        paint.setStrokeWidth(getDefaultStrokeWidth());
-
-        int oscOpacity= PreferenceConfiguration.readPreferences(getContext()).oscOpacity;
-
-        paint.setColor(isPressed() ? pressedColor:getDefaultColor());
-        rect.left = rect.top = paint.getStrokeWidth();
-        rect.right = getWidth() - rect.left;
-        rect.bottom = getHeight() - rect.top;
-
-        boolean bIsMoving = virtualController.getControllerMode() == KeyBoardController.ControllerMode.MoveButtons;
-        boolean bIsResizing = virtualController.getControllerMode() == KeyBoardController.ControllerMode.ResizeButtons;
-        boolean bIsEnable = virtualController.getControllerMode() == KeyBoardController.ControllerMode.DisableEnableButtons;
-
-        if (bIsMoving || bIsResizing || bIsEnable) {
-            paint.setStyle(Paint.Style.STROKE);
-            canvas.drawRect(rect,paint);
-        }
-
-        if (direction == DIGITAL_PAD_DIRECTION_NO_DIRECTION) {
-            Drawable d = getResources().getDrawable(R.mipmap.face_ps_dpad_normal);
-            d.setBounds(5, 5, getWidth() - 5, getHeight() - 5);
-            d.setAlpha((int) (oscOpacity*2.55));
-            d.draw(canvas);
-        }
-
-        if (direction == DIGITAL_PAD_DIRECTION_UP) {
-            Drawable d = getResources().getDrawable(R.mipmap.face_ps_dpad_up_press);
-            d.setBounds(5, 5, getWidth() - 5, getHeight() - 5);
-            d.setAlpha((int) (oscOpacity*2.55));
-            d.draw(canvas);
-        }
-
-        if (direction == DIGITAL_PAD_DIRECTION_DOWN) {
-            Drawable d = getResources().getDrawable(R.mipmap.face_ps_dpad_up_press);
-            Drawable newD=rotateDrawable(d,180);
-            newD.setBounds(5, 5, getWidth() - 5, getHeight() - 5);
-            newD.setAlpha((int) (oscOpacity*2.55));
-            newD.draw(canvas);
-        }
-
-        if (direction == DIGITAL_PAD_DIRECTION_LEFT) {
-            Drawable d = getResources().getDrawable(R.mipmap.face_ps_dpad_up_press);
-            Drawable newD=rotateDrawable(d,270);
-            newD.setBounds(5, 5, getWidth() - 5, getHeight() - 5);
-            newD.setAlpha((int) (oscOpacity*2.55));
-            newD.draw(canvas);
-        }
-
-        if (direction == DIGITAL_PAD_DIRECTION_RIGHT) {
-            Drawable d = getResources().getDrawable(R.mipmap.face_ps_dpad_up_press);
-            Drawable newD=rotateDrawable(d,90);
-            newD.setBounds(5, 5, getWidth() - 5, getHeight() - 5);
-            newD.setAlpha((int) (oscOpacity*2.55));
-            newD.draw(canvas);
-        }
-        //right up
-        if((direction & DIGITAL_PAD_DIRECTION_RIGHT) > 0 && (direction & DIGITAL_PAD_DIRECTION_UP) > 0){
-            Drawable d = getResources().getDrawable(R.mipmap.face_ps_dpad_up_left_press);
-            Drawable newD=rotateDrawable(d,90);
-            newD.setBounds(5, 5, getWidth() - 5, getHeight() - 5);
-            newD.setAlpha((int) (oscOpacity*2.55));
-            newD.draw(canvas);
-        }
-
-        if((direction & DIGITAL_PAD_DIRECTION_LEFT) > 0 && (direction & DIGITAL_PAD_DIRECTION_UP) > 0){
-            Drawable d = getResources().getDrawable(R.mipmap.face_ps_dpad_up_left_press);
-            d.setBounds(5, 5, getWidth() - 5, getHeight() - 5);
-            d.setAlpha((int) (oscOpacity*2.55));
-            d.draw(canvas);
-        }
-
-        if((direction & DIGITAL_PAD_DIRECTION_RIGHT) > 0 && (direction & DIGITAL_PAD_DIRECTION_DOWN) > 0){
-            Drawable d = getResources().getDrawable(R.mipmap.face_ps_dpad_up_left_press);
-            Drawable newD=rotateDrawable(d,180);
-            newD.setBounds(5, 5, getWidth() - 5, getHeight() - 5);
-            newD.setAlpha((int) (oscOpacity*2.55));
-            newD.draw(canvas);
-        }
-
-        if((direction & DIGITAL_PAD_DIRECTION_LEFT) > 0 && (direction & DIGITAL_PAD_DIRECTION_DOWN) > 0){
-            Drawable d = getResources().getDrawable(R.mipmap.face_ps_dpad_up_left_press);
-            Drawable newD=rotateDrawable(d,270);
-            newD.setBounds(5, 5, getWidth() - 5, getHeight() - 5);
-            newD.setAlpha((int) (oscOpacity*2.55));
-            newD.draw(canvas);
-        }
-
-
-//        if (direction == DIGITAL_PAD_DIRECTION_NO_DIRECTION) {
-//            // draw no direction rect
-//            paint.setStyle(Paint.Style.STROKE);
-//            paint.setColor(getDefaultColor());
-//            canvas.drawRect(
-//                    getPercent(getWidth(), 36), getPercent(getHeight(), 36),
-//                    getPercent(getWidth(), 63), getPercent(getHeight(), 63),
-//                    paint
-//            );
-//        }
-//
-//        // draw left rect
-//        paint.setColor(
-//                (direction & DIGITAL_PAD_DIRECTION_LEFT) > 0 ? pressedColor : getDefaultColor());
-//        paint.setStyle(Paint.Style.STROKE);
-//        canvas.drawRect(
-//                paint.getStrokeWidth()+DPAD_MARGIN, getPercent(getHeight(), 33),
-//                getPercent(getWidth(), 33), getPercent(getHeight(), 66),
-//                paint
-//        );
-//
-//
-//        // draw up rect
-//        paint.setColor(
-//                (direction & DIGITAL_PAD_DIRECTION_UP) > 0 ? pressedColor : getDefaultColor());
-//        paint.setStyle(Paint.Style.STROKE);
-//        canvas.drawRect(
-//                getPercent(getWidth(), 33), paint.getStrokeWidth()+DPAD_MARGIN,
-//                getPercent(getWidth(), 66), getPercent(getHeight(), 33),
-//                paint
-//        );
-//
-//        // draw right rect
-//        paint.setColor(
-//                (direction & DIGITAL_PAD_DIRECTION_RIGHT) > 0 ? pressedColor : getDefaultColor());
-//        paint.setStyle(Paint.Style.STROKE);
-//        canvas.drawRect(
-//                getPercent(getWidth(), 66), getPercent(getHeight(), 33),
-//                getWidth() - (paint.getStrokeWidth()+DPAD_MARGIN), getPercent(getHeight(), 66),
-//                paint
-//        );
-//
-//        // draw down rect
-//        paint.setColor(
-//                (direction & DIGITAL_PAD_DIRECTION_DOWN) > 0 ? pressedColor : getDefaultColor());
-//        paint.setStyle(Paint.Style.STROKE);
-//        canvas.drawRect(
-//                getPercent(getWidth(), 33), getPercent(getHeight(), 66),
-//                getPercent(getWidth(), 66), getHeight() - (paint.getStrokeWidth()+DPAD_MARGIN),
-//                paint
-//        );
-//
-//        // draw left up line
-//        paint.setColor((
-//                        (direction & DIGITAL_PAD_DIRECTION_LEFT) > 0 &&
-//                                (direction & DIGITAL_PAD_DIRECTION_UP) > 0
-//                ) ? pressedColor : getDefaultColor()
-//        );
-//        paint.setStyle(Paint.Style.STROKE);
-//        canvas.drawLine(
-//                paint.getStrokeWidth()+DPAD_MARGIN, getPercent(getHeight(), 33),
-//                getPercent(getWidth(), 33), paint.getStrokeWidth()+DPAD_MARGIN,
-//                paint
-//        );
-//
-//        // draw up right line
-//        paint.setColor((
-//                        (direction & DIGITAL_PAD_DIRECTION_UP) > 0 &&
-//                                (direction & DIGITAL_PAD_DIRECTION_RIGHT) > 0
-//                ) ? pressedColor : getDefaultColor()
-//        );
-//        paint.setStyle(Paint.Style.STROKE);
-//        canvas.drawLine(
-//                getPercent(getWidth(), 66), paint.getStrokeWidth()+DPAD_MARGIN,
-//                getWidth() - (paint.getStrokeWidth()+DPAD_MARGIN), getPercent(getHeight(), 33),
-//                paint
-//        );
-//
-//        // draw right down line
-//        paint.setColor((
-//                        (direction & DIGITAL_PAD_DIRECTION_RIGHT) > 0 &&
-//                                (direction & DIGITAL_PAD_DIRECTION_DOWN) > 0
-//                ) ? pressedColor : getDefaultColor()
-//        );
-//        paint.setStyle(Paint.Style.STROKE);
-//        canvas.drawLine(
-//                getWidth()-paint.getStrokeWidth(), getPercent(getHeight(), 66),
-//                getPercent(getWidth(), 66), getHeight()-(paint.getStrokeWidth()+DPAD_MARGIN),
-//                paint
-//        );
-//
-//        // draw down left line
-//        paint.setColor((
-//                        (direction & DIGITAL_PAD_DIRECTION_DOWN) > 0 &&
-//                                (direction & DIGITAL_PAD_DIRECTION_LEFT) > 0
-//                ) ? pressedColor : getDefaultColor()
-//        );
-//        paint.setStyle(Paint.Style.STROKE);
-//        canvas.drawLine(
-//                getPercent(getWidth(), 33), getHeight()-(paint.getStrokeWidth()+DPAD_MARGIN),
-//                paint.getStrokeWidth()+DPAD_MARGIN, getPercent(getHeight(), 66),
-//                paint
-//        );
+    public void setTextTipValues(String[] textTipValues) {
+        this.textTipValues = textTipValues;
     }
 
-    public Drawable rotateDrawable(Drawable vectorDrawable, float angle) {
-        int width = vectorDrawable.getIntrinsicWidth();
-        int height = vectorDrawable.getIntrinsicHeight();
-        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bitmap);
-        vectorDrawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
-        vectorDrawable.draw(canvas);
+    @Override
+    protected void onElementDraw(Canvas canvas) {
+        canvas.drawColor(Color.TRANSPARENT);
 
-        Matrix matrix = new Matrix();
-        matrix.postRotate(angle);
-        Bitmap rotatedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
-        return new BitmapDrawable(getResources(), rotatedBitmap);
+        // 1. 基础参数初始化
+        float width = getWidth();
+        float height = getHeight();
+        float minSide = Math.min(width, height);
+
+        // 开启抗锯齿，保证圆角平滑
+        paint.setAntiAlias(true);
+
+        // --- 文本大小优化：调小到 12% ~ 14% 左右比较灵巧 ---
+        paint.setTextSize(minSide * 0.12f);
+        paint.setTextAlign(Paint.Align.CENTER);
+        paint.setFakeBoldText(true); // 保持加粗以增加识别度
+
+        // 计算文字垂直居中偏移
+        Paint.FontMetrics fontMetrics = paint.getFontMetrics();
+        float textOffset = (fontMetrics.bottom - fontMetrics.top) / 2 - fontMetrics.bottom;
+
+        // 2. 坐标比例定义
+        // 33.5% 和 66.5% 留出极小的中间空隙，让视觉更干净
+        float p33 = width * 0.335f;
+        float p66 = width * 0.665f;
+        float cornerRadius = minSide * 0.10f; // 增加圆角，让按键更圆润
+
+        // --- 步骤 1：绘制四个独立的方向块 (删除了中心矩形绘制) ---
+        if(textTipValues.length<4){
+            paint.setFakeBoldText(false);
+            return;
+        }
+        // 上 (W)
+        drawStyledPart(canvas, p33, DPAD_MARGIN, p66, p33,
+                (direction & DIGITAL_PAD_DIRECTION_UP) > 0, textTipValues[0], textOffset, cornerRadius);
+
+        // 下 (S)
+        drawStyledPart(canvas, p33, p66, p66, height - DPAD_MARGIN,
+                (direction & DIGITAL_PAD_DIRECTION_DOWN) > 0, textTipValues[2], textOffset, cornerRadius);
+
+        // 左 (A)
+        drawStyledPart(canvas, DPAD_MARGIN, p33, p33, p66,
+                (direction & DIGITAL_PAD_DIRECTION_LEFT) > 0, textTipValues[1], textOffset, cornerRadius);
+
+        // 右 (D)
+        drawStyledPart(canvas, p66, p33, width - DPAD_MARGIN, p66,
+                (direction & DIGITAL_PAD_DIRECTION_RIGHT) > 0, textTipValues[3], textOffset, cornerRadius);
+
+        paint.setFakeBoldText(false); // 重置画笔状态
+    }
+
+    /**
+     * 优化后的独立按键绘制逻辑
+     */
+    private void drawStyledPart(Canvas canvas, float l, float t, float r, float b,
+                                boolean isPressed, String label, float textOffset, float radius) {
+        rect.set(l, t, r, b);
+        // 1. 绘制按键背景
+        paint.setStyle(isNomal() ? Paint.Style.FILL : Paint.Style.STROKE);
+        paint.setStrokeWidth(getDefaultStrokeWidth());
+        paint.setColor(isPressed ? pressedColor : getDefaultColor());
+        canvas.drawRoundRect(rect, radius, radius, paint);
+
+        // 2. 绘制精致描边 (始终保留细边框，增强立体感)
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(getDefaultStrokeWidth());
+        // 按下时高亮描边
+        paint.setColor(isPressed ? Color.WHITE : strokeColor);
+        canvas.drawRoundRect(rect, radius, radius, paint);
+
+        // 3. 绘制文字
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(textColor);
+
+        float centerX = rect.centerX();
+        float centerY = rect.centerY();
+
+        canvas.drawText(label, centerX, centerY + textOffset, paint);
     }
 
     private void newDirectionCallback(int direction) {
         _DBG("direction: " + direction);
-
         // notify listeners
         for (DigitalPadListener listener : listeners) {
             listener.onDirectionChange(direction);

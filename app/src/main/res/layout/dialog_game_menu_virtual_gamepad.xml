@@ -97,8 +97,7 @@
                     android:layout_marginRight="5dp"
                     android:layout_weight="1"
                     android:background="@drawable/ic_game_menu_btn_selector"
-                    android:drawableLeft="@drawable/ic_axi_game_pad_active"
-                    android:gravity="center_vertical|left"
+                    android:gravity="center"
                     android:drawablePadding="4dp"
                     android:padding="4dp"
                     android:button="@null"
@@ -112,105 +111,75 @@
                     android:layout_marginRight="5dp"
                     android:layout_weight="1"
                     android:background="@drawable/ic_game_menu_btn_selector"
-                    android:drawableLeft="@drawable/ic_axi_game_pad_move"
-                    android:gravity="center_vertical|left"
+                    android:gravity="center"
                     android:drawablePadding="4dp"
                     android:padding="4dp"
                     android:button="@null"
                     android:id="@+id/btn_game_virtual_move"
-                    android:text="位移"
-                    android:textSize="10dp" />
-
-                <RadioButton
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_marginRight="5dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/ic_game_menu_btn_selector"
-                    android:drawableLeft="@drawable/ic_axi_game_pad_zoom"
-                    android:gravity="center_vertical|left"
-                    android:drawablePadding="4dp"
-                    android:padding="4dp"
-                    android:button="@null"
-                    android:id="@+id/btn_game_virtual_zoom"
-                    android:text="缩放"
-                    android:textSize="10dp" />
-
-                <RadioButton
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:background="@drawable/ic_game_menu_btn_selector"
-                    android:drawableLeft="@drawable/ic_axi_game_pad_disable"
-                    android:gravity="center_vertical|left"
-                    android:drawablePadding="4dp"
-                    android:padding="4dp"
-                    android:button="@null"
-                    android:id="@+id/btn_game_virtual_disable"
-                    android:text="禁用"
+                    android:text="编辑模式"
                     android:textSize="10dp" />
 
             </RadioGroup>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="5dp"
-                android:text="按键皮肤"
-                android:textStyle="italic"
-                android:textColor="@android:color/white"
-                android:textSize="9dp" />
+<!--            <TextView-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_marginLeft="5dp"-->
+<!--                android:text="按键皮肤"-->
+<!--                android:textStyle="italic"-->
+<!--                android:textColor="@android:color/white"-->
+<!--                android:textSize="9dp" />-->
 
-            <RadioGroup
-                android:layout_width="match_parent"
-                android:layout_height="27dp"
-                android:layout_marginTop="4dp"
-                android:layout_marginRight="5dp"
-                android:layout_marginLeft="5dp"
-                android:layout_marginBottom="5dp"
-                android:id="@+id/rg_game_pad_skin"
-                android:orientation="horizontal">
+<!--            <RadioGroup-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="27dp"-->
+<!--                android:layout_marginTop="4dp"-->
+<!--                android:layout_marginRight="5dp"-->
+<!--                android:layout_marginLeft="5dp"-->
+<!--                android:layout_marginBottom="5dp"-->
+<!--                android:id="@+id/rg_game_pad_skin"-->
+<!--                android:orientation="horizontal">-->
 
-                <RadioButton
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_marginRight="5dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/ic_game_menu_btn_selector"
-                    android:gravity="center"
-                    android:padding="4dp"
-                    android:id="@+id/btn_game_pad_skin_1"
-                    android:button="@null"
-                    android:text="默认"
-                    android:textSize="10dp" />
+<!--                <RadioButton-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="match_parent"-->
+<!--                    android:layout_marginRight="5dp"-->
+<!--                    android:layout_weight="1"-->
+<!--                    android:background="@drawable/ic_game_menu_btn_selector"-->
+<!--                    android:gravity="center"-->
+<!--                    android:padding="4dp"-->
+<!--                    android:id="@+id/btn_game_pad_skin_1"-->
+<!--                    android:button="@null"-->
+<!--                    android:text="默认"-->
+<!--                    android:textSize="10dp" />-->
 
-                <RadioButton
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_marginRight="5dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/ic_game_menu_btn_selector"
-                    android:gravity="center"
-                    android:padding="4dp"
-                    android:id="@+id/btn_game_pad_skin_2"
-                    android:button="@null"
-                    android:text="NS皮肤"
-                    android:textSize="10dp" />
+<!--                <RadioButton-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="match_parent"-->
+<!--                    android:layout_marginRight="5dp"-->
+<!--                    android:layout_weight="1"-->
+<!--                    android:background="@drawable/ic_game_menu_btn_selector"-->
+<!--                    android:gravity="center"-->
+<!--                    android:padding="4dp"-->
+<!--                    android:id="@+id/btn_game_pad_skin_2"-->
+<!--                    android:button="@null"-->
+<!--                    android:text="NS皮肤"-->
+<!--                    android:textSize="10dp" />-->
 
-                <RadioButton
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_marginRight="5dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/ic_game_menu_btn_selector"
-                    android:gravity="center"
-                    android:padding="4dp"
-                    android:id="@+id/btn_game_pad_skin_3"
-                    android:button="@null"
-                    android:text="PS皮肤"
-                    android:textSize="10dp" />
+<!--                <RadioButton-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="match_parent"-->
+<!--                    android:layout_marginRight="5dp"-->
+<!--                    android:layout_weight="1"-->
+<!--                    android:background="@drawable/ic_game_menu_btn_selector"-->
+<!--                    android:gravity="center"-->
+<!--                    android:padding="4dp"-->
+<!--                    android:id="@+id/btn_game_pad_skin_3"-->
+<!--                    android:button="@null"-->
+<!--                    android:text="PS皮肤"-->
+<!--                    android:textSize="10dp" />-->
 
-            </RadioGroup>
+<!--            </RadioGroup>-->
 
             <LinearLayout
                 android:layout_marginTop="5dp"
@@ -254,8 +223,7 @@
                     android:layout_marginRight="5dp"
                     android:layout_weight="1"
                     android:background="@drawable/ic_game_menu_btn_selector"
-                    android:drawableLeft="@drawable/ic_axi_game_pad_active"
-                    android:gravity="center_vertical|left"
+                    android:gravity="center"
                     android:drawablePadding="4dp"
                     android:padding="4dp"
                     android:button="@null"
@@ -269,45 +237,16 @@
                     android:layout_marginRight="5dp"
                     android:layout_weight="1"
                     android:background="@drawable/ic_game_menu_btn_selector"
-                    android:drawableLeft="@drawable/ic_axi_game_pad_move"
-                    android:gravity="center_vertical|left"
+                    android:gravity="center"
                     android:drawablePadding="4dp"
                     android:padding="4dp"
                     android:button="@null"
                     android:id="@+id/btn_game_virtual_key_move"
-                    android:text="位移"
-                    android:textSize="10dp" />
-
-                <RadioButton
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_marginRight="5dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/ic_game_menu_btn_selector"
-                    android:drawableLeft="@drawable/ic_axi_game_pad_zoom"
-                    android:gravity="center_vertical|left"
-                    android:drawablePadding="4dp"
-                    android:padding="4dp"
-                    android:button="@null"
-                    android:id="@+id/btn_game_virtual_key_zoom"
-                    android:text="缩放"
-                    android:textSize="10dp" />
-
-                <RadioButton
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:background="@drawable/ic_game_menu_btn_selector"
-                    android:drawableLeft="@drawable/ic_axi_game_pad_disable"
-                    android:gravity="center_vertical|left"
-                    android:drawablePadding="4dp"
-                    android:padding="4dp"
-                    android:button="@null"
-                    android:id="@+id/btn_game_virtual_key_disable"
-                    android:text="禁用"
+                    android:text="编辑模式"
                     android:textSize="10dp" />
 
             </RadioGroup>
+
 
             <TextView
                 android:layout_width="wrap_content"
@@ -394,92 +333,92 @@
 
             </RadioGroup>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="5dp"
-                android:text="组合键相关功能"
-                android:textStyle="italic"
-                android:textColor="@android:color/white"
-                android:textSize="9dp" />
+<!--            <TextView-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_marginLeft="5dp"-->
+<!--                android:text="组合键相关功能"-->
+<!--                android:textStyle="italic"-->
+<!--                android:textColor="@android:color/white"-->
+<!--                android:textSize="9dp" />-->
 
-            <Button
-                android:layout_width="match_parent"
-                android:layout_height="34dp"
-                android:layout_marginTop="4dp"
-                android:layout_marginRight="5dp"
-                android:layout_marginLeft="5dp"
-                android:layout_marginBottom="5dp"
-                android:background="@drawable/ic_game_menu_btn_selector"
-                android:drawableLeft="@drawable/ic_axi_keyboard_list"
-                android:drawablePadding="4dp"
-                android:drawableRight="@drawable/ic_axi_arrow"
-                android:gravity="left|center_vertical"
-                android:padding="10dp"
-                android:text="自定义虚拟按键列表"
-                android:id="@+id/bt_keyboard_list"
-                android:textSize="10dp" />
+<!--            <Button-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="34dp"-->
+<!--                android:layout_marginTop="4dp"-->
+<!--                android:layout_marginRight="5dp"-->
+<!--                android:layout_marginLeft="5dp"-->
+<!--                android:layout_marginBottom="5dp"-->
+<!--                android:background="@drawable/ic_game_menu_btn_selector"-->
+<!--                android:drawableLeft="@drawable/ic_axi_keyboard_list"-->
+<!--                android:drawablePadding="4dp"-->
+<!--                android:drawableRight="@drawable/ic_axi_arrow"-->
+<!--                android:gravity="left|center_vertical"-->
+<!--                android:padding="10dp"-->
+<!--                android:text="自定义虚拟按键列表"-->
+<!--                android:id="@+id/bt_keyboard_list"-->
+<!--                android:textSize="10dp" />-->
 
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="5dp"
-                android:text="APP内置按键布局文件"
-                android:textStyle="italic"
-                android:textColor="@android:color/white"
-                android:textSize="9dp" />
+<!--            <TextView-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_marginLeft="5dp"-->
+<!--                android:text="APP内置按键布局文件"-->
+<!--                android:textStyle="italic"-->
+<!--                android:textColor="@android:color/white"-->
+<!--                android:textSize="9dp" />-->
 
-            <RadioGroup
-                android:layout_width="match_parent"
-                android:layout_height="27dp"
-                android:layout_marginTop="4dp"
-                android:layout_marginRight="5dp"
-                android:layout_marginLeft="5dp"
-                android:layout_marginBottom="5dp"
-                android:id="@+id/rg_game_virtual_key_file"
-                android:orientation="horizontal">
+<!--            <RadioGroup-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="27dp"-->
+<!--                android:layout_marginTop="4dp"-->
+<!--                android:layout_marginRight="5dp"-->
+<!--                android:layout_marginLeft="5dp"-->
+<!--                android:layout_marginBottom="5dp"-->
+<!--                android:id="@+id/rg_game_virtual_key_file"-->
+<!--                android:orientation="horizontal">-->
 
-                <RadioButton
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_marginRight="5dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/ic_game_menu_btn_selector"
-                    android:gravity="center"
-                    android:padding="4dp"
-                    android:id="@+id/btn_game_virtual_key_file_1"
-                    android:button="@null"
-                    android:text="完整"
-                    android:textSize="10dp" />
+<!--                <RadioButton-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="match_parent"-->
+<!--                    android:layout_marginRight="5dp"-->
+<!--                    android:layout_weight="1"-->
+<!--                    android:background="@drawable/ic_game_menu_btn_selector"-->
+<!--                    android:gravity="center"-->
+<!--                    android:padding="4dp"-->
+<!--                    android:id="@+id/btn_game_virtual_key_file_1"-->
+<!--                    android:button="@null"-->
+<!--                    android:text="完整"-->
+<!--                    android:textSize="10dp" />-->
 
-                <RadioButton
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_marginRight="5dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/ic_game_menu_btn_selector"
-                    android:gravity="center"
-                    android:padding="4dp"
-                    android:id="@+id/btn_game_virtual_key_file_2"
-                    android:button="@null"
-                    android:text="精简"
-                    android:textSize="10dp" />
+<!--                <RadioButton-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="match_parent"-->
+<!--                    android:layout_marginRight="5dp"-->
+<!--                    android:layout_weight="1"-->
+<!--                    android:background="@drawable/ic_game_menu_btn_selector"-->
+<!--                    android:gravity="center"-->
+<!--                    android:padding="4dp"-->
+<!--                    android:id="@+id/btn_game_virtual_key_file_2"-->
+<!--                    android:button="@null"-->
+<!--                    android:text="精简"-->
+<!--                    android:textSize="10dp" />-->
 
-                <RadioButton
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_marginRight="5dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/ic_game_menu_btn_selector"
-                    android:gravity="center"
-                    android:padding="4dp"
-                    android:id="@+id/btn_game_virtual_key_file_3"
-                    android:button="@null"
-                    android:text="空白"
-                    android:textSize="10dp" />
+<!--                <RadioButton-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="match_parent"-->
+<!--                    android:layout_marginRight="5dp"-->
+<!--                    android:layout_weight="1"-->
+<!--                    android:background="@drawable/ic_game_menu_btn_selector"-->
+<!--                    android:gravity="center"-->
+<!--                    android:padding="4dp"-->
+<!--                    android:id="@+id/btn_game_virtual_key_file_3"-->
+<!--                    android:button="@null"-->
+<!--                    android:text="空白"-->
+<!--                    android:textSize="10dp" />-->
 
-            </RadioGroup>
+<!--            </RadioGroup>-->
 
             <LinearLayout
                 android:layout_marginTop="10dp"
@@ -527,18 +466,23 @@
                     android:text="按键震动"
                     android:textSize="11dp" />
 
-                <Button
+                <View
+                    android:layout_weight="0.5"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:background="@drawable/ic_game_menu_btn_selector"
-                    android:drawablePadding="4dp"
-                    android:layout_marginRight="5dp"
-                    android:drawableTop="@drawable/ic_axi_free_rocker"
-                    android:padding="4dp"
-                    android:id="@+id/btn_free_rocker"
-                    android:text="自由摇杆"
-                    android:textSize="11dp" />
+                    android:layout_height="match_parent"/>
+
+<!--                <Button-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="match_parent"-->
+<!--                    android:layout_weight="1"-->
+<!--                    android:background="@drawable/ic_game_menu_btn_selector"-->
+<!--                    android:drawablePadding="4dp"-->
+<!--                    android:layout_marginRight="5dp"-->
+<!--                    android:drawableTop="@drawable/ic_axi_free_rocker"-->
+<!--                    android:padding="4dp"-->
+<!--                    android:id="@+id/btn_free_rocker"-->
+<!--                    android:text="自由摇杆"-->
+<!--                    android:textSize="11dp" />-->
 
 <!--                <Button-->
 <!--                    android:layout_width="match_parent"-->
@@ -553,19 +497,79 @@
 <!--                    android:text="NS皮肤"-->
 <!--                    android:textSize="11dp" />-->
 
-                <Button
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:background="@drawable/ic_game_menu_btn_selector"
-                    android:drawablePadding="4dp"
-                    android:drawableTop="@drawable/ic_axi_quare"
-                    android:padding="4dp"
-                    android:id="@+id/btn_button_square"
-                    android:text="方形按钮"
-                    android:textSize="11dp" />
+<!--                <Button-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="match_parent"-->
+<!--                    android:layout_weight="1"-->
+<!--                    android:background="@drawable/ic_game_menu_btn_selector"-->
+<!--                    android:drawablePadding="4dp"-->
+<!--                    android:drawableTop="@drawable/ic_axi_quare"-->
+<!--                    android:padding="4dp"-->
+<!--                    android:id="@+id/btn_button_square"-->
+<!--                    android:text="方形按钮"-->
+<!--                    android:textSize="11dp" />-->
 
             </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="5dp"
+                android:text="控件默认模式颜色(手柄与按键通用)"
+                android:textColor="@android:color/white"
+                android:textSize="10dp" />
+
+            <RadioGroup
+                android:layout_width="match_parent"
+                android:layout_height="27dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginRight="5dp"
+                android:layout_marginLeft="5dp"
+                android:layout_marginBottom="5dp"
+                android:id="@+id/rg_game_virtual_key_color"
+                android:orientation="horizontal">
+
+                <RadioButton
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/btn_game_virtual_key_color_1"
+                    android:button="@null"
+                    android:text="黑色"
+                    android:textSize="10dp" />
+
+                <RadioButton
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/btn_game_virtual_key_color_2"
+                    android:button="@null"
+                    android:text="白色"
+                    android:textSize="10dp" />
+
+                <RadioButton
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/btn_game_virtual_key_color_3"
+                    android:button="@null"
+                    android:text="灰色"
+                    android:textSize="10dp" />
+
+            </RadioGroup>
+
 
             <TextView
                 android:layout_width="wrap_content"
@@ -602,45 +606,6 @@
                     android:textColor="@android:color/white"
                     android:textStyle="italic"
                     android:id="@+id/tx_adjust_virtual_gamepad"
-                    android:textSize="10dp" />
-
-            </LinearLayout>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="5dp"
-                android:text="自由摇杆透明度"
-                android:textColor="@android:color/white"
-                android:textSize="10dp" />
-
-            <LinearLayout
-                android:orientation="vertical"
-                android:layout_marginTop="6dp"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <SeekBar
-                    android:max="100"
-                    android:min="0"
-                    android:splitTrack="false"
-                    android:id="@+id/sb_adjust_free_rocker"
-                    android:progress="90"
-                    android:thumb="@android:color/transparent"
-                    android:progressDrawable="@drawable/ic_game_menu_seek_bg"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="left"
-                    android:layout_marginLeft="20dp"
-                    android:layout_marginTop="4dp"
-                    android:text="不透明度:100%"
-                    android:textStyle="italic"
-                    android:textColor="@android:color/white"
-                    android:id="@+id/tx_adjust_free_rocker"
                     android:textSize="10dp" />
 
             </LinearLayout>
@@ -761,64 +726,6 @@
 
             </LinearLayout>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="5dp"
-                android:text="控件默认模式颜色(手柄与按键通用)"
-                android:textColor="@android:color/white"
-                android:textSize="10dp" />
-
-            <RadioGroup
-                android:layout_width="match_parent"
-                android:layout_height="27dp"
-                android:layout_marginTop="4dp"
-                android:layout_marginRight="5dp"
-                android:layout_marginLeft="5dp"
-                android:layout_marginBottom="5dp"
-                android:id="@+id/rg_game_virtual_key_color"
-                android:orientation="horizontal">
-
-                <RadioButton
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_marginRight="5dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/ic_game_menu_btn_selector"
-                    android:gravity="center"
-                    android:padding="4dp"
-                    android:id="@+id/btn_game_virtual_key_color_1"
-                    android:button="@null"
-                    android:text="黑色"
-                    android:textSize="10dp" />
-
-                <RadioButton
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_marginRight="5dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/ic_game_menu_btn_selector"
-                    android:gravity="center"
-                    android:padding="4dp"
-                    android:id="@+id/btn_game_virtual_key_color_2"
-                    android:button="@null"
-                    android:text="白色"
-                    android:textSize="10dp" />
-
-                <RadioButton
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_marginRight="5dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/ic_game_menu_btn_selector"
-                    android:gravity="center"
-                    android:padding="4dp"
-                    android:id="@+id/btn_game_virtual_key_color_3"
-                    android:button="@null"
-                    android:text="灰色"
-                    android:textSize="10dp" />
-
-            </RadioGroup>
 
         </LinearLayout>
 

@@ -55,6 +55,10 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
 
     private SeekBar sb_game_setting_pref_zoom;
 
+    private SeekBar sb_game_setting_pref_magin_top;
+
+    private TextView tx_game_setting_pref_magin_top;
+
     private TextView tx_game_setting_pref_zoom;
     @Override
     public void bindView(View v) {
@@ -78,6 +82,10 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
         btn_game_force_gyro_switch=v.findViewById(R.id.btn_game_force_gyro_switch);
         sb_game_setting_pref_zoom=v.findViewById(R.id.sb_game_setting_pref_zoom);
         tx_game_setting_pref_zoom=v.findViewById(R.id.tx_game_setting_pref_zoom);
+
+        tx_game_setting_pref_magin_top=v.findViewById(R.id.tx_game_setting_pref_magin_top);
+        sb_game_setting_pref_magin_top=v.findViewById(R.id.sb_game_setting_pref_magin_top);
+
         if(!TextUtils.isEmpty(title)){
             tx_title.setText(title);
         }
@@ -86,6 +94,7 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
         initTouchNumber();
         initFloatBall();
         initPrefZoom();
+        initPrefMagin();
         ibtn_back.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -246,6 +255,9 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 prefConfig.gameForceGyro=isChecked;
                 setSetting("gameForceGyro",isChecked);
+                if(onClick!=null){
+                    onClick.click(4,isChecked);
+                }
             }
         });
 
@@ -272,6 +284,28 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
                 initPrefZoom();
                 if(onClick!=null){
                     onClick.click(3,false);
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
+
+        sb_game_setting_pref_magin_top.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                prefConfig.performanceOverlayLiteMaginTop=progress;
+                saveSetting("performance_overlayLite_magin_top",progress);
+                initPrefMagin();
+                if(onClick!=null){
+                    onClick.click(5,false);
                 }
             }
 
@@ -391,6 +425,11 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
     private void initPrefZoom(){
         tx_game_setting_pref_zoom.setText("性能信息 缩放："+prefConfig.gameSettingPrefZoom+"%");
         sb_game_setting_pref_zoom.setProgress(prefConfig.gameSettingPrefZoom);
+    }
+
+    private void initPrefMagin(){
+        tx_game_setting_pref_magin_top.setText("性能信息 边距："+prefConfig.performanceOverlayLiteMaginTop);
+        sb_game_setting_pref_magin_top.setProgress(prefConfig.performanceOverlayLiteMaginTop);
     }
 
     @Override

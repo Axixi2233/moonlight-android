@@ -141,47 +141,83 @@ public class KeyBoardTouchPadButton extends keyBoardVirtualControllerElement {
         invalidate();
     }
 
+    private int code;
+
+    public void setCode(int code) {
+        this.code = code;
+    }
+
     int pressedColor = 0x805C5CAD;
 
     PreferenceConfiguration preferenceConfiguration;
 
     @Override
     protected void onElementDraw(Canvas canvas) {
-        // set transparent background
+        // 1. 清除背景
         canvas.drawColor(Color.TRANSPARENT);
 
-        paint.setTextSize(getPercent(getWidth(), 15));
-        paint.setTextAlign(Paint.Align.CENTER);
+        // 2. 初始化画笔与基础参数
+        float width = getWidth();
+        float height = getHeight();
+        float minSide = Math.min(width, height);
+        paint.setAntiAlias(true);
+
+        // 统一画笔属性
         paint.setStrokeWidth(getDefaultStrokeWidth());
 
+        // 计算描边内切矩形
+        float strokeW = paint.getStrokeWidth();
+        rect.set(strokeW, strokeW, width - strokeW, height - strokeW);
+
+        // 设置圆角（保持一致的圆润风格）
+        float cornerRadius = minSide * 0.15f;
+
+        // 3. 绘制背景
+        // 逻辑：按下时填充 pressedColor，常规时根据 isNomal() 决定填充或描边
         paint.setColor(isPressed() ? pressedColor : getDefaultColor());
+        paint.setStyle(isPressed() ? Paint.Style.FILL : (isNomal() ? Paint.Style.FILL : Paint.Style.STROKE));
+        canvas.drawRoundRect(rect, cornerRadius, cornerRadius, paint);
 
-        paint.setStyle(isPressed() ? Paint.Style.FILL_AND_STROKE : Paint.Style.STROKE);
+        // 4. 绘制精致描边 (始终存在，提升边缘质感)
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(getDefaultStrokeWidth());
+        paint.setColor(isPressed() ? Color.WHITE : strokeColor); // strokeColor 应在基类中统一定义
+        canvas.drawRoundRect(rect, cornerRadius, cornerRadius, paint);
 
-        rect.left = rect.top = paint.getStrokeWidth();
-        rect.right = getWidth() - rect.left;
-        rect.bottom = getHeight() - rect.top;
-//        canvas.drawRect(rect, paint);
-
-        canvas.drawRoundRect(rect, 15, 15, paint);
-
+        // 5. 绘制内容 (图标或文字)
         if (icon != -1) {
-            int oscOpacity=PreferenceConfiguration.readPreferences(getContext()).oscOpacity;
-            Drawable d = getResources().getDrawable(isPressed()? R.mipmap.face_ps_touchpad_press:R.mipmap.face_ps_touchpad_normal);
-            d.setBounds(5, 5, getWidth() - 5, getHeight() - 5);
-            d.setAlpha((int) (oscOpacity*2.55));
+            // --- 图标模式 ---
+            int oscOpacity = PreferenceConfiguration.readPreferences(getContext()).oscOpacity;
+            Drawable d = getResources().getDrawable(isPressed() ?
+                    R.mipmap.face_ps_touchpad_press : R.mipmap.face_ps_touchpad_normal);
+            // 动态计算 Padding：保持图标在中间，不紧贴边缘
+            int padding = (int) (minSide * 0.15f);
+            d.setBounds(padding, padding, (int)width - padding, (int)height - padding);
+            d.setAlpha((int) (oscOpacity * 2.55));
             d.draw(canvas);
-            boolean bIsMoving = virtualController.getControllerMode() == KeyBoardController.ControllerMode.MoveButtons;
-            boolean bIsResizing = virtualController.getControllerMode() == KeyBoardController.ControllerMode.ResizeButtons;
-            boolean bIsEnable = virtualController.getControllerMode() == KeyBoardController.ControllerMode.DisableEnableButtons;
-            if (bIsMoving || bIsResizing || bIsEnable) {
-                paint.setStyle(Paint.Style.STROKE);
-                canvas.drawRect(rect,paint);
+            // 编辑模式下的额外框线
+            boolean bIsEditing = virtualController.getControllerMode() == KeyBoardController.ControllerMode.MoveButtons ||
+                    virtualController.getControllerMode() == KeyBoardController.ControllerMode.ResizeButtons ||
+                    virtualController.getControllerMode() == KeyBoardController.ControllerMode.DisableEnableButtons;
+            if (bIsEditing) {
+                paint.setColor(Color.YELLOW); // 编辑模式使用显眼色
+                paint.setStrokeWidth(2);
+                canvas.drawRoundRect(rect, cornerRadius, cornerRadius, paint);
             }
-        } else {
-            paint.setStyle(Paint.Style.FILL_AND_STROKE);
-            paint.setStrokeWidth((float) getDefaultStrokeWidth() / 2);
-            canvas.drawText(text, getPercent(getWidth(), 50), getPercent(getHeight(), 60), paint);
+        } else if (!TextUtils.isEmpty(text)) {
+            // --- 文字模式 ---
+            paint.setColor(textColor);
+            paint.setStyle(Paint.Style.FILL);
+            paint.setFakeBoldText(true);
+            paint.setTextSize(minSide * 0.1f); // 调小一点，显得更精致
+            paint.setTextAlign(Paint.Align.CENTER);
+
+            // 文字垂直居中核心逻辑
+            Paint.FontMetrics fontMetrics = paint.getFontMetrics();
+            float textOffset = (fontMetrics.bottom - fontMetrics.top) / 2 - fontMetrics.bottom;
+            canvas.drawText(text, width / 2f, (height / 2f) + textOffset, paint);
+
+            paint.setFakeBoldText(false);
         }
     }
 
@@ -258,7 +294,7 @@ public class KeyBoardTouchPadButton extends keyBoardVirtualControllerElement {
                 }
                 if (event.getEventTime() - originalTouchTime > 100 && !isPressed()) {
                     setPressed(true);
-                    if(TextUtils.equals(elementId,"m_9")||TextUtils.equals(elementId,"m_11")||TextUtils.equals(elementId,"m_12")){
+                    if(code==9||code==11||code==12){
                         onClickCallback();
                     }
                 }

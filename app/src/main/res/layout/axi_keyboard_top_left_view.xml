@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:padding="5dp"
+    android:gravity="center_vertical"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:id="@+id/lv_right_view"
+        android:layout_width="190dp"
+        android:gravity="center"
+        android:layout_margin="5dp"
+        android:padding="10dp"
+        android:background="@drawable/ic_top_view_left_bg"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:text="当前按钮：xx"
+            android:textSize="12sp"
+            android:id="@+id/tx_name"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+        <TextView
+            android:text="键值：xx"
+            android:id="@+id/tx_desc"
+            android:textSize="11sp"
+            android:textColor="@android:color/white"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:text="坐标：xx"
+            android:id="@+id/tx_margin"
+            android:textSize="11sp"
+            android:textColor="@android:color/white"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:text="缩放比例：100%"
+            android:textSize="11sp"
+            android:id="@+id/tx_zoom"
+            android:textColor="@android:color/white"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <SeekBar
+            android:max="300"
+            android:min="50"
+            android:id="@+id/sb_zoom_x"
+            android:progress="100"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="4dp"
+            android:splitTrack="false"
+            android:thumb="@android:color/transparent"
+            android:progressDrawable="@drawable/ic_game_menu_seek_bg"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <LinearLayout
+            android:gravity="center"
+            android:visibility="gone"
+            android:id="@+id/lv_zoom_wh"
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:text="缩放宽度：100%"
+                android:textSize="11sp"
+                android:id="@+id/tx_zoom_w"
+                android:textColor="@android:color/white"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+            <SeekBar
+                android:max="300"
+                android:min="50"
+                android:id="@+id/sb_zoom_w"
+                android:progress="100"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"
+                android:splitTrack="false"
+                android:thumb="@android:color/transparent"
+                android:progressDrawable="@drawable/ic_game_menu_seek_bg"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+
+            <TextView
+                android:text="缩放高度：100%"
+                android:textSize="11sp"
+                android:id="@+id/tx_zoom_h"
+                android:textColor="@android:color/white"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+            <SeekBar
+                android:max="300"
+                android:min="50"
+                android:id="@+id/sb_zoom_h"
+                android:progress="100"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"
+                android:splitTrack="false"
+                android:thumb="@android:color/transparent"
+                android:progressDrawable="@drawable/ic_game_menu_seek_bg"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+
+        </LinearLayout>
+
+
+        <CheckBox
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:padding="4dp"
+            android:textSize="11sp"
+            android:id="@+id/cb_round"
+            android:text="方形按钮" />
+
+        <TextView
+            android:text="删除"
+            android:textSize="11sp"
+            android:layout_marginTop="4dp"
+            android:layout_marginLeft="5dp"
+            android:layout_marginRight="5dp"
+            android:layout_marginBottom="4dp"
+            android:gravity="center"
+            android:id="@+id/tx_del"
+            android:textColor="#FB4545"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:text="取消"
+            android:textSize="11sp"
+            android:gravity="center"
+            android:layout_marginTop="4dp"
+            android:layout_marginLeft="5dp"
+            android:layout_marginRight="5dp"
+            android:layout_marginBottom="4dp"
+            android:textColor="#2EA1FB"
+            android:id="@+id/tx_cancel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+    </LinearLayout>
+
+
+</LinearLayout>

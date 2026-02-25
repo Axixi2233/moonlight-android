@@ -1,7 +1,10 @@
 package com.limelight.ui.gamemenu;
 
+import android.graphics.Rect;
+import android.os.Build;
 import android.text.TextUtils;
 import android.view.View;
+import android.view.WindowMetrics;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
@@ -45,6 +48,27 @@ public class GameDisplayResolutionFragment extends BaseGameMenuDialog implements
         initViewData();
         ibtn_back.setOnClickListener(this);
         v.findViewById(R.id.btn_right).setOnClickListener(this);
+        TextView tx=v.findViewWithTag("5");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            WindowMetrics windowMetrics = getActivity().getWindowManager().getCurrentWindowMetrics();
+            Rect bounds = windowMetrics.getBounds();
+            bounds.width();
+            tx.setText(bounds.width()+"x"+bounds.height());
+        }else{
+            tx.setText(getResources().getDisplayMetrics().widthPixels+"x"+getResources().getDisplayMetrics().heightPixels);
+        }
+        for (int i = 0; i < 6; i++) {
+            TextView textView=v.findViewWithTag(""+i);
+            textView.setOnClickListener(v1 -> {
+                String txt=textView.getText().toString().trim();
+                String[] strings=txt.split("x");
+                if(onClick==null){
+                    return;
+                }
+                onClick.click(Integer.parseInt(strings[0]),Integer.parseInt(strings[1]));
+                dismiss();
+            });
+        }
     }
 
     private void initViewData() {

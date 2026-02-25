@@ -2,7 +2,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bgColor"
+    android:background="@drawable/bg_gradient_axi_main"
     tools:ignore="MissingDefaultResource">
 
     <ImageView
@@ -18,28 +18,17 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <LinearLayout
-            android:gravity="center"
+        <TextView
+            android:layout_marginLeft="35dp"
             android:layout_marginTop="15dp"
-            android:layout_marginLeft="25dp"
+            android:text="@string/app_label"
+            android:textSize="22sp"
+            android:id="@+id/tx_label"
+            android:gravity="center"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
             android:layout_width="wrap_content"
-            android:layout_height="48dp">
-            <ImageView
-                android:id="@+id/iv_logo"
-                android:src="@drawable/app_icon_axi"
-                android:layout_width="36dp"
-                android:layout_height="36dp"/>
-            <TextView
-                android:layout_marginLeft="10dp"
-                android:text="@string/app_label"
-                android:textSize="12dp"
-                android:id="@+id/tx_label"
-                android:textColor="@android:color/white"
-                android:textStyle="bold|italic"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
-
-        </LinearLayout>
+            android:layout_height="48dp"/>
 
 
         <LinearLayout

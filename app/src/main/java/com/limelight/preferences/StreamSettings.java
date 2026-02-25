@@ -35,9 +35,7 @@ import android.view.WindowInsets;
 import android.widget.EditText;
 import android.widget.Toast;
 import com.google.gson.Gson;
-import com.limelight.AxiTestActivity;
 import com.limelight.BuildConfig;
-import com.limelight.GameMenu;
 import com.limelight.LimeLog;
 import com.limelight.PcView;
 import com.limelight.R;
@@ -48,14 +46,10 @@ import com.limelight.nvstream.http.ComputerDetails;
 import com.limelight.utils.Dialog;
 import com.limelight.utils.FileUriUtils;
 import com.limelight.utils.UiHelper;
-import org.json.JSONObject;
 import java.io.File;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import static com.limelight.ui.gamemenu.GameListKeyBoardFragment.PREF_KEYBOARD_LIST_NAME;
 
 public class StreamSettings extends Activity {
     private PreferenceConfiguration previousPrefs;
@@ -719,17 +713,6 @@ public class StreamSettings extends Activity {
                 }
             });
 
-            findPreference("import_keyboard_user_list_file").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-                @Override
-                public boolean onPreferenceClick(Preference preference) {
-                    Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-                    intent.addCategory(Intent.CATEGORY_OPENABLE);
-                    intent.setType("text/plain");
-                    startActivityForResult(intent, READ_REQUEST_KEYBOARD_USER_LIST_CODE);
-                    return false;
-                }
-            });
-
             findPreference("import_computers_data_file").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
                 @Override
                 public boolean onPreferenceClick(Preference preference) {
@@ -763,26 +746,6 @@ public class StreamSettings extends Activity {
                 }
             });
 
-            findPreference("import_special_button_file").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-                @Override
-                public boolean onPreferenceClick(Preference preference) {
-                    Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-                    intent.addCategory(Intent.CATEGORY_OPENABLE);
-                    intent.setType("application/json");
-                    startActivityForResult(intent, READ_REQUEST_SPECIAL_CODE);
-                    return false;
-                }
-            });
-            findPreference("import_keyboard_json_file").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-                @Override
-                public boolean onPreferenceClick(Preference preference) {
-                    Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-                    intent.addCategory(Intent.CATEGORY_OPENABLE);
-                    intent.setType("application/json");
-                    startActivityForResult(intent, READ_REQUEST_VIRTUAL_BUTTON_CODE);
-                    return false;
-                }
-            });
             findPreference("import_switch_button_file").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
                 @Override
                 public boolean onPreferenceClick(Preference preference) {
@@ -804,49 +767,16 @@ public class StreamSettings extends Activity {
                 }
             });
 
-
             findPreference("export_keyboard_file").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
                 @Override
                 public boolean onPreferenceClick(Preference preference) {
-                    File file = new File(getActivity().getExternalCacheDir(),"export_settings");
-                    if(!file.exists()){
-                        file.mkdir();
-                    }
                     String name = PreferenceManager.getDefaultSharedPreferences(getActivity()).getString(KeyBoardControllerConfigurationLoader.OSC_PREFERENCE, KeyBoardControllerConfigurationLoader.OSC_PREFERENCE_VALUE);
-                    File file1= getJsonContent(getActivity(),file,name);
-                    if(file1==null){
-                        Toast.makeText(getActivity(),"出错啦~",Toast.LENGTH_SHORT).show();
+                    Uri uri=FileUriUtils.getKeyBoardFile(getActivity(),"axi_"+name+".txt");
+                    if(uri==null){
                         return false;
                     }
-                    Uri uri;
                     Intent intent = new Intent(Intent.ACTION_SEND);
                     intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                    String authority= BuildConfig.APPLICATION_ID+".fileprovider";
-                    uri= FileProvider.getUriForFile(getActivity(),authority,file1);
-                    intent.putExtra(Intent.EXTRA_STREAM, uri);
-                    intent.setType("text/plain");
-                    startActivity(Intent.createChooser(intent,"保存配置文件"));
-                    return false;
-                }
-            });
-
-            findPreference("export_keyboard_user_list_file").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-                @Override
-                public boolean onPreferenceClick(Preference preference) {
-                    File file = new File(getActivity().getExternalCacheDir(),"export_settings");
-                    if(!file.exists()){
-                        file.mkdir();
-                    }
-                    File file1= getJsonContent(getActivity(),file,PREF_KEYBOARD_LIST_NAME);
-                    if(file1==null){
-                        Toast.makeText(getActivity(),"出错啦~",Toast.LENGTH_SHORT).show();
-                        return false;
-                    }
-                    Uri uri;
-                    Intent intent = new Intent(Intent.ACTION_SEND);
-                    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                    String authority= BuildConfig.APPLICATION_ID+".fileprovider";
-                    uri= FileProvider.getUriForFile(getActivity(),authority,file1);
                     intent.putExtra(Intent.EXTRA_STREAM, uri);
                     intent.setType("text/plain");
                     startActivity(Intent.createChooser(intent,"保存配置文件"));
@@ -911,16 +841,6 @@ public class StreamSettings extends Activity {
                 }
             });
 
-
-            findPreference("pref_axi_test").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-                @Override
-                public boolean onPreferenceClick(Preference preference) {
-                    Intent intent=new Intent(getActivity(), AxiTestActivity.class);
-                    getActivity().startActivity(intent);
-                    return false;
-                }
-            });
-
             EditTextPreference bitrateEditPre= (EditTextPreference) findPreference("edit_diy_bitrate");
             EditText editText=bitrateEditPre.getEditText();
 
@@ -956,23 +876,8 @@ public class StreamSettings extends Activity {
                     return true;
                 }
             });
-
-
-//            findPreference("checkbox_multi_touch_screen").setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-//                @Override
-//                public boolean onPreferenceChange(Preference preference, Object newValue) {
-//
-//                    if(((Boolean) newValue)){
-//                        CheckBoxPreference checkBoxPreference= (CheckBoxPreference) findPreference(PreferenceConfiguration.TOUCHSCREEN_TRACKPAD_PREF_STRING);
-//                        checkBoxPreference.setChecked(false);
-//                    }
-//
-//                    return true;
-//                }
-//            });
         }
         int READ_REQUEST_CODE=1001;
-        int READ_REQUEST_SPECIAL_CODE=1002;
 
         int READ_DATABASE_REQUEST_CODE=1003;
 
@@ -980,13 +885,9 @@ public class StreamSettings extends Activity {
 
         int READ_DATA_KEY_REQUEST_CODE=1005;
 
-        int READ_REQUEST_VIRTUAL_BUTTON_CODE=1006;
-
         int READ_REQUEST_SWITCH_BUTTON_CODE=1007;
 
         int READ_REQUEST_SCREEN_IMAGE_CODE=1008;
-
-        int READ_REQUEST_KEYBOARD_USER_LIST_CODE=1010;
 
         @Override
         public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -1000,62 +901,12 @@ public class StreamSettings extends Activity {
                         return;
                     }
                     String name = PreferenceManager.getDefaultSharedPreferences(getActivity()).getString(KeyBoardControllerConfigurationLoader.OSC_PREFERENCE, KeyBoardControllerConfigurationLoader.OSC_PREFERENCE_VALUE);
-                    SharedPreferences.Editor prefEditor = getActivity().getSharedPreferences(name, Activity.MODE_PRIVATE).edit();
-                    JSONObject object=new JSONObject(json);
-                    Iterator it = object.keys();
-                    prefEditor.clear();
-                    while(it.hasNext()) {
-                        String key = (String) it.next();// 获得key
-                        String value = object.getString(key);// 获得value
-                        prefEditor.putString(key,value);
+                    boolean result=FileUriUtils.saveKeyBoardJson(getActivity(),"axi_"+name+".txt",json);
+                    if(result){
+                        Toast.makeText(getActivity(),"导入成功！",Toast.LENGTH_SHORT).show();
+                    }else{
+                        Toast.makeText(getActivity(),"导入失败！",Toast.LENGTH_SHORT).show();
                     }
-                    prefEditor.apply();
-                    Toast.makeText(getActivity(),"导入成功！",Toast.LENGTH_SHORT).show();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Toast.makeText(getActivity(),"出错啦~"+e.getMessage(),Toast.LENGTH_SHORT).show();
-                }
-                return;
-            }
-
-            if (requestCode == READ_REQUEST_KEYBOARD_USER_LIST_CODE && resultCode == Activity.RESULT_OK &&data.getData()!=null) {
-                try {
-                    Uri uri = data.getData();
-                    String json=FileUriUtils.openUriForRead(getActivity(),uri);
-                    if(TextUtils.isEmpty(json)){
-                        Toast.makeText(getActivity(),"空文件~",Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    SharedPreferences.Editor prefEditor = getActivity().getSharedPreferences(PREF_KEYBOARD_LIST_NAME, Activity.MODE_PRIVATE).edit();
-                    JSONObject object=new JSONObject(json);
-                    Iterator it = object.keys();
-                    prefEditor.clear();
-                    while(it.hasNext()) {
-                        String key = (String) it.next();// 获得key
-                        String value = object.getString(key);// 获得value
-                        prefEditor.putString(key,value);
-                    }
-                    prefEditor.apply();
-                    Toast.makeText(getActivity(),"导入成功！",Toast.LENGTH_SHORT).show();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Toast.makeText(getActivity(),"出错啦~"+e.getMessage(),Toast.LENGTH_SHORT).show();
-                }
-                return;
-            }
-
-            if (requestCode == READ_REQUEST_SPECIAL_CODE && resultCode == Activity.RESULT_OK &&data.getData()!=null) {
-                try {
-                    Uri uri = data.getData();
-                    String json=FileUriUtils.openUriForRead(getActivity(),uri);
-                    if(TextUtils.isEmpty(json)){
-                        Toast.makeText(getActivity(),"空文件~",Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    SharedPreferences.Editor prefEditor = getActivity().getSharedPreferences(GameMenu.PREF_NAME, Activity.MODE_PRIVATE).edit();
-                    prefEditor.putString(GameMenu.KEY_NAME,json);
-                    prefEditor.apply();
-                    Toast.makeText(getActivity(),"导入成功！",Toast.LENGTH_SHORT).show();
                 } catch (Exception e) {
                     e.printStackTrace();
                     Toast.makeText(getActivity(),"出错啦~"+e.getMessage(),Toast.LENGTH_SHORT).show();
@@ -1117,23 +968,6 @@ public class StreamSettings extends Activity {
                     Toast.makeText(getActivity(),"出错啦~"+e.getMessage(),Toast.LENGTH_SHORT).show();
                 }
                 return;
-
-            }
-
-            if (requestCode == READ_REQUEST_VIRTUAL_BUTTON_CODE && resultCode == Activity.RESULT_OK &&data.getData()!=null) {
-                try {
-                    Uri uri = data.getData();
-                    File dataBaseFile= null;
-                    String displayName = "axi_keyboard.json";
-                    dataBaseFile=new File(getActivity().getFilesDir().getAbsolutePath(), displayName);
-                    FileUriUtils.copyUriToInternalStorage(getActivity(),uri,dataBaseFile);
-                    Toast.makeText(getActivity(),"导入成功!",Toast.LENGTH_SHORT).show();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Toast.makeText(getActivity(),"出错啦~"+e.getMessage(),Toast.LENGTH_SHORT).show();
-                }
-                return;
-
             }
 
             if (requestCode == READ_REQUEST_SWITCH_BUTTON_CODE && resultCode == Activity.RESULT_OK &&data.getData()!=null) {
@@ -1169,33 +1003,6 @@ public class StreamSettings extends Activity {
 
 
         }
-
-
-        private File getJsonContent(Context context,File file,String name){
-            SharedPreferences pref = context.getSharedPreferences(name, Activity.MODE_PRIVATE);
-            Map<String,?> map = pref.getAll();
-            File file1= new File(file,name+".txt");
-            String jsonStr=new Gson().toJson(map);
-            if(!FileUriUtils.writerFileString(file1,jsonStr)){
-                return null;
-            }
-            return file1;
-        }
-
-        //获取所有设置项配置文件
-        private File getAllJsonData(Context context,File file){
-            SharedPreferences pref=PreferenceManager.getDefaultSharedPreferences(context);
-            Map<String,?> map = pref.getAll();
-            //获取适配电脑的数据库信息
-//            List<ComputerDetails> map= new ComputerDatabaseManager(context).getAllComputers();
-            File file1= new File(file,"allJSON.txt");
-            String jsonStr=new Gson().toJson(map);
-            if(!FileUriUtils.writerFileString(file1,jsonStr)){
-                return null;
-            }
-            return file1;
-        }
     }
-
 
 }

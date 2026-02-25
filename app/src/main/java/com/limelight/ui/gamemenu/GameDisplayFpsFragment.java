@@ -4,8 +4,10 @@ import android.text.TextUtils;
 import android.view.Display;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.limelight.R;
 import com.limelight.preferences.PreferenceConfiguration;
@@ -35,6 +37,8 @@ public class GameDisplayFpsFragment extends BaseGameMenuDialog implements View.O
 
     private Button bt_display_fps_max;
 
+    private EditText edt_fps;
+
     private int maxSupportedFps;
     @Override
     public void bindView(View v) {
@@ -42,6 +46,7 @@ public class GameDisplayFpsFragment extends BaseGameMenuDialog implements View.O
         ibtn_back=v.findViewById(R.id.ibtn_back);
         tx_title=v.findViewById(R.id.tx_title);
 
+        edt_fps=v.findViewById(R.id.edt_fps);
         bt_display_fps_90=v.findViewById(R.id.bt_display_fps_90);
         bt_display_fps_120=v.findViewById(R.id.bt_display_fps_120);
         bt_display_fps_144=v.findViewById(R.id.bt_display_fps_144);
@@ -50,6 +55,8 @@ public class GameDisplayFpsFragment extends BaseGameMenuDialog implements View.O
             tx_title.setText(title);
         }
         ibtn_back.setOnClickListener(this);
+        v.findViewById(R.id.btn_right).setOnClickListener(this);
+
         v.findViewById(R.id.bt_display_fps_60).setOnClickListener(this);
         v.findViewById(R.id.bt_display_fps_30).setOnClickListener(this);
         v.findViewById(R.id.bt_display_fps_90).setOnClickListener(this);
@@ -88,6 +95,20 @@ public class GameDisplayFpsFragment extends BaseGameMenuDialog implements View.O
 
     @Override
     public void onClick(View v) {
+        if(v.getId()==R.id.btn_right){
+            String fps=edt_fps.getText().toString().trim();
+            if(TextUtils.isEmpty(fps)){
+                Toast.makeText(getActivity(),"fps不能为空！",Toast.LENGTH_SHORT).show();
+                return;
+            }
+            dismiss();
+            if(onClick==null){
+                return;
+            }
+            onClick.click(Integer.parseInt(fps));
+            return;
+        }
+
         dismiss();
         if(onClick==null){
             return;

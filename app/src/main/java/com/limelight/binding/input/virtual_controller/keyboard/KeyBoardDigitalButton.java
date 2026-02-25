@@ -16,6 +16,7 @@ import android.view.MotionEvent;
 import com.limelight.binding.input.virtual_controller.VirtualController;
 import com.limelight.binding.input.virtual_controller.VirtualControllerElement;
 import com.limelight.preferences.PreferenceConfiguration;
+import com.limelight.utils.UiHelper;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -142,45 +143,64 @@ public class KeyBoardDigitalButton extends keyBoardVirtualControllerElement {
     public void setIconPress(int iconPress) {
         this.iconPress = iconPress;
     }
+
     @Override
     protected void onElementDraw(Canvas canvas) {
-        // set transparent background
+        // 1. 基础准备
         canvas.drawColor(Color.TRANSPARENT);
-        paint.setTextSize(getPercent(getWidth(), 25));
+
+        // 动态计算合适的字体大小：取宽高的最小值作为基准，防止长方形按钮文字爆框
+        float minSide = Math.min(getWidth(), getHeight());
+        paint.setTextSize(minSide * 0.25f);
         paint.setTextAlign(Paint.Align.CENTER);
         paint.setStrokeWidth(getDefaultStrokeWidth());
 
+        // 2. 准备绘制区域 (内切矩形)
+        float strokeW = paint.getStrokeWidth();
+        rect.set(strokeW, strokeW, getWidth() - strokeW, getHeight() - strokeW);
+
+        // 3. 绘制背景 (Pressed / Normal)
         paint.setColor(isPressed() ? pressedColor : getDefaultColor());
+        paint.setStyle(isPressed() ? Paint.Style.FILL_AND_STROKE :
+                isNomal() ? Paint.Style.FILL : Paint.Style.STROKE);
 
-        paint.setStyle(isPressed() ?Paint.Style.FILL_AND_STROKE: Paint.Style.STROKE);
-
-        rect.left = rect.top = paint.getStrokeWidth();
-        rect.right = getWidth() - rect.left;
-        rect.bottom = getHeight() - rect.top;
-
-        if (icon != -1) {
-            if(PreferenceConfiguration.readPreferences(getContext()).enableKeyboardSquare){
-                canvas.drawRoundRect(rect, 15, 15, paint);
-            }else{
-                canvas.drawOval(rect, paint);
-            }
-            int oscOpacity=PreferenceConfiguration.readPreferences(getContext()).oscOpacity;
-            Drawable d = getResources().getDrawable(isPressed()?iconPress:icon);
-            d.setBounds(15, 15, getWidth() - 15, getHeight() - 15);
-            d.setAlpha((int) (oscOpacity*2.55));
-            d.draw(canvas);
-            return;
-        }
-        if(PreferenceConfiguration.readPreferences(getContext()).enableKeyboardSquare){
-//            canvas.drawRect(rect,paint);
-            canvas.drawRoundRect(rect, 15, 15, paint);
-        }else{
+        if (shapeType == 1) {
+            canvas.drawRoundRect(rect, 42, 42, paint);
+        } else {
             canvas.drawOval(rect, paint);
         }
-        paint.setStyle(Paint.Style.FILL_AND_STROKE);
-        paint.setStrokeWidth(getDefaultStrokeWidth()/2);
-        canvas.drawText(text, getPercent(getWidth(), 50), getPercent(getHeight(), 63), paint);
 
+        // 4. 绘制描边 (Stroke)
+        paint.setColor(strokeColor);
+        paint.setStyle(Paint.Style.STROKE);
+        if (shapeType == 1) {
+            canvas.drawRoundRect(rect, 42, 42, paint);
+        } else {
+            canvas.drawOval(rect, paint);
+        }
+
+        // 5. 绘制内容 (图标或文字)
+        if (icon != -1) {
+            // 图标缩放优化：保持 1:1 比例且居中
+            int oscOpacity = PreferenceConfiguration.readPreferences(getContext()).oscOpacity;
+            Drawable d = getResources().getDrawable(isPressed() ? iconPress : icon);
+            int padding = (int) (minSide * 0.15f); // 间距随按钮大小缩放
+            d.setBounds(padding, padding, getWidth() - padding, getHeight() - padding);
+            d.setAlpha((int) (oscOpacity * 2.55));
+            d.draw(canvas);
+        } else if (!TextUtils.isEmpty(text)) {
+            // --- 文本垂直居中优化核心逻辑 ---
+            paint.setColor(textColor);
+            paint.setStyle(Paint.Style.FILL); // 绘制文字通常不需要 STROKE，否则会模糊
+
+            // 计算文字垂直居中的偏移量
+            Paint.FontMetrics fontMetrics = paint.getFontMetrics();
+            // (bottom - top)/2 是高度一半，再减去 bottom 得到中心点到基线的距离
+            float distance = (fontMetrics.bottom - fontMetrics.top) / 2 - fontMetrics.bottom;
+            float baseline = (getHeight() / 2f) + distance;
+
+            canvas.drawText(text, getWidth() / 2f, baseline, paint);
+        }
     }
 
     private void onClickCallback() {

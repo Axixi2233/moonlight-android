@@ -6,191 +6,6 @@
     android:background="#212121"
     android:orientation="vertical">
 
-<!--    <LinearLayout-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="match_parent"-->
-<!--        android:layout_weight="100"-->
-<!--        android:orientation="horizontal">-->
-
-<!--        <TextView-->
-<!--            android:layout_width="0dp"-->
-<!--            android:layout_height="match_parent"-->
-<!--            android:layout_weight="100"-->
-<!--            android:background="@drawable/bg_ax_keyboard_button"-->
-<!--            android:gravity="center"-->
-<!--            android:tag="143"-->
-<!--            android:text="Num"-->
-<!--            android:textColor="@android:color/white"-->
-<!--            android:textSize="12sp" />-->
-
-<!--        <TextView-->
-<!--            android:layout_width="0dp"-->
-<!--            android:layout_height="match_parent"-->
-<!--            android:layout_weight="100"-->
-<!--            android:background="@drawable/bg_ax_keyboard_button"-->
-<!--            android:gravity="center"-->
-<!--            android:tag="157"-->
-<!--            android:text="加"-->
-<!--            android:textColor="@android:color/white"-->
-<!--            android:textSize="12sp" />-->
-
-<!--        <TextView-->
-<!--            android:layout_width="0dp"-->
-<!--            android:layout_height="match_parent"-->
-<!--            android:layout_weight="100"-->
-<!--            android:background="@drawable/bg_ax_keyboard_button"-->
-<!--            android:gravity="center"-->
-<!--            android:tag="156"-->
-<!--            android:text="减"-->
-<!--            android:textColor="@android:color/white"-->
-<!--            android:textSize="12sp" />-->
-
-<!--        <TextView-->
-<!--            android:layout_width="0dp"-->
-<!--            android:layout_height="match_parent"-->
-<!--            android:layout_weight="100"-->
-<!--            android:background="@drawable/bg_ax_keyboard_button"-->
-<!--            android:gravity="center"-->
-<!--            android:tag="155"-->
-<!--            android:text="乘"-->
-<!--            android:textColor="@android:color/white"-->
-<!--            android:textSize="12sp" />-->
-
-<!--        <TextView-->
-<!--            android:layout_width="0dp"-->
-<!--            android:layout_height="match_parent"-->
-<!--            android:layout_weight="100"-->
-<!--            android:background="@drawable/bg_ax_keyboard_button"-->
-<!--            android:gravity="center"-->
-<!--            android:tag="154"-->
-<!--            android:text="除"-->
-<!--            android:textColor="@android:color/white"-->
-<!--            android:textSize="12sp" />-->
-
-<!--        <TextView-->
-<!--            android:layout_width="0dp"-->
-<!--            android:layout_height="match_parent"-->
-<!--            android:layout_weight="100"-->
-<!--            android:background="@drawable/bg_ax_keyboard_button"-->
-<!--            android:gravity="center"-->
-<!--            android:tag="158"-->
-<!--            android:text="点"-->
-<!--            android:textColor="@android:color/white"-->
-<!--            android:textSize="12sp" />-->
-
-<!--        <TextView-->
-<!--            android:layout_width="0dp"-->
-<!--            android:layout_height="match_parent"-->
-<!--            android:layout_weight="100"-->
-<!--            android:background="@drawable/bg_ax_keyboard_button"-->
-<!--            android:gravity="center"-->
-<!--            android:tag="144"-->
-<!--            android:text="数0"-->
-<!--            android:textColor="@android:color/white"-->
-<!--            android:textSize="12sp" />-->
-
-<!--        <TextView-->
-<!--            android:layout_width="0dp"-->
-<!--            android:layout_height="match_parent"-->
-<!--            android:layout_weight="100"-->
-<!--            android:background="@drawable/bg_ax_keyboard_button"-->
-<!--            android:gravity="center"-->
-<!--            android:tag="145"-->
-<!--            android:text="数1"-->
-<!--            android:textColor="@android:color/white"-->
-<!--            android:textSize="12sp" />-->
-
-<!--        <TextView-->
-<!--            android:layout_width="0dp"-->
-<!--            android:layout_height="match_parent"-->
-<!--            android:layout_weight="100"-->
-<!--            android:background="@drawable/bg_ax_keyboard_button"-->
-<!--            android:gravity="center"-->
-<!--            android:tag="146"-->
-<!--            android:text="数2"-->
-<!--            android:textColor="@android:color/white"-->
-<!--            android:textSize="12sp" />-->
-
-<!--        <TextView-->
-<!--            android:layout_width="0dp"-->
-<!--            android:layout_height="match_parent"-->
-<!--            android:layout_weight="100"-->
-<!--            android:background="@drawable/bg_ax_keyboard_button"-->
-<!--            android:gravity="center"-->
-<!--            android:tag="147"-->
-<!--            android:text="数3"-->
-<!--            android:textColor="@android:color/white"-->
-<!--            android:textSize="12sp" />-->
-
-<!--        <TextView-->
-<!--            android:layout_width="0dp"-->
-<!--            android:layout_height="match_parent"-->
-<!--            android:layout_weight="100"-->
-<!--            android:background="@drawable/bg_ax_keyboard_button"-->
-<!--            android:gravity="center"-->
-<!--            android:tag="148"-->
-<!--            android:text="数4"-->
-<!--            android:textColor="@android:color/white"-->
-<!--            android:textSize="12sp" />-->
-
-<!--        <TextView-->
-<!--            android:layout_width="0dp"-->
-<!--            android:layout_height="match_parent"-->
-<!--            android:layout_weight="100"-->
-<!--            android:background="@drawable/bg_ax_keyboard_button"-->
-<!--            android:gravity="center"-->
-<!--            android:tag="149"-->
-<!--            android:text="数5"-->
-<!--            android:textColor="@android:color/white"-->
-<!--            android:textSize="12sp" />-->
-
-<!--        <TextView-->
-<!--            android:layout_width="0dp"-->
-<!--            android:layout_height="match_parent"-->
-<!--            android:layout_weight="100"-->
-<!--            android:background="@drawable/bg_ax_keyboard_button"-->
-<!--            android:gravity="center"-->
-<!--            android:tag="150"-->
-<!--            android:text="数6"-->
-<!--            android:textColor="@android:color/white"-->
-<!--            android:textSize="12sp" />-->
-
-<!--        <TextView-->
-<!--            android:layout_width="0dp"-->
-<!--            android:layout_height="match_parent"-->
-<!--            android:layout_weight="100"-->
-<!--            android:background="@drawable/bg_ax_keyboard_button"-->
-<!--            android:gravity="center"-->
-<!--            android:tag="151"-->
-<!--            android:text="数7"-->
-<!--            android:textColor="@android:color/white"-->
-<!--            android:textSize="12sp" />-->
-
-<!--        <TextView-->
-<!--            android:layout_width="0dp"-->
-<!--            android:layout_height="match_parent"-->
-<!--            android:layout_weight="100"-->
-<!--            android:background="@drawable/bg_ax_keyboard_button"-->
-<!--            android:gravity="center"-->
-<!--            android:tag="152"-->
-<!--            android:text="数8"-->
-<!--            android:textColor="@android:color/white"-->
-<!--            android:textSize="12sp" />-->
-
-<!--        <TextView-->
-<!--            android:layout_width="0dp"-->
-<!--            android:layout_height="match_parent"-->
-<!--            android:layout_weight="100"-->
-<!--            android:background="@drawable/bg_ax_keyboard_button"-->
-<!--            android:gravity="center"-->
-<!--            android:tag="153"-->
-<!--            android:text="数9"-->
-<!--            android:textColor="@android:color/white"-->
-<!--            android:textSize="12sp" />-->
-
-<!--    </LinearLayout>-->
-
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -1029,8 +844,6 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="310"
-            android:layout_marginLeft="5dp"
-            android:layout_marginRight="5dp"
             android:background="@drawable/bg_ax_keyboard_button"
             android:gravity="center"
             android:tag="62"
@@ -1038,32 +851,32 @@
             android:textColor="@android:color/white"
             android:textSize="12sp" />
 
-<!--        <TextView-->
-<!--            android:layout_width="0dp"-->
-<!--            android:layout_height="match_parent"-->
-<!--            android:layout_weight="100"-->
-<!--            android:background="@drawable/bg_ax_keyboard_button"-->
-<!--            android:gravity="center"-->
-<!--            android:tag="58"-->
-<!--            android:text="Alt"-->
-<!--            android:textColor="@android:color/white"
-            android:textSize="12sp" />-->
-
-<!--        <TextView-->
-<!--            android:layout_width="0dp"-->
-<!--            android:layout_height="match_parent"-->
-<!--            android:layout_weight="100"-->
-<!--            android:background="@drawable/bg_ax_keyboard_button"-->
-<!--            android:gravity="center"-->
-<!--            android:tag="114"-->
-<!--            android:text="Ctrl"-->
-<!--            android:textColor="@android:color/white"
-            android:textSize="12sp" />-->
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="105"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="58"
+            android:text="Alt"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="98"
+            android:layout_weight="100"
+            android:background="@drawable/bg_ax_keyboard_button"
+            android:gravity="center"
+            android:tag="114"
+            android:text="Ctrl"
+            android:textColor="@android:color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="100"
             android:background="@drawable/bg_ax_keyboard_button"
             android:gravity="center"
             android:tag="122"
@@ -1074,7 +887,7 @@
         <TextView
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="98"
+            android:layout_weight="100"
             android:background="@drawable/bg_ax_keyboard_button"
             android:gravity="center"
             android:tag="123"
@@ -1082,27 +895,27 @@
             android:textColor="@android:color/white"
             android:textSize="10sp" />
 
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="98"
-            android:background="@drawable/bg_ax_keyboard_button"
-            android:gravity="center"
-            android:tag="92"
-            android:text="PgUp"
-            android:textColor="@android:color/white"
-            android:textSize="10sp" />
+<!--        <TextView-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="match_parent"-->
+<!--            android:layout_weight="98"-->
+<!--            android:background="@drawable/bg_ax_keyboard_button"-->
+<!--            android:gravity="center"-->
+<!--            android:tag="92"-->
+<!--            android:text="PgUp"-->
+<!--            android:textColor="@android:color/white"-->
+<!--            android:textSize="10sp" />-->
 
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="98"
-            android:background="@drawable/bg_ax_keyboard_button"
-            android:gravity="center"
-            android:tag="93"
-            android:textColor="@android:color/white"
-            android:text="PgDn"
-            android:textSize="10sp" />
+<!--        <TextView-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="match_parent"-->
+<!--            android:layout_weight="98"-->
+<!--            android:background="@drawable/bg_ax_keyboard_button"-->
+<!--            android:gravity="center"-->
+<!--            android:tag="93"-->
+<!--            android:textColor="@android:color/white"-->
+<!--            android:text="PgDn"-->
+<!--            android:textSize="10sp" />-->
 
 
         <TextView

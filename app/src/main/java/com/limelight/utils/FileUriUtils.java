@@ -6,7 +6,12 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.FileUtils;
 import android.support.annotation.RequiresApi;
+import android.support.v4.content.FileProvider;
 import android.webkit.MimeTypeMap;
+
+import com.google.gson.Gson;
+import com.limelight.BuildConfig;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -22,6 +27,27 @@ import java.io.Reader;
  * Time: 13:46
  */
 public class FileUriUtils {
+
+    //获取json文件内容
+    public static String getKeyBoardJson(Context context,String name){
+        File dataBaseFile=new File(context.getFilesDir().getAbsolutePath()+File.separator, name);
+        String authority= BuildConfig.APPLICATION_ID+".fileprovider";
+        Uri uri= FileProvider.getUriForFile(context,authority,dataBaseFile);
+        return FileUriUtils.openUriForRead(context,uri);
+    }
+
+    public static Uri getKeyBoardFile(Context context,String name){
+        File dataBaseFile=new File(context.getFilesDir().getAbsolutePath(), name);
+        String authority= BuildConfig.APPLICATION_ID+".fileprovider";
+        return FileProvider.getUriForFile(context,authority,dataBaseFile);
+    }
+
+    //保存json数据
+    public static boolean saveKeyBoardJson(Context context,String name,String json){
+        File file1=new File(context.getFilesDir().getAbsolutePath(), name);
+        return FileUriUtils.writerFileString(file1,json);
+    }
+
     public static String openUriForRead(Context context, Uri uri) {
         if (uri == null)
             return "";

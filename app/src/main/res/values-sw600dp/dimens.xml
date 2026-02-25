@@ -1,0 +1,3 @@
+<resources>
+    <dimen name="keyboard_view_height">320dp</dimen>
+</resources>

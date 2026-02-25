@@ -28,6 +28,20 @@
             android:id="@+id/tx_title"
             android:textColor="@android:color/white"
             android:textSize="13dp" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="24dp"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:text="确认"
+            android:background="@drawable/ic_game_menu_btn_side_selector"
+            android:layout_marginRight="5dp"
+            android:gravity="center"
+            android:id="@+id/btn_right"
+            android:textColor="@android:color/white"
+            android:textSize="11dp" />
+
     </RelativeLayout>
 
     <ScrollView
@@ -73,12 +87,36 @@
                 android:layout_margin="5dp"
                 android:orientation="vertical">
 
+                <EditText
+                    android:id="@+id/edt_fps"
+                    android:layout_width="match_parent"
+                    android:layout_height="30dp"
+                    android:layout_marginTop="4dp"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:hint="请输入帧率"
+                    android:inputType="number"
+                    android:maxLength="3"
+                    android:paddingLeft="10dp"
+                    android:paddingRight="10dp"
+                    android:singleLine="true"
+                    android:textSize="12dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="left"
+                    android:text="常用帧率"
+                    android:layout_marginTop="10dp"
+                    android:textStyle="bold"
+                    android:textSize="10dp" />
+
                 <Button
                     android:layout_width="match_parent"
                     android:layout_height="48dp"
                     android:background="@drawable/ic_game_menu_btn_selector"
                     android:drawableLeft="@drawable/ic_axi_game_pad_bitrate"
                     android:drawablePadding="4dp"
+                    android:layout_marginTop="4dp"
                     android:id="@+id/bt_display_fps_30"
                     android:gravity="left|center_vertical"
                     android:padding="10dp"

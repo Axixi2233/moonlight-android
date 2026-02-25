@@ -145,7 +145,7 @@ public class GameMenu {
     private void showMenuDialog(String title, MenuOption[] options) {
         AlertDialog.Builder builder = new AlertDialog.Builder(game);
         builder.setTitle(title);
-        builder.setIcon(R.drawable.app_icon);
+        builder.setIcon(R.drawable.app_icon_axi);
 
         final ArrayAdapter<String> actions =
                 new ArrayAdapter<String>(game, android.R.layout.simple_list_item_1);

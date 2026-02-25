@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:id="@+id/lv_gamepad"
+    android:background="@drawable/bg_gradient_axi_main"
+    android:fitsSystemWindows="true"
+    tools:ignore="MissingDefaultResource">
+
+    <RelativeLayout
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:layout_alignParentLeft="true"
+            android:id="@+id/iv_back"
+            android:layout_centerVertical="true"
+            android:src="@drawable/axi_gameplay_ic_back_selector"
+            android:focusable="false"
+            android:layout_marginRight="10dp"
+            android:layout_width="@dimen/axi_gameplay_index_app_icon_size"
+            android:layout_height="@dimen/axi_gameplay_index_app_icon_size"/>
+
+    </RelativeLayout>
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:layout_margin="15dp"
+            android:background="@drawable/axi_gameplay_gamepad_item_bg"
+            android:orientation="vertical"
+            android:paddingTop="25dp"
+            android:paddingBottom="25dp"
+            android:gravity="center_horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <ImageView
+                android:id="@+id/iv_logo"
+                android:src="@mipmap/ic_app_axi"
+                android:layout_width="65dp"
+                android:layout_height="65dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/app_label"
+                android:id="@+id/tv_info"
+                android:textStyle="bold"
+                android:layout_marginTop="8dp"
+                android:textColor="@android:color/white"
+                android:textSize="17sp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="随时随地，畅联你的电脑！"
+                android:layout_marginTop="5dp"
+                android:textColor="@android:color/white"
+                android:textSize="8sp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="版本号：1.0.0"
+                android:textStyle="bold"
+                android:id="@+id/tv_version"
+                android:layout_marginTop="5dp"
+                android:textColor="@android:color/white"
+                android:textSize="10sp"/>
+
+            <TextView
+                android:onClick="onClick"
+                android:id="@+id/iv_get"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/about_update_text"
+                android:textStyle="bold"
+                android:padding="4dp"
+                android:layout_marginTop="3dp"
+                android:textColor="@android:color/white"
+                android:textSize="9sp"/>
+
+
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="在这里找到开发者"
+            android:textStyle="bold"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="20dp"
+            android:textColor="@android:color/white"
+            android:textSize="9sp"/>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:layout_gravity="center_horizontal"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:onClick="onClick"
+                android:id="@+id/iv_bili"
+                android:src="@mipmap/axi_gameplay_icon_bili"
+                android:layout_width="25dp"
+                android:layout_height="25dp"/>
+
+            <ImageView
+                android:onClick="onClick"
+                android:id="@+id/iv_xhs"
+                android:src="@mipmap/axi_gameplay_icon_xhs"
+                android:layout_width="25dp"
+                android:layout_marginLeft="15dp"
+                android:layout_marginRight="15dp"
+                android:layout_height="25dp"/>
+
+            <ImageView
+                android:onClick="onClick"
+                android:id="@+id/iv_douyin"
+                android:src="@mipmap/axi_gameplay_icon_douyin"
+                android:layout_width="25dp"
+                android:layout_height="25dp"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+
+</LinearLayout>

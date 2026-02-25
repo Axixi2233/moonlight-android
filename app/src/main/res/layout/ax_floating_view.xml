@@ -7,8 +7,8 @@
 
     <ImageView
         android:id="@+id/iv_icon"
-        android:layout_width="42dp"
-        android:layout_height="42dp"
-        tools:src="@drawable/app_icon" />
+        android:layout_width="38dp"
+        android:layout_height="38dp"
+        tools:src="@drawable/app_icon_axi" />
 
 </RelativeLayout>

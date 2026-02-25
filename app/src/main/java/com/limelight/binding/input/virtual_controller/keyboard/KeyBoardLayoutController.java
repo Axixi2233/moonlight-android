@@ -89,8 +89,10 @@ public class KeyBoardLayoutController {
                         if(isCombination){
                             switch (tag){
                                 case "113"://ctrl
+                                case "114"://ctrl right
                                 case "117"://win
                                 case "57"://alt
+                                case "58"://alt right
                                 case "59"://shift
                                 case "60"://shift right
                                     if(!keyList.contains(tag)){
@@ -145,9 +147,11 @@ public class KeyBoardLayoutController {
                         if(isCombination){
                             switch (tag2) {
                                 case "113"://ctrl
+                                case "114"://ctrl right
                                 case "117"://win
                                 case "57"://alt
-                                case "59"://shift left
+                                case "58"://alt right
+                                case "59"://shift
                                 case "60"://shift right
                                     return true;
                             }
@@ -323,7 +327,7 @@ public class KeyBoardLayoutController {
     private void resetView(){
         keyList.clear();
 //        isCombination=false;
-        String[] keys={"113","117","57","59","60"};
+        String[] keys={"113","114","117","57","58","59","60"};
         for (String key:keys) {
             if(keyboardView.findViewById(R.id.lv_keyboard).findViewWithTag(key)!=null){
                 keyboardView.findViewById(R.id.lv_keyboard).findViewWithTag(key).setBackgroundResource(R.drawable.bg_ax_keyboard_button);

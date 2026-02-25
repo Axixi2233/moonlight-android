@@ -3,15 +3,11 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/gameMenuBgColor"
-    android:orientation="vertical"
-    android:paddingBottom="10dp"
-    android:paddingLeft="10dp"
-    android:paddingRight="10dp"
-    android:paddingTop="10dp">
+    android:orientation="vertical">
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:paddingBottom="4dp"
+        android:padding="10dp"
         android:layout_height="wrap_content">
         <ImageButton
             android:src="@drawable/ic_axi_back"
@@ -64,7 +60,8 @@
             android:id="@+id/lv_name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="5dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
             android:orientation="vertical">
             <TextView
                 android:layout_width="wrap_content"
@@ -93,39 +90,143 @@
                 android:layout_gravity="left"
                 android:text="组合键值"
                 android:textColor="@android:color/white"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="5dp"
                 android:textStyle="bold"
                 android:textSize="10dp" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="left"
-                android:text="阿西西快捷键：AXIX前缀，例如AXIX0(软键盘)，AXIX1(虚拟按键)，AXIX2(虚拟全键盘)，AXIX3(虚拟手柄)，AXIX4(悬浮球)，AXIX5(性能信息),AXIX6(游戏菜单)"
-                android:layout_marginTop="4dp"
-                android:id="@+id/tx_tips_axi"
-                android:textColor="@android:color/white"
-                android:textStyle="bold"
-                android:textSize="8dp" />
+<!--            <TextView-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_gravity="left"-->
+<!--                android:text="阿西西快捷键：AXIX前缀，例如AXIX0(软键盘)，AXIX1(虚拟按键)，AXIX2(虚拟全键盘)，AXIX3(虚拟手柄)，AXIX4(悬浮球)，AXIX5(性能信息),AXIX6(游戏菜单)"-->
+<!--                android:layout_marginTop="2dp"-->
+<!--                android:id="@+id/tx_tips_axi"-->
+<!--                android:textColor="@android:color/white"-->
+<!--                android:textStyle="italic"-->
+<!--                android:textSize="8sp" />-->
 
             <TextView
-                android:hint="使用虚拟键盘输入1~5个按键，输错了点击清空。"
+                android:hint="请输入1~5个按键"
                 android:id="@+id/tx_content"
                 android:textColor="@android:color/white"
-                android:textSize="20dp"
-                android:layout_marginTop="18dp"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginTop="10dp"
                 android:gravity="center_horizontal"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"/>
 
         </LinearLayout>
 
-        <include
-            android:id="@+id/lv_keyboard"
-            android:layout_width="match_parent"
-            android:layout_height="200dp"
+        <LinearLayout
+            android:orientation="vertical"
             android:layout_alignParentBottom="true"
-            layout="@layout/item_layout_axixi_keyboard"/>
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <RadioGroup
+                android:layout_marginTop="2dp"
+                android:layout_marginRight="5dp"
+                android:layout_marginLeft="5dp"
+                android:layout_marginBottom="2dp"
+                android:layout_width="wrap_content"
+                android:layout_height="27dp"
+                android:id="@+id/rg_keyboard"
+                android:orientation="horizontal">
+
+                <RadioButton
+                    android:layout_width="80dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:button="@null"
+                    android:id="@+id/rbt_keyboard_1"
+                    android:text="电脑全键盘"
+                    android:textSize="10dp" />
+
+                <RadioButton
+                    android:layout_width="80dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:button="@null"
+                    android:id="@+id/rbt_keyboard_2"
+                    android:text="数字键盘"
+                    android:textSize="10dp" />
+
+                <RadioButton
+                    android:layout_width="80dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:button="@null"
+                    android:id="@+id/rbt_keyboard_3"
+                    android:text="鼠标与轮盘按键"
+                    android:textSize="10dp" />
+
+                <RadioButton
+                    android:layout_width="80dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:button="@null"
+                    android:id="@+id/rbt_keyboard_4"
+                    android:text="功能按键"
+                    android:textSize="10dp" />
+
+            </RadioGroup>
+
+
+            <include
+                android:id="@+id/lv_keyboard"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/keyboard_view_height"
+                android:visibility="visible"
+                layout="@layout/item_layout_axixi_keyboard"/>
+
+            <include
+                android:id="@+id/lv_keyboard_digitpad"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/keyboard_view_height"
+                android:visibility="gone"
+                layout="@layout/item_layout_axixi_keyboard_digitpad_add"/>
+
+            <GridView
+                android:id="@+id/rv_keyboard_mouse"
+                android:background="#212121"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/keyboard_view_height"
+                android:numColumns="4"
+                android:padding="3dp"
+                android:visibility="gone"
+                android:verticalSpacing="3dp"
+                android:horizontalSpacing="3dp"
+                android:scrollbars="none"
+                android:stretchMode="columnWidth" />
+
+            <GridView
+                android:id="@+id/rv_keyboard_function"
+                android:background="#212121"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/keyboard_view_height"
+                android:numColumns="4"
+                android:padding="3dp"
+                android:visibility="gone"
+                android:verticalSpacing="3dp"
+                android:horizontalSpacing="3dp"
+                android:scrollbars="none"
+                android:stretchMode="columnWidth" />
+
+
+        </LinearLayout>
 
     </RelativeLayout>
 

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:paddingTop="5dp"
+    android:paddingLeft="5dp"
+    android:paddingRight="20dp"
+    android:paddingBottom="5dp"
+    android:gravity="center_vertical"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+
+    <ImageView
+        android:src="@drawable/ic_axi_game_pad_top_right"
+        android:layout_marginRight="4dp"
+        android:layout_marginLeft="2dp"
+        android:id="@+id/iv_game_virtual_pad"
+        android:layout_width="28dp"
+        android:layout_height="28dp"/>
+
+    <LinearLayout
+        android:id="@+id/lv_right_view"
+        android:layout_width="230dp"
+        android:layout_height="30dp">
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginRight="5dp"
+            android:layout_weight="1"
+            android:background="@drawable/ic_game_menu_btn_green"
+            android:drawablePadding="4dp"
+            android:padding="4dp"
+            android:id="@+id/btn_game_virtual_add"
+            android:text="新增按钮"
+            android:textSize="8dp" />
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginRight="5dp"
+            android:layout_weight="1"
+            android:background="@drawable/ic_game_menu_btn_normal"
+            android:drawablePadding="4dp"
+            android:padding="4dp"
+            android:id="@+id/btn_game_virtual_reset"
+            android:text="重置布局"
+            android:textSize="8dp" />
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginRight="5dp"
+            android:layout_weight="1"
+            android:background="@drawable/ic_game_menu_btn_press"
+            android:drawablePadding="4dp"
+            android:padding="4dp"
+            android:id="@+id/btn_game_virtual_save"
+            android:text="保存布局"
+            android:textSize="8dp" />
+
+    </LinearLayout>
+
+</LinearLayout>

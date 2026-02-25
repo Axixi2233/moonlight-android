@@ -124,11 +124,12 @@ public class StreamView extends SurfaceView {
             return super.onTouchEvent(event);
         }
         if(!initFlag){
-            initX=getX();
-            initY=getY();
-            initFlag=true;
+            initX = getX();
+            initY = getY();
+            posX = initX;
+            posY = initY;
+            initFlag = true;
         }
-        // 同时处理缩放和拖动手势
         scaleDetector.onTouchEvent(event);
         gestureDetector.onTouchEvent(event);
         return true;

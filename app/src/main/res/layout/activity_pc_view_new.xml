@@ -2,7 +2,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bgColor"
+    android:background="@drawable/bg_gradient_axi_main"
     tools:ignore="MissingDefaultResource">
 
     <ImageView
@@ -18,45 +18,34 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <LinearLayout
-            android:gravity="center"
-            android:layout_marginTop="5dp"
+        <TextView
             android:layout_marginLeft="15dp"
+            android:layout_marginRight="5dp"
+            android:text="@string/app_label"
+            android:textSize="18sp"
+            android:id="@+id/tx_label"
+            android:gravity="center"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
             android:layout_width="wrap_content"
-            android:layout_height="48dp">
-            <ImageView
-                android:id="@+id/iv_logo"
-                android:src="@drawable/app_icon_axi"
-                android:layout_width="36dp"
-                android:layout_height="36dp"/>
-            <TextView
-                android:layout_marginLeft="10dp"
-                android:text="@string/app_label"
-                android:textSize="12dp"
-                android:id="@+id/tx_label"
-                android:textColor="@android:color/white"
-                android:textStyle="bold|italic"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
-
-        </LinearLayout>
-
+            android:layout_height="48dp"/>
 
         <LinearLayout
             android:layout_alignParentRight="true"
             android:layout_marginRight="10dp"
             android:id="@+id/lv_right"
+            android:gravity="center_vertical"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content">
+            android:layout_height="48dp">
 
             <ImageButton
                 android:id="@+id/manuallyAddPc"
                 android:background="@drawable/ic_game_menu_btn_side_selector"
                 android:src="@drawable/ic_axi_app_add"
                 android:layout_marginRight="4dp"
-                android:layout_width="48dp"
+                android:layout_width="32dp"
                 android:scaleType="centerInside"
-                android:layout_height="48dp"/>
+                android:layout_height="32dp"/>
 
             <ImageButton
                 android:id="@+id/helpButton"
@@ -64,8 +53,8 @@
                 android:src="@drawable/ic_axi_app_help"
                 android:layout_marginRight="4dp"
                 android:scaleType="centerInside"
-                android:layout_width="48dp"
-                android:layout_height="48dp"/>
+                android:layout_width="34dp"
+                android:layout_height="34dp"/>
 
             <ImageButton
                 android:id="@+id/axiButton"
@@ -73,16 +62,16 @@
                 android:src="@drawable/ic_game_controller"
                 android:layout_marginRight="4dp"
                 android:scaleType="centerInside"
-                android:layout_width="48dp"
-                android:layout_height="48dp"/>
+                android:layout_width="32dp"
+                android:layout_height="32dp"/>
 
             <ImageButton
                 android:id="@+id/settingsButton"
                 android:background="@drawable/ic_game_menu_btn_side_selector"
                 android:src="@drawable/ic_axi_app_setting"
                 android:scaleType="centerInside"
-                android:layout_width="48dp"
-                android:layout_height="48dp"/>
+                android:layout_width="35dp"
+                android:layout_height="35dp"/>
 
         </LinearLayout>
 

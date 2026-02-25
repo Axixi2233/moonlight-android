@@ -10,7 +10,7 @@
             android:summary="@string/summary_resolution_list"
             android:entries="@array/resolution_names"
             android:entryValues="@array/resolution_values"
-            android:defaultValue="1280x720" />
+            android:defaultValue="1920x1080" />
         <ListPreference
             android:key="list_fps"
             android:title="@string/title_fps_list"
@@ -62,6 +62,19 @@
             android:key="checkbox_cutout_mode_video"
             android:title="填充刘海区域"
             android:defaultValue="false" />
+
+        <CheckBoxPreference
+            android:key="checkbox_auto_screen_orientation"
+            android:title="横竖屏自由切换"
+            android:defaultValue="false" />
+
+        <ListPreference
+            android:key="screen_gravity_list"
+            android:title="画面显示位置（默认居中）"
+            android:summary="可能对折叠屏手机或者平板有点帮助,请自行DIY分辨率和画面位置。"
+            android:entries="@array/screen_gravity_list_names"
+            android:entryValues="@array/screen_gravity_list_values"
+            android:defaultValue="0" />
 
         <CheckBoxPreference
             android:key="checkbox_ui_theme_white"
@@ -366,8 +379,8 @@
             android:key="performance_overlayLite_magin_top"
             android:dialogMessage="设置精简性能信息距屏幕顶部边距，默认是4dp"
             seekbar:min="0"
-            android:max="50"
-            seekbar:step="1"
+            android:max="100"
+            seekbar:step="2"
             android:defaultValue="4"
             android:summary="设置精简性能信息距屏幕顶部边距，默认是4dp"
             android:text="dp"
@@ -388,18 +401,6 @@
             android:title="快捷选项"
             android:summary="开启后，串流界面点击手机物理返回键 展示相关选项！
             \n软键盘、性能信息、触控模式切换、发送特殊按键"
-            android:defaultValue="true"/>
-
-        <Preference
-            android:key="pref_axi_test"
-            android:title="阿西西调试页面"
-            android:summary="测试手柄震动及其他内容。"
-            />
-
-        <CheckBoxPreference
-            android:key="checkbox_enable_axi_test"
-            android:title="首页显示手柄调试入口"
-            android:summary="开启后会显示一个图标，快速打开手柄调试页面"
             android:defaultValue="true"/>
 
         <CheckBoxPreference
@@ -448,7 +449,7 @@
             android:key="checkbox_enable_ax_floating"
             android:title="启用悬浮球（Beta）"
             android:summary="开启后，点击打开快捷菜单。"
-            android:defaultValue="false"/>
+            android:defaultValue="true"/>
 
         <com.limelight.preferences.SeekBarPreference
             android:key="seekbar_keyboard_axi_opacity"
@@ -471,31 +472,10 @@
             android:title="虚拟全键盘高度" />
 
         <CheckBoxPreference
-            android:key="checkbox_enable_analog_stick_new"
-            android:title="自由摇杆"
-            android:summary="虚拟手柄 左右摇杆中心点位置不固定，可自由调整在一定区域内移动。"
-            android:defaultValue="false"/>
-
-        <CheckBoxPreference
-            android:key="checkbox_enable_analog_stick_new_fixed"
-            android:title="自由摇杆键程固定"
-            android:dependency="checkbox_enable_analog_stick_new"
-            android:summary="固定摇杆推到底，虚拟手柄 左右摇杆中心点位置不固定，可自由调整在一定区域内移动。"
-            android:defaultValue="false"/>
-
-        <CheckBoxPreference
             android:key="checkbox_enable_exdisplay"
             android:title="外接显示器模式（Beta）"
             android:summary="串流画面显示在显示器，虚拟按键及性能信息等控件在手机屏幕。"
             android:defaultValue="false"/>
-
-        <ListPreference
-            android:key="screen_gravity_list"
-            android:title="画面显示位置（默认居中）"
-            android:summary="可能对折叠屏手机或者平板有点帮助,请自行DIY分辨率和画面位置。"
-            android:entries="@array/screen_gravity_list_names"
-            android:entryValues="@array/screen_gravity_list_values"
-            android:defaultValue="0" />
 
         <CheckBoxPreference
             android:key="checkbox_enable_device_rumble"
@@ -522,12 +502,6 @@
             android:defaultValue="false"/>
 
         <Preference
-            android:key="import_special_button_file"
-            android:title="导入自定义特殊指令(快捷键)配置文件"
-            android:summary="每次都会覆盖原来的，请注意备份。"
-            />
-
-        <Preference
             android:key="import_switch_button_file"
             android:title="导入自定义无障碍配置文件"
             android:summary="每次都会覆盖原来的，请注意备份。"
@@ -542,12 +516,12 @@
     </PreferenceCategory>
 
 
-    <PreferenceCategory android:title="特殊按键布局-阿西西的日常"
+    <PreferenceCategory android:title="虚拟按键"
         android:key="category_axixi_settings">
 
         <CheckBoxPreference
             android:key="checkbox_enable_keyboard"
-            android:title="屏幕显示虚拟按键"
+            android:title="显示虚拟按键"
             android:summary="在触摸屏上显示一层虚拟特殊按键。
             \n按键透明度与上方选项中虚拟手柄共用。"
             android:defaultValue="false"/>
@@ -555,68 +529,27 @@
         <ListPreference
             android:key="keyboard_axi_list"
             android:title="默认布局方案"
-            android:dependency="checkbox_enable_keyboard"
-            android:summary="每套布局方案初始默认一样（根据keyboards.json文件生成），可自行进行删减调整"
+            android:summary="横竖屏支持单独配置。"
             android:entries="@array/keyboard_axi_names"
             android:entryValues="@array/keyboard_axi_values"
             android:defaultValue="OSC_Keyboard" />
 
         <CheckBoxPreference
             android:key="checkbox_vibrate_keyboard"
-            android:dependency="checkbox_enable_keyboard"
             android:title="@string/title_checkbox_vibrate_osc"
             android:summary="点按屏幕按键时，会触发手机马达震动，此选项也可用于虚拟手柄按钮。"
             android:defaultValue="false" />
 
-        <CheckBoxPreference
-            android:key="checkbox_enable_keyboard_square"
-            android:title="普通按钮为方形按钮"
-            android:summary="虚拟按钮形状为方形按钮，默认为圆形。"
-            android:defaultValue="false" />
-
-        <CheckBoxPreference
-            android:key="checkbox_enable_custom_axi_keyboard_file"
-            android:title="启用自定义虚拟按钮配置文件"
-            android:summary="优先使用导入的keyboards.json文件。"
-            android:defaultValue="false" />
-
-        <Preference
-            android:key="import_keyboard_json_file"
-            android:title="导入虚拟按钮配置文件"
-            android:summary="会覆盖替换掉APP内置默认的keyboards.json文件\n旧版本只能修改APK文件重新打包。"
-            />
-
-        <com.limelight.preferences.ConfirmDeleteKeyboardPreference
-            android:title="重置屏幕虚拟按键布局"
-            android:summary="初始化特殊按键布局（重置默认选择的那套布局方案）"
-            android:dialogTitle="@string/dialog_title_reset_osc"
-            android:dialogMessage="@string/dialog_text_reset_osc"
-            android:positiveButtonText="@string/yes"
-            android:negativeButtonText="@string/no"
-            />
-
         <Preference
             android:key="import_keyboard_file"
-            android:title="导入配置文件"
-            android:summary="此处是按钮位置、大小等配置\n选择一个配置文件，覆盖默认选择的布局方案。"
+            android:title="导入虚拟按键配置"
+            android:summary="选择一个配置文件，覆盖默认选择的布局方案。(仅横屏模式)"
             />
 
         <Preference
             android:key="export_keyboard_file"
-            android:title="导出配置文件"
-            android:summary="导出默认选择的布局方案，此处是按钮位置、大小等配置"
-            />
-
-        <Preference
-            android:key="import_keyboard_user_list_file"
-            android:title="导入APP内虚拟按键列表配置"
-            android:summary="会覆盖APP内虚拟按键列表的内容。"
-            />
-
-        <Preference
-            android:key="export_keyboard_user_list_file"
-            android:title="导出APP内虚拟按键列表配置"
-            android:summary="导出APP内虚拟按键列表的内容。"
+            android:title="导出虚拟按键配置"
+            android:summary="导出默认选择的布局方案的配置文件。(仅横屏模式)"
             />
 
     </PreferenceCategory>
@@ -693,12 +626,6 @@
             android:title="设置主屏幕左侧文本" />
 
         <CheckBoxPreference
-            android:key="checkbox_enable_screen_hide_logo"
-            android:title="隐藏Logo图标"
-            android:summary="隐藏首页APP的logo"
-            android:defaultValue="false" />
-
-        <CheckBoxPreference
             android:key="checkbox_enable_pass_menu"
             android:title="忽略掉应用列表菜单选项"
             android:summary="开启此功能，点击图标可直接进入串流界面，无需再点击弹出的菜单选项。"
@@ -710,14 +637,9 @@
         android:key="category_axi_about">
 
         <com.limelight.preferences.WebLauncherPreference
-            android:title="软件版本更新"
-            android:summary="跳转到github获取releases"
-            url="https://github.com/Axixi2233/moonlight-android/releases"/>
-
-        <com.limelight.preferences.WebLauncherPreference
-            android:title="关于作者"
-            android:summary="跳转到B站阿西西的日常个人主页"
-            url="https://space.bilibili.com/16893379"/>
+            android:title="关于我们"
+            android:summary="版本信息·获取更新·关注作者"
+            url="about"/>
 
     </PreferenceCategory>
 
