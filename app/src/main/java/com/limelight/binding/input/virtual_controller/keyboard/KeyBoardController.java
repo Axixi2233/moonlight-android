@@ -389,7 +389,7 @@ public class KeyBoardController {
             if(alertDialog==null){
                 alertDialog=new AlertDialog.Builder(context)
                         .setMessage("打开游戏菜单-虚拟手柄与按键-切换到编辑模式，添加按钮！")
-                        .setTitle("当前配置:"+fileName)
+                        .setTitle("提示")
                         .setNegativeButton("切换到编辑模式", (dialog, which) -> {
                             switchMode(ControllerMode.MoveButtons);
                         }).setPositiveButton("取消", new DialogInterface.OnClickListener() {
