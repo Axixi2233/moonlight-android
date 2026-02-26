@@ -79,6 +79,14 @@ public class keyAnalogStickFree extends keyBoardVirtualControllerElement {
         }
     }
 
+    //未触摸状态是否绘制
+    private boolean isDrawNormal=true;
+
+    public keyAnalogStickFree setDrawNormal(boolean drawNormal) {
+        isDrawNormal = drawNormal;
+        return this;
+    }
+
     @Override
     protected void onElementDraw(Canvas canvas) {
         canvas.drawColor(Color.TRANSPARENT);
@@ -89,6 +97,9 @@ public class keyAnalogStickFree extends keyBoardVirtualControllerElement {
             return;
         }
 
+        if(!bIsFingerOnScreen&&!isDrawNormal){
+            return;
+        }
         // 2. 确定绘制中心 (未按下时在控件中心，按下时在起点)
         float cX = bIsFingerOnScreen ? touchStartX : getWidth() / 2f;
         float cY = bIsFingerOnScreen ? touchStartY : getHeight() / 2f;

@@ -427,7 +427,7 @@ public class KeyBoardController {
         if(bean.getBtnType()==3){
             if(bean.isGamePad()){
                 if(bean.isFreeStick()){
-                    element=new AnalogStickFreeGamePad(this,bean.getId(),context,bean.getCode()==ControllerPacket.PADDLE5_FLAG,bean.isFixedStrokeFreeStick());
+                    element=new AnalogStickFreeGamePad(this,bean.getId(),context,bean.getCode()==ControllerPacket.PADDLE5_FLAG,bean.isFixedStrokeFreeStick(),bean.isFreeeStickDrawNormal());
                 }else{
                     element=new AnalogStickGamePad(this,bean.getId(),context,bean.getCode()==ControllerPacket.PADDLE5_FLAG,bean.isFixedStrokeFreeStick());
                 }
@@ -536,6 +536,7 @@ public class KeyBoardController {
             case Active:
                 message="正常模式~";
                 buttonConfigure.setVisibility(View.GONE);
+                lv_left_view.setVisibility(View.GONE);
                 break;
             case MoveButtons:
                 message="位移模式~";

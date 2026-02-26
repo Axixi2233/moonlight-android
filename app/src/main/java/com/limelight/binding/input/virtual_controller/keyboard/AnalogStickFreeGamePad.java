@@ -7,9 +7,10 @@ import com.limelight.nvstream.input.ControllerPacket;
 import com.limelight.preferences.PreferenceConfiguration;
 
 public class AnalogStickFreeGamePad extends keyAnalogStickFree {
-    public AnalogStickFreeGamePad(KeyBoardController controller, String elementId, Context context, boolean isLeft,boolean fixedStroke) {
+    public AnalogStickFreeGamePad(KeyBoardController controller, String elementId, Context context, boolean isLeft,boolean fixedStroke,boolean drawNormal) {
         super(controller, context, elementId);
         setTextTipValues(new String[]{});
+        setDrawNormal(drawNormal);
         addAnalogStickListener(new AnalogStickListener() {
             @Override
             public void onMovement(float x, float y) {
