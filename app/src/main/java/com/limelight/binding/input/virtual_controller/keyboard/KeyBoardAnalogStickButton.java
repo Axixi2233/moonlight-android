@@ -128,7 +128,7 @@ public class KeyBoardAnalogStickButton extends KeyAnalogStick {
 
             @Override
             public void onDoubleClick() {
-                listener.onkeyEvent(stickSender[4],true);
+//                listener.onkeyEvent(stickSender[4],true);
             }
 
             @Override
@@ -144,7 +144,7 @@ public class KeyBoardAnalogStickButton extends KeyAnalogStick {
                 for (int i = 0; i < 4; i++) {
                     listener.onkeyEvent(stickSender[i],stickBool[i]);
                 }
-                listener.onkeyEvent(stickSender[4],false);
+//                listener.onkeyEvent(stickSender[4],false);
             }
         });
     }

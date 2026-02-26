@@ -100,7 +100,6 @@ public class GameDisplayDeviceFragment extends BaseGameMenuDialog implements See
             public void onClick(View v) {
                 if(onClick!=null){
                     onClick.click(1,true);
-                    Toast.makeText(getActivity(),"更新成功！",Toast.LENGTH_SHORT).show();
                 }
             }
         });

@@ -689,14 +689,14 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     }
 
     private void initKeyboardController(){
-        keyBoardController=new KeyBoardController(controllerHandler,findViewById(R.id.fv_keyboard), this,prefConfig,false);
+        keyBoardController=new KeyBoardController(controllerHandler, (FrameLayout) rootView, this,prefConfig,false);
         keyBoardController.refreshLayout();
         keyBoardController.show();
     }
 
 
     private void initVirtualController(){
-        virtualController = new KeyBoardController(controllerHandler,findViewById(R.id.fv_game_pad), this,prefConfig,true);
+        virtualController = new KeyBoardController(controllerHandler,(FrameLayout) rootView, this,prefConfig,true);
         virtualController.refreshLayout();
         virtualController.show();
     }

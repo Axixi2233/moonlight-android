@@ -36,16 +36,6 @@
 <!--        app:aperture_middle_color="#6CD2F8">-->
 <!--    </com.limelight.ui.ApertureViewGroup>-->
 
-    <FrameLayout
-        android:id="@+id/fv_game_pad"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
-
-    <FrameLayout
-        android:id="@+id/fv_keyboard"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
-
     <TextView
         android:id="@+id/notificationOverlay"
         android:layout_width="wrap_content"

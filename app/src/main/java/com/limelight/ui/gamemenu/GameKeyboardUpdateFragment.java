@@ -268,7 +268,11 @@ public class GameKeyboardUpdateFragment extends BaseGameMenuDialog implements Vi
     @Override
     public void onClick(View v) {
         if(v.getId()==R.id.btn_right){
-            String name=edt_name.getText().toString().trim();
+            String name=edt_name.getText().toString();
+            //快捷键列表
+            if(keyFrom==1){
+                name=name.trim();
+            }
             if(TextUtils.isEmpty(name)){
                 Toast.makeText(getActivity(),"请输入名称！",Toast.LENGTH_SHORT).show();
                 return;

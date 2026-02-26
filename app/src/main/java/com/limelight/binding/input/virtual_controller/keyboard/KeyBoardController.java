@@ -212,7 +212,7 @@ public class KeyBoardController {
         });
 
         lv_left_view.findViewById(R.id.tx_cancel).setOnClickListener(v -> {
-            View view=frame_layout.findViewWithTag(currentIndex);
+            View view=frame_layout.findViewWithTag(new TagInfo(currentIndex,isGamePadMode));
             currentIndex=-1;
             if(view!=null){
                 view.invalidate();
@@ -232,7 +232,7 @@ public class KeyBoardController {
 
             cb_round.setChecked(isChecked);
             beanList.get(currentIndex).setShapeType(isChecked?1:0);
-            keyBoardVirtualControllerElement element=frame_layout.findViewWithTag(currentIndex);
+            keyBoardVirtualControllerElement element=frame_layout.findViewWithTag(new TagInfo(currentIndex,isGamePadMode));
             element.setShapeType(beanList.get(currentIndex).getShapeType());
             element.invalidate();
         });
@@ -260,8 +260,8 @@ public class KeyBoardController {
                         beanList.get(currentIndex).setHeight((int) (buttonHeight*2*progress*0.01));
                         break;
                 }
-                frame_layout.findViewWithTag(currentIndex).getLayoutParams().width=beanList.get(currentIndex).getWidth();
-                frame_layout.findViewWithTag(currentIndex).getLayoutParams().height=beanList.get(currentIndex).getHeight();
+                frame_layout.findViewWithTag(new TagInfo(currentIndex,isGamePadMode)).getLayoutParams().width=beanList.get(currentIndex).getWidth();
+                frame_layout.findViewWithTag(new TagInfo(currentIndex,isGamePadMode)).getLayoutParams().height=beanList.get(currentIndex).getHeight();
             }
 
             @Override
@@ -288,7 +288,7 @@ public class KeyBoardController {
                         beanList.get(currentIndex).setWidth((int) (buttonWidth*progress*0.01));
                         break;
                 }
-                frame_layout.findViewWithTag(currentIndex).getLayoutParams().width=beanList.get(currentIndex).getWidth();
+                frame_layout.findViewWithTag(new TagInfo(currentIndex,isGamePadMode)).getLayoutParams().width=beanList.get(currentIndex).getWidth();
             }
 
             @Override
@@ -315,7 +315,7 @@ public class KeyBoardController {
                         beanList.get(currentIndex).setHeight((int) (buttonHeight*progress*0.01));
                         break;
                 }
-                frame_layout.findViewWithTag(currentIndex).getLayoutParams().height=beanList.get(currentIndex).getHeight();
+                frame_layout.findViewWithTag(new TagInfo(currentIndex,isGamePadMode)).getLayoutParams().height=beanList.get(currentIndex).getHeight();
             }
 
             @Override
@@ -374,7 +374,7 @@ public class KeyBoardController {
         }
     }
 
-    private AlertDialog alertDialog;
+    private String tips;
 
     private void initData(){
         String res=FileUriUtils.getKeyBoardJson(context,fileName);
@@ -385,25 +385,11 @@ public class KeyBoardController {
         }
         LimeLog.info("axi->"+getControllerMode());
         if(getControllerMode()==ControllerMode.Active&& beanList.isEmpty()){
-            LimeLog.info("axi->dialog");
-            if(alertDialog==null){
-                alertDialog=new AlertDialog.Builder(context)
-                        .setMessage("打开游戏菜单-虚拟手柄与按键-切换到编辑模式，添加按钮！")
-                        .setTitle("提示")
-                        .setNegativeButton("切换到编辑模式", (dialog, which) -> {
-                            switchMode(ControllerMode.MoveButtons);
-                        }).setPositiveButton("取消", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                dialog.dismiss();
-                            }
-                        })
-                        .create();
+            if(TextUtils.isEmpty(tips)){
+                tips="无按键可用，打开编辑模式新增按钮后使用！(菜单-虚拟手柄与按键-编辑模式)";
+                Toast.makeText(context,tips,Toast.LENGTH_LONG).show();
             }
-            if(alertDialog.isShowing()){
-                alertDialog.dismiss();
-            }
-            alertDialog.show();
+//            switchMode(ControllerMode.MoveButtons);
             return;
         }
         for (int i = 0; i < beanList.size(); i++) {
@@ -441,9 +427,9 @@ public class KeyBoardController {
         if(bean.getBtnType()==3){
             if(bean.isGamePad()){
                 if(bean.isFreeStick()){
-                    element=new AnalogStickFreeGamePad(this,bean.getId(),context,bean.getCode()==ControllerPacket.PADDLE5_FLAG);
+                    element=new AnalogStickFreeGamePad(this,bean.getId(),context,bean.getCode()==ControllerPacket.PADDLE5_FLAG,bean.isFixedStrokeFreeStick());
                 }else{
-                    element=new AnalogStickGamePad(this,bean.getId(),context,bean.getCode()==ControllerPacket.PADDLE5_FLAG);
+                    element=new AnalogStickGamePad(this,bean.getId(),context,bean.getCode()==ControllerPacket.PADDLE5_FLAG,bean.isFixedStrokeFreeStick());
                 }
             }else{
                 String[] tips=bean.getDesc().split("-");
@@ -475,10 +461,10 @@ public class KeyBoardController {
 
         if(element!=null){
             element.setShapeType(bean.getShapeType());
-            element.setTag(i);
+            element.setTag(new TagInfo(i,isGamePadMode));
             element.setOnClick(tag -> {
 //                LimeLog.info("axi->当前："+new Gson().toJson(beanList.get(tag)));
-                updateItem(tag);
+                updateItem(tag.index);
             });
             element.setOpacity(PreferenceConfiguration.readPreferences(context).oscOpacity);
             addElement(element,bean.getmLeft(),bean.getmTop(),bean.getWidth(),bean.getHeight());
@@ -493,7 +479,7 @@ public class KeyBoardController {
         lv_left_view.setVisibility(View.VISIBLE);
         View lastView=null;
         if(currentIndex!=-1){
-            lastView=frame_layout.findViewWithTag(currentIndex);
+            lastView=frame_layout.findViewWithTag(new TagInfo(currentIndex,isGamePadMode));
         }
         currentIndex=index;
         if(lastView!=null){
@@ -524,7 +510,7 @@ public class KeyBoardController {
             sb_zoom_x.setProgress(beanList.get(index).getZoom());
         }
 
-        FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) frame_layout.findViewWithTag(currentIndex).getLayoutParams();
+        FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) frame_layout.findViewWithTag(new TagInfo(currentIndex,isGamePadMode)).getLayoutParams();
         beanList.get(currentIndex).setmLeft(layoutParams.leftMargin);
         beanList.get(currentIndex).setmTop(layoutParams.topMargin);
     }
@@ -550,7 +536,6 @@ public class KeyBoardController {
             case Active:
                 message="正常模式~";
                 buttonConfigure.setVisibility(View.GONE);
-                KeyBoardControllerConfigurationLoader.saveProfile(KeyBoardController.this, context);
                 break;
             case MoveButtons:
                 message="位移模式~";
@@ -569,9 +554,9 @@ public class KeyBoardController {
     Handler getHandler() {
         return handler;
     }
-
-    public int getCurrentIndex() {
-        return currentIndex;
+    
+    public TagInfo getCurrentIndex() {
+        return new TagInfo(currentIndex,isGamePadMode);
     }
 
     public void hide() {

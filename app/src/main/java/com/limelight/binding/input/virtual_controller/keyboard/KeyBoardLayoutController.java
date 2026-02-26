@@ -213,6 +213,11 @@ public class KeyBoardLayoutController {
                 resetView();
             }
         });
+        //组合键模式
+        if(prefConfig.keyboard_axi_combination){
+            btn_combination.setChecked(true);
+            isCombination=true;
+        }
 
         keyboardView.findViewById(R.id.iv_down).setOnClickListener(v -> hide());
 

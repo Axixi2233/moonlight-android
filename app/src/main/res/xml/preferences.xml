@@ -472,6 +472,12 @@
             android:title="虚拟全键盘高度" />
 
         <CheckBoxPreference
+            android:key="checkbox_enable_keyboard_axi_combination"
+            android:title="全键盘组合键模式"
+            android:summary="勾选后默认为选中组合键模式"
+            android:defaultValue="false"/>
+
+        <CheckBoxPreference
             android:key="checkbox_enable_exdisplay"
             android:title="外接显示器模式（Beta）"
             android:summary="串流画面显示在显示器，虚拟按键及性能信息等控件在手机屏幕。"

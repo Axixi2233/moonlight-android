@@ -2463,8 +2463,10 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                         filterGyroX = filterGyroX + SMOOTH_ALPHA * (finalX - filterGyroX);
                         filterGyroY = filterGyroY + SMOOTH_ALPHA * (finalY - filterGyroY);
                         // --- 4. 限制范围并发送 ---
-                        context.rightStickX = (short) (clamp(filterGyroX) * 0x7FFF);
-                        context.rightStickY = (short) (clamp(filterGyroY) * 0x7FFF);
+                        short rightX=(short) (clamp(filterGyroX) * 0x7FFF);
+                        short rightY=(short) (clamp(filterGyroY) * 0x7FFF);
+                        context.rightStickX = (short) -rightX;
+                        context.rightStickY = (short) -rightY;
                         sendControllerInputPacket(context);
                     }
                     return;

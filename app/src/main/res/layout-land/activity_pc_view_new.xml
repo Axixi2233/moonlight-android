@@ -89,9 +89,9 @@
         android:padding="15dp"
         android:background="@android:color/transparent"
         android:layout_marginBottom="15dp"
-        android:layout_marginLeft="28dp"
+        android:layout_marginLeft="20dp"
         android:layout_marginRight="15dp"
-        android:layout_marginTop="28dp"
+        android:layout_marginTop="25dp"
         android:layout_below="@+id/rv_top_view"
         android:layout_alignParentBottom="true">
 

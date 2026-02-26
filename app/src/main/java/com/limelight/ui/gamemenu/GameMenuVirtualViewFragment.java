@@ -8,6 +8,7 @@ import android.widget.ImageButton;
 import android.widget.RadioGroup;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.limelight.R;
 import com.limelight.binding.input.virtual_controller.VirtualController;
@@ -138,6 +139,7 @@ public class GameMenuVirtualViewFragment extends BaseGameMenuDialog implements V
                 }
                 if(checkedId==R.id.btn_game_virtual_move){
                     onClick.switchModeGamePad("编辑模式", KeyBoardController.ControllerMode.MoveButtons);
+                    Toast.makeText(getActivity(),"已进入编辑模式，关闭游戏菜单，进行操作！",Toast.LENGTH_SHORT).show();
                     return;
                 }
             }
@@ -155,6 +157,7 @@ public class GameMenuVirtualViewFragment extends BaseGameMenuDialog implements V
                 }
                 if(checkedId==R.id.btn_game_virtual_key_move){
                     onClick.switchModeGameKey("编辑模式", KeyBoardController.ControllerMode.MoveButtons);
+                    Toast.makeText(getActivity(),"已进入编辑模式，关闭游戏菜单，进行操作！",Toast.LENGTH_SHORT).show();
                     return;
                 }
             }

@@ -386,6 +386,9 @@ public class PreferenceConfiguration {
     //解锁屏幕方向锁定
     public boolean autoScreenOrientation;
 
+    //记住全键盘 组合键模式
+    public boolean keyboard_axi_combination;
+
     public static boolean isNativeResolution(int width, int height) {
         // It's not a native resolution if it matches an existing resolution option
         if (width == 640 && height == 360) {
@@ -975,6 +978,8 @@ public class PreferenceConfiguration {
         config.ignoreCheckHDR=prefs.getBoolean("ignoreCheckHDR",false);
 
         config.autoScreenOrientation=prefs.getBoolean("checkbox_auto_screen_orientation",false);
+
+        config.keyboard_axi_combination=prefs.getBoolean("checkbox_enable_keyboard_axi_combination",false);
 
         return config;
     }

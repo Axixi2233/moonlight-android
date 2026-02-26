@@ -126,7 +126,7 @@ public abstract class keyBoardVirtualControllerElement extends View {
 
     protected int getDefaultColor() {
         if(virtualController.getControllerMode() == KeyBoardController.ControllerMode.MoveButtons
-                &&virtualController.getCurrentIndex()==(Integer) getTag()){
+                &&virtualController.getCurrentIndex().equals(getTag())){
             return configSelectedColor;
         }else{
             return normalColor;
@@ -167,7 +167,7 @@ public abstract class keyBoardVirtualControllerElement extends View {
         }
 
         if(onItem!=null){
-            onItem.click((Integer) this.getTag());
+            onItem.click((TagInfo) this.getTag());
         }
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN: {
@@ -297,7 +297,7 @@ public abstract class keyBoardVirtualControllerElement extends View {
     private onItem onItem;
 
     public interface onItem{
-        void click(int tag);
+        void click(TagInfo tag);
     }
 
     public void setOnClick(onItem onItem) {

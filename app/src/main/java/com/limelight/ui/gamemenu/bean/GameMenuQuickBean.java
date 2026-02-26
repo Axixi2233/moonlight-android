@@ -42,6 +42,9 @@ public class GameMenuQuickBean {
     //自由摇杆
     private boolean isFreeStick;
 
+    //固定行程自由摇杆
+    private boolean fixedStrokeFreeStick;
+
     //是否是手柄按键
     private boolean isGamePad;
 
@@ -213,6 +216,15 @@ public class GameMenuQuickBean {
 
     public GameMenuQuickBean setGamePad(boolean gamePad) {
         isGamePad = gamePad;
+        return this;
+    }
+
+    public boolean isFixedStrokeFreeStick() {
+        return fixedStrokeFreeStick;
+    }
+
+    public GameMenuQuickBean setFixedStrokeFreeStick(boolean fixedStrokeFreeStick) {
+        this.fixedStrokeFreeStick = fixedStrokeFreeStick;
         return this;
     }
 }

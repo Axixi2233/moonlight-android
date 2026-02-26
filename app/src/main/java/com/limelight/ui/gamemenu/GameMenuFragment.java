@@ -477,7 +477,7 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
                         return;
                     }
                     game.updateVirtualView();
-                    Toast.makeText(getActivity(),"更新成功！",Toast.LENGTH_SHORT).show();
+//                    Toast.makeText(getActivity(),"更新成功！",Toast.LENGTH_SHORT).show();
                 }
 
                 @Override

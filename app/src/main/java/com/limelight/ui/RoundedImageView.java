@@ -40,7 +40,7 @@ public class RoundedImageView extends android.support.v7.widget.AppCompatImageVi
         paint.setDither(true);
         clipPath = new Path();
         rectF = new RectF();
-        radius = UiHelper.dpToPx(getContext(),12);
+        radius = UiHelper.dpToPx(getContext(),21);
         bgColor = 0xFFFFFF;
     }
 

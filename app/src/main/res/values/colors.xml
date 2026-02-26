@@ -4,5 +4,6 @@
     <color name="bgColor">@android:color/transparent</color>
     <color name="gameMenuBgColor">#272727</color>
     <color name="gameMenuBgColor2">#F0272727</color>
-
+    <color name="pc_app_item_stoke_color">#21C3C3C3</color>
+    <color name="pc_app_item_bg_color">#6675698A</color>
 </resources>
