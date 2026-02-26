@@ -101,9 +101,14 @@ public abstract class AbstractXboxController extends AbstractController {
 
     public boolean start() {
         ifaces.clear();
-        // Force claim all interfaces
+        // Force claim all interfaces except audio so the system can handle the headset jack
         for (int i = 0; i < device.getInterfaceCount(); i++) {
             UsbInterface iface = device.getInterface(i);
+
+            // Let the OS own the USB audio interface so headset audio keeps working
+            if (iface.getInterfaceClass() == UsbConstants.USB_CLASS_AUDIO) {
+                continue;
+            }
 
             if (!connection.claimInterface(iface, true)) {
                 LimeLog.warning("Failed to claim interfaces");
