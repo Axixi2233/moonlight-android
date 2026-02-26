@@ -105,14 +105,16 @@ public class keyAnalogStickFree extends keyBoardVirtualControllerElement {
         float cY = bIsFingerOnScreen ? touchStartY : getHeight() / 2f;
 
         // 3. 绘制外圆和背景
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(getDefaultStrokeWidth());
-        paint.setColor(strokeColor);
-        canvas.drawCircle(cX, cY, radius_complete, paint);
+        if(isDrawNormal){
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(getDefaultStrokeWidth());
+            paint.setColor(strokeColor);
+            canvas.drawCircle(cX, cY, radius_complete, paint);
 
-        paint.setStyle(Paint.Style.FILL);
-        paint.setColor(getDefaultColor());
-        canvas.drawCircle(cX, cY, radius_complete, paint);
+            paint.setStyle(Paint.Style.FILL);
+            paint.setColor(getDefaultColor());
+            canvas.drawCircle(cX, cY, radius_complete, paint);
+        }
 
         // 4. 绘制方向字符
         if(textTipValues.length>3){
