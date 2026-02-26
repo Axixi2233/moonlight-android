@@ -288,8 +288,6 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
         performanceRumble=findViewById(R.id.performanceRumble);
         switchPerformanceRumbleHUD();
-        //光标是否显示
-        cursorVisible=prefConfig.enableMouseLocalCursor;
 
 //        //串流画面 顶部居中显示
 //        if(prefConfig.enableDisplayTopCenter){
@@ -669,6 +667,11 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
         addPerformanceOverlayLiteLeftIcon();
 
+        //光标是否显示
+        if(!cursorVisible&&prefConfig.enableMouseLocalCursor){
+            switchMouseLocalCursor();
+        }
+//        cursorVisible=prefConfig.enableMouseLocalCursor;
 //        initFloatingView();
 
     }
