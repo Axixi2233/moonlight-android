@@ -305,8 +305,8 @@
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:text="Home"
-                android:tag="122"
+                android:text="ScrLk"
+                android:tag="116"
                 android:textColor="@android:color/white"
                 android:textSize="12sp"
                 android:background="@drawable/bg_ax_keyboard_button" />
