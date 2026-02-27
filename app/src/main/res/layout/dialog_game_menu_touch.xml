@@ -187,7 +187,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="5dp"
-                android:text="鼠标/触控板灵敏度（默认启用没有开关）"
+                android:text="触控板模式灵敏度（默认启用没有开关）"
                 android:textColor="@android:color/white"
                 android:textStyle="bold"
                 android:textSize="12dp" />

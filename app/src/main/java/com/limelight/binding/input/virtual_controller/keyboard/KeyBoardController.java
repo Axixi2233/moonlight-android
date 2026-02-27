@@ -87,7 +87,7 @@ public class KeyBoardController {
 
     private FrameLayout frame_layout = null;
 
-    ControllerMode currentMode = ControllerMode.Active;
+    ControllerMode currentMode = ControllerMode.NONE;
 
     private View buttonConfigure = null;
 
@@ -385,6 +385,9 @@ public class KeyBoardController {
         }
         LimeLog.info("axi->"+getControllerMode());
         if(getControllerMode()==ControllerMode.Active&& beanList.isEmpty()){
+            if(fileName.endsWith("_1.txt")&&!prefConfig.autoScreenOrientation){
+                return;
+            }
             if(TextUtils.isEmpty(tips)){
                 tips="无按键可用，打开编辑模式新增按钮后使用！(菜单-虚拟手柄与按键-编辑模式)";
                 Toast.makeText(context,tips,Toast.LENGTH_LONG).show();
@@ -628,7 +631,7 @@ public class KeyBoardController {
         FrameLayout.LayoutParams params1 = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         params1.gravity=Gravity.LEFT;
         frame_layout.addView(lv_left_view, params1);
-        buttonConfigure.setVisibility(View.GONE);
+        buttonConfigure.setVisibility(this.currentMode==ControllerMode.MoveButtons?View.VISIBLE:View.GONE);
         lv_left_view.setVisibility(View.GONE);
     }
 

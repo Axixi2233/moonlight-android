@@ -13,6 +13,7 @@ import com.limelight.binding.input.touch.AbsoluteTouchSwitchContext;
 import com.limelight.binding.input.touch.RelativeTouchContext;
 import com.limelight.binding.input.driver.UsbDriverService;
 import com.limelight.binding.input.evdev.EvdevListener;
+import com.limelight.binding.input.touch.RelativeTouchSwitchContext;
 import com.limelight.binding.input.touch.TouchContext;
 import com.limelight.binding.input.virtual_controller.VirtualController;
 import com.limelight.binding.input.virtual_controller.keyboard.KeyBoardController;
@@ -693,14 +694,14 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     private void initKeyboardController(){
         keyBoardController=new KeyBoardController(controllerHandler, (FrameLayout) rootView, this,prefConfig,false);
-        keyBoardController.refreshLayout();
+//        keyBoardController.refreshLayout();
         keyBoardController.show();
     }
 
 
     private void initVirtualController(){
         virtualController = new KeyBoardController(controllerHandler,(FrameLayout) rootView, this,prefConfig,true);
-        virtualController.refreshLayout();
+//        virtualController.refreshLayout();
         virtualController.show();
     }
 
@@ -3137,7 +3138,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         new AlertDialog.Builder(this).setItems(items, (dialog, which) -> {
             dialog.dismiss();
             //切换本地鼠标
-            if(which==5){
+            if(which==7){
                 switchMouseLocalCursor();
                 return;
             }
@@ -3186,6 +3187,19 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             prefConfig.enableMultiTouchScreen=false;
             prefConfig.touchscreenTrackpad=false;
         }
+
+        //触控板模式 仅移动
+        if(which==5){
+            prefConfig.enableMultiTouchScreen=false;
+            prefConfig.touchscreenTrackpad=true;
+        }
+
+        //触控板模式 仅移动&左键点击
+        if(which==6){
+            prefConfig.enableMultiTouchScreen=false;
+            prefConfig.touchscreenTrackpad=true;
+        }
+
         for (int i = 0; i < touchContextMap.length; i++) {
             if (!prefConfig.touchscreenTrackpad) {
                 if(which==4){
@@ -3195,9 +3209,15 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 }
             }
             else {
-                touchContextMap[i] = new RelativeTouchContext(conn, i,
-                        REFERENCE_HORIZ_RES, REFERENCE_VERT_RES,
-                        streamView, prefConfig);
+                if(which==5||which==6){
+                    touchContextMap[i] = new RelativeTouchSwitchContext(conn, i,
+                            REFERENCE_HORIZ_RES, REFERENCE_VERT_RES,
+                            streamView, prefConfig, which != 5);
+                }else{
+                    touchContextMap[i] = new RelativeTouchContext(conn, i,
+                            REFERENCE_HORIZ_RES, REFERENCE_VERT_RES,
+                            streamView, prefConfig);
+                }
             }
         }
     }
@@ -3249,7 +3269,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     //切换虚拟手柄模式
     public void switchVirtualController(KeyBoardController.ControllerMode mode){
-        if(virtualController==null){
+        if(virtualController==null||!prefConfig.onscreenController){
             Toast.makeText(this,"请先打开虚拟手柄开关！",Toast.LENGTH_SHORT).show();
             return;
         }
@@ -3266,7 +3286,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     //切换虚拟手柄模式
     public void switchVirtualKeyController(KeyBoardController.ControllerMode mode){
-        if(keyBoardController==null){
+        if(keyBoardController==null||!prefConfig.enableKeyboard){
             Toast.makeText(this,"请先打开虚拟按键开关！",Toast.LENGTH_SHORT).show();
             return;
         }

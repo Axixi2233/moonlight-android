@@ -342,22 +342,22 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
             fragment.setOnClick(new GameListMouseFragment.onClick() {
                 @Override
                 public void click(String title, int index) {
-                    if(!TextUtils.isEmpty(title)&&index!=6){
+                    if(!TextUtils.isEmpty(title)&&index!=8){
                         Toast.makeText(getActivity(),title,Toast.LENGTH_SHORT).show();
                     }
                     if(game==null||index<0){
                         return;
                     }
-                    if(index==5){
+                    if(index==7){
                         game.switchMouseLocalCursor();
                         return;
                     }
-                    if(index==6){
+                    if(index==8){
                         game.prefConfig.absoluteMouseMode=!game.prefConfig.absoluteMouseMode;
                         Toast.makeText(getActivity(),"远程桌面鼠标模式"+(game.prefConfig.absoluteMouseMode?"已启用！":"已禁用！"),Toast.LENGTH_SHORT).show();
                         return;
                     }
-                    if(index==7){
+                    if(index==9){
                         if(conn!=null){
                             sendKeys(new short[]{KeyboardTranslator.VK_LCONTROL,KeyboardTranslator.VK_LMENU, KeyboardTranslator.VK_LSHIFT, KeyboardTranslator.VK_N});
                         }

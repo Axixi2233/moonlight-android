@@ -153,7 +153,9 @@
         <item>普通鼠标模式</item>
         <item>触控板模式</item>
         <item>禁用鼠标/触控</item>
-        <item>普通鼠标模式（左右键互换）</item>
+        <item>普通鼠标「左右键互换」</item>
+        <item>触控板「仅移动」</item>
+        <item>触控板「移动+左键点击」</item>
     </string-array>
 
     <string-array name="mouse_model_values_axi" translatable="false">
