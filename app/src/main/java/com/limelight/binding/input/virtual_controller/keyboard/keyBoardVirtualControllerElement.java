@@ -37,6 +37,7 @@ public abstract class keyBoardVirtualControllerElement extends View {
     protected int textColor = 0xFFFFFFFF;
     protected int pressedColor = 0x805C5CAD;
     protected int strokeColor = 0xB3ADADAD;
+    protected int strokeSwicthModeColor = 0xB3FFC107;
 
     private int configMoveColor = 0xF0FF0000;
     private int configResizeColor = 0xF0FF00FF;

@@ -104,6 +104,7 @@ public class KeyBoardController {
     private TextView txDesc;
     private TextView txZoom;
     private CheckBox cb_round;
+    private CheckBox cb_switch_mode;
     private SeekBar sb_zoom_x;
 
     private TextView tx_zoom_w;
@@ -144,6 +145,7 @@ public class KeyBoardController {
         txDesc=lv_left_view.findViewById(R.id.tx_desc);
         txZoom=lv_left_view.findViewById(R.id.tx_zoom);
         cb_round=lv_left_view.findViewById(R.id.cb_round);
+        cb_switch_mode=lv_left_view.findViewById(R.id.cb_switch_mode);
         sb_zoom_x=lv_left_view.findViewById(R.id.sb_zoom_x);
         sb_zoom_w=lv_left_view.findViewById(R.id.sb_zoom_w);
         sb_zoom_h=lv_left_view.findViewById(R.id.sb_zoom_h);
@@ -236,6 +238,17 @@ public class KeyBoardController {
             element.setShapeType(beanList.get(currentIndex).getShapeType());
             element.invalidate();
         });
+
+        cb_switch_mode.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            cb_switch_mode.setChecked(isChecked);
+            beanList.get(currentIndex).setSwitchMode(isChecked);
+            keyBoardVirtualControllerElement element=frame_layout.findViewWithTag(new TagInfo(currentIndex,isGamePadMode));
+            if(element instanceof KeyBoardDigitalButton){
+                ((KeyBoardDigitalButton)element).setEnableSwitchDown(isChecked);
+            }
+            element.invalidate();
+        });
+
         sb_zoom_x.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -496,6 +509,18 @@ public class KeyBoardController {
             cb_round.setChecked(beanList.get(index).getShapeType()==1);
             cb_round.setVisibility(beanList.get(index).getBtnType()==4?View.VISIBLE:View.GONE);
 
+            cb_switch_mode.setChecked(beanList.get(index).isSwitchMode());
+            if(beanList.get(index).getBtnType()==4){
+                //排除功能按钮
+                String codes=beanList.get(index).getCodes();
+                if(!TextUtils.isEmpty(codes)&&!codes.startsWith("29,52,37,52")){
+                    cb_switch_mode.setVisibility(View.VISIBLE);
+                }else{
+                    cb_switch_mode.setVisibility(View.GONE);
+                }
+            }else{
+                cb_switch_mode.setVisibility(View.GONE);
+            }
             lv_left_view.findViewById(R.id.lv_zoom_wh).setVisibility(beanList.get(index).getShapeType()==1?View.VISIBLE:View.GONE);
             txZoom.setVisibility(beanList.get(index).getShapeType()==1?View.GONE:View.VISIBLE);
             sb_zoom_x.setVisibility(beanList.get(index).getShapeType()==1?View.GONE:View.VISIBLE);
@@ -505,6 +530,7 @@ public class KeyBoardController {
             sb_zoom_w.setProgress(beanList.get(index).getZoomW());
             sb_zoom_h.setProgress(beanList.get(index).getZoomH());
         }else{
+            cb_switch_mode.setVisibility(View.GONE);
             cb_round.setVisibility(View.GONE);
             lv_left_view.findViewById(R.id.lv_zoom_wh).setVisibility(View.GONE);
             txZoom.setVisibility(View.VISIBLE);

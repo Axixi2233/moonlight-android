@@ -171,7 +171,7 @@ public class KeyBoardDigitalButton extends keyBoardVirtualControllerElement {
         }
 
         // 4. 绘制描边 (Stroke)
-        paint.setColor(strokeColor);
+        paint.setColor(enableSwitchDown?strokeSwicthModeColor:strokeColor);
         paint.setStyle(Paint.Style.STROKE);
         if (shapeType == 1) {
             canvas.drawRoundRect(rect, 42, 42, paint);

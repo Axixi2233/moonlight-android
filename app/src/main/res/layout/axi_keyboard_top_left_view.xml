@@ -113,16 +113,33 @@
 
         </LinearLayout>
 
+        <LinearLayout
+            android:gravity="center_horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
-        <CheckBox
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:padding="4dp"
-            android:textSize="11sp"
-            android:id="@+id/cb_round"
-            android:buttonTint="#8C99E6"
-            android:text="方形按钮" />
+            <CheckBox
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:padding="0dp"
+                android:textSize="11sp"
+                android:id="@+id/cb_switch_mode"
+                android:buttonTint="#8C99E6"
+                android:text="锁定模式" />
+
+            <CheckBox
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:padding="0dp"
+                android:textSize="11sp"
+                android:id="@+id/cb_round"
+                android:buttonTint="#8C99E6"
+                android:text="方形按钮" />
+
+        </LinearLayout>
+
 
         <TextView
             android:text="删除"
