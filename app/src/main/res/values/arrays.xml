@@ -134,11 +134,11 @@
 
 
     <string-array name="keyboard_axi_names">
-        <item>第1套</item>
-        <item>第2套</item>
-        <item>第3套</item>
-        <item>第4套</item>
-        <item>第5套</item>
+        <item>方案1</item>
+        <item>方案2</item>
+        <item>方案3</item>
+        <item>方案4</item>
+        <item>方案5</item>
     </string-array>
     <string-array name="keyboard_axi_values" translatable="false">
         <item>OSC_Keyboard</item>
@@ -187,5 +187,19 @@
         <item>6</item>
     </string-array>
 
+    <string-array name="gamepad_axi_names">
+        <item>方案1</item>
+        <item>方案2</item>
+        <item>方案3</item>
+        <item>方案4</item>
+        <item>方案5</item>
+    </string-array>
+    <string-array name="gamepad_axi_values" translatable="false">
+        <item>gamePad</item>
+        <item>gamePad_2</item>
+        <item>gamePad_3</item>
+        <item>gamePad_4</item>
+        <item>gamePad_5</item>
+    </string-array>
 
 </resources>

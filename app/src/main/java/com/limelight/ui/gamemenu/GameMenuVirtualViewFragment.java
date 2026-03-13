@@ -17,6 +17,8 @@ import com.limelight.preferences.PreferenceConfiguration;
 import com.limelight.ui.BaseFragmentDialog.BaseGameMenuDialog;
 import com.limelight.utils.UiHelper;
 
+import static com.limelight.binding.input.virtual_controller.keyboard.KeyBoardControllerConfigurationLoader.OSC_GAMEPAD_PREFERENCE;
+import static com.limelight.binding.input.virtual_controller.keyboard.KeyBoardControllerConfigurationLoader.OSC_GAMEPAD_PREFERENCE_VALUE;
 import static com.limelight.binding.input.virtual_controller.keyboard.KeyBoardControllerConfigurationLoader.OSC_PREFERENCE;
 import static com.limelight.binding.input.virtual_controller.keyboard.KeyBoardControllerConfigurationLoader.OSC_PREFERENCE_VALUE;
 
@@ -68,6 +70,10 @@ public class GameMenuVirtualViewFragment extends BaseGameMenuDialog implements V
     private String[] keyValues;
     private String keyName;
 
+    private String[] keyValuesGamePad;
+    private String keyNameGamePad;
+
+    private RadioGroup rg_game_virtual_game_scheme;
     @Override
     public void bindView(View v) {
         super.bindView(v);
@@ -85,6 +91,7 @@ public class GameMenuVirtualViewFragment extends BaseGameMenuDialog implements V
         tx_adjust_virtual_gamepad=v.findViewById(R.id.tx_adjust_virtual_gamepad);
 
         rg_game_virtual_key_scheme=v.findViewById(R.id.rg_game_virtual_key_scheme);
+        rg_game_virtual_game_scheme=v.findViewById(R.id.rg_game_virtual_game_scheme);
         rg_game_virtual_pad=v.findViewById(R.id.rg_game_virtual_pad);
         rg_game_virtual_pad_key=v.findViewById(R.id.rg_game_virtual_key);
 
@@ -212,6 +219,58 @@ public class GameMenuVirtualViewFragment extends BaseGameMenuDialog implements V
                         .commit();
             }
         });
+
+        //虚拟手柄
+        keyValuesGamePad=getResources().getStringArray(R.array.gamepad_axi_values);
+        keyNameGamePad = PreferenceManager.getDefaultSharedPreferences(getActivity()).getString(OSC_GAMEPAD_PREFERENCE, OSC_GAMEPAD_PREFERENCE_VALUE);
+
+        for (int i = 0; i < keyValuesGamePad.length; i++) {
+            if(TextUtils.equals(keyNameGamePad,keyValuesGamePad[i])){
+                switch (i){
+                    case 0:
+                        rg_game_virtual_game_scheme.check(R.id.btn_game_virtual_game_scheme_1);
+                        break;
+                    case 1:
+                        rg_game_virtual_game_scheme.check(R.id.btn_game_virtual_game_scheme_2);
+                        break;
+                    case 2:
+                        rg_game_virtual_game_scheme.check(R.id.btn_game_virtual_game_scheme_3);
+                        break;
+                    case 3:
+                        rg_game_virtual_game_scheme.check(R.id.btn_game_virtual_game_scheme_4);
+                        break;
+                    case 4:
+                        rg_game_virtual_game_scheme.check(R.id.btn_game_virtual_game_scheme_5);
+                        break;
+                }
+                break;
+            }
+        }
+        rg_game_virtual_game_scheme.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(RadioGroup group, int checkedId) {
+                if(checkedId==R.id.btn_game_virtual_game_scheme_1){
+                    keyNameGamePad=keyValuesGamePad[0];
+                }
+                if(checkedId==R.id.btn_game_virtual_game_scheme_2){
+                    keyNameGamePad=keyValuesGamePad[1];
+                }
+                if(checkedId==R.id.btn_game_virtual_game_scheme_3){
+                    keyNameGamePad=keyValuesGamePad[2];
+                }
+                if(checkedId==R.id.btn_game_virtual_game_scheme_4){
+                    keyNameGamePad=keyValuesGamePad[3];
+                }
+                if(checkedId==R.id.btn_game_virtual_game_scheme_5){
+                    keyNameGamePad=keyValuesGamePad[4];
+                }
+                PreferenceManager.getDefaultSharedPreferences(getActivity())
+                        .edit()
+                        .putString(OSC_GAMEPAD_PREFERENCE,keyNameGamePad)
+                        .commit();
+            }
+        });
+
 
         switch (PreferenceConfiguration.readPreferences(getActivity()).virtualkeyViewNormalColor){
             case 0xF0000000:

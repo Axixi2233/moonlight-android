@@ -233,27 +233,35 @@
             android:key="checkbox_show_onscreen_controls"
             android:summary="@string/summary_checkbox_show_onscreen_controls"
             android:title="@string/title_checkbox_show_onscreen_controls" />
-       
+
+        <ListPreference
+            android:key="gamepad_axi_list"
+            android:title="默认布局方案"
+            android:summary="横竖屏支持单独配置。"
+            android:entries="@array/gamepad_axi_names"
+            android:entryValues="@array/gamepad_axi_values"
+            android:defaultValue="OSC_GAMEPAD_1" />
+
         <CheckBoxPreference
             android:key="checkbox_vibrate_osc"
             android:dependency="checkbox_show_onscreen_controls"
             android:title="@string/title_checkbox_vibrate_osc"
             android:summary="@string/summary_checkbox_vibrate_osc"
             android:defaultValue="true" />
-        <CheckBoxPreference
-            android:defaultValue="false"
-            android:dependency="checkbox_show_onscreen_controls"
-            android:key="checkbox_only_show_L3R3"
-            android:summary="@string/summary_only_l3r3"
-            android:title="@string/title_only_l3r3" />
-        <CheckBoxPreference
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:defaultValue="false"
-            android:dependency="checkbox_show_onscreen_controls"
-            android:key="checkbox_show_guide_button"
-            android:summary="@string/summary_show_guide_button"
-            android:title="@string/title_show_guide_button" />
+<!--        <CheckBoxPreference-->
+<!--            android:defaultValue="false"-->
+<!--            android:dependency="checkbox_show_onscreen_controls"-->
+<!--            android:key="checkbox_only_show_L3R3"-->
+<!--            android:summary="@string/summary_only_l3r3"-->
+<!--            android:title="@string/title_only_l3r3" />-->
+<!--        <CheckBoxPreference-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:defaultValue="false"-->
+<!--            android:dependency="checkbox_show_onscreen_controls"-->
+<!--            android:key="checkbox_show_guide_button"-->
+<!--            android:summary="@string/summary_show_guide_button"-->
+<!--            android:title="@string/title_show_guide_button" />-->
 
         <com.limelight.preferences.SeekBarPreference
             android:key="seekbar_osc_opacity"
@@ -272,14 +280,25 @@
             android:key="checkbox_rocker_click_L3R3"
             android:summary="开启后，虚拟手柄摇杆无法触发L3和R3"
             android:title="禁用虚拟手柄摇杆中心区域" />
+<!--        <com.limelight.preferences.ConfirmDeleteOscPreference-->
+<!--            android:title="@string/title_reset_osc"-->
+<!--            android:summary="@string/summary_reset_osc"-->
+<!--            android:dialogTitle="@string/dialog_title_reset_osc"-->
+<!--            android:dialogMessage="@string/dialog_text_reset_osc"-->
+<!--            android:positiveButtonText="@string/yes"-->
+<!--            android:negativeButtonText="@string/no"-->
+<!--            />-->
 
-        <com.limelight.preferences.ConfirmDeleteOscPreference
-            android:title="@string/title_reset_osc"
-            android:summary="@string/summary_reset_osc"
-            android:dialogTitle="@string/dialog_title_reset_osc"
-            android:dialogMessage="@string/dialog_text_reset_osc"
-            android:positiveButtonText="@string/yes"
-            android:negativeButtonText="@string/no"
+        <Preference
+            android:key="import_gamepad_file"
+            android:title="导入虚拟手柄配置"
+            android:summary="选择一个配置文件，覆盖默认选择的布局方案。(仅横屏模式)"
+            />
+
+        <Preference
+            android:key="export_gamepad_file"
+            android:title="导出虚拟手柄配置"
+            android:summary="导出默认选择的布局方案的配置文件。(仅横屏模式)"
             />
 
     </PreferenceCategory>

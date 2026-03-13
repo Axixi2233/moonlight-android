@@ -1,6 +1,8 @@
 package com.limelight.preferences;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -713,6 +715,17 @@ public class StreamSettings extends Activity {
                 }
             });
 
+            findPreference("import_gamepad_file").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+                @Override
+                public boolean onPreferenceClick(Preference preference) {
+                    Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                    intent.addCategory(Intent.CATEGORY_OPENABLE);
+                    intent.setType("text/plain");
+                    startActivityForResult(intent, GAMEPAD_READ_REQUEST_CODE);
+                    return false;
+                }
+            });
+
             findPreference("import_computers_data_file").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
                 @Override
                 public boolean onPreferenceClick(Preference preference) {
@@ -771,6 +784,23 @@ public class StreamSettings extends Activity {
                 @Override
                 public boolean onPreferenceClick(Preference preference) {
                     String name = PreferenceManager.getDefaultSharedPreferences(getActivity()).getString(KeyBoardControllerConfigurationLoader.OSC_PREFERENCE, KeyBoardControllerConfigurationLoader.OSC_PREFERENCE_VALUE);
+                    Uri uri=FileUriUtils.getKeyBoardFile(getActivity(),"axi_"+name+".txt");
+                    if(uri==null){
+                        return false;
+                    }
+                    Intent intent = new Intent(Intent.ACTION_SEND);
+                    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    intent.putExtra(Intent.EXTRA_STREAM, uri);
+                    intent.setType("text/plain");
+                    startActivity(Intent.createChooser(intent,"保存配置文件"));
+                    return false;
+                }
+            });
+
+            findPreference("export_gamepad_file").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+                @Override
+                public boolean onPreferenceClick(Preference preference) {
+                    String name = PreferenceManager.getDefaultSharedPreferences(getActivity()).getString(KeyBoardControllerConfigurationLoader.OSC_GAMEPAD_PREFERENCE, KeyBoardControllerConfigurationLoader.OSC_GAMEPAD_PREFERENCE_VALUE);
                     Uri uri=FileUriUtils.getKeyBoardFile(getActivity(),"axi_"+name+".txt");
                     if(uri==null){
                         return false;
@@ -879,6 +909,8 @@ public class StreamSettings extends Activity {
         }
         int READ_REQUEST_CODE=1001;
 
+        int GAMEPAD_READ_REQUEST_CODE=1002;
+
         int READ_DATABASE_REQUEST_CODE=1003;
 
         int READ_DATA_CRT_REQUEST_CODE=1004;
@@ -892,7 +924,7 @@ public class StreamSettings extends Activity {
         @Override
         public void onActivityResult(int requestCode, int resultCode, Intent data) {
             super.onActivityResult(requestCode, resultCode, data);
-            if (requestCode == READ_REQUEST_CODE && resultCode == Activity.RESULT_OK &&data.getData()!=null) {
+            if ((requestCode == READ_REQUEST_CODE || requestCode == GAMEPAD_READ_REQUEST_CODE) && resultCode == Activity.RESULT_OK &&data.getData()!=null) {
                 try {
                     Uri uri = data.getData();
                     String json=FileUriUtils.openUriForRead(getActivity(),uri);
@@ -901,6 +933,9 @@ public class StreamSettings extends Activity {
                         return;
                     }
                     String name = PreferenceManager.getDefaultSharedPreferences(getActivity()).getString(KeyBoardControllerConfigurationLoader.OSC_PREFERENCE, KeyBoardControllerConfigurationLoader.OSC_PREFERENCE_VALUE);
+                    if(requestCode == GAMEPAD_READ_REQUEST_CODE){
+                        name = PreferenceManager.getDefaultSharedPreferences(getActivity()).getString(KeyBoardControllerConfigurationLoader.OSC_GAMEPAD_PREFERENCE, KeyBoardControllerConfigurationLoader.OSC_GAMEPAD_PREFERENCE_VALUE);
+                    }
                     boolean result=FileUriUtils.saveKeyBoardJson(getActivity(),"axi_"+name+".txt",json);
                     if(result){
                         Toast.makeText(getActivity(),"导入成功！",Toast.LENGTH_SHORT).show();

@@ -37,6 +37,9 @@ public class KeyBoardControllerConfigurationLoader {
     public static final String OSC_PREFERENCE = "keyboard_axi_list";
     public static final String OSC_PREFERENCE_VALUE = "OSC_Keyboard";
 
+    public static final String OSC_GAMEPAD_PREFERENCE = "gamepad_axi_list";
+    public static final String OSC_GAMEPAD_PREFERENCE_VALUE = "gamePad";
+
     // The default controls are specified using a grid of 128*72 cells at 16:9
     private static int screenScale(int units, int height) {
         return (int) (((float) height / (float) 72) * (float) units);

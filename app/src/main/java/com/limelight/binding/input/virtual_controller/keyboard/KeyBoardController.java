@@ -45,6 +45,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static com.limelight.binding.input.virtual_controller.keyboard.KeyBoardControllerConfigurationLoader.OSC_GAMEPAD_PREFERENCE;
+import static com.limelight.binding.input.virtual_controller.keyboard.KeyBoardControllerConfigurationLoader.OSC_GAMEPAD_PREFERENCE_VALUE;
 import static com.limelight.binding.input.virtual_controller.keyboard.KeyBoardControllerConfigurationLoader.OSC_PREFERENCE;
 import static com.limelight.binding.input.virtual_controller.keyboard.KeyBoardControllerConfigurationLoader.OSC_PREFERENCE_VALUE;
 
@@ -669,7 +671,7 @@ public class KeyBoardController {
         removeElements();
         String name = PreferenceManager.getDefaultSharedPreferences(context).getString(OSC_PREFERENCE, OSC_PREFERENCE_VALUE);
         if(isGamePadMode){
-            name="gamePad";
+            name= PreferenceManager.getDefaultSharedPreferences(context).getString(OSC_GAMEPAD_PREFERENCE, OSC_GAMEPAD_PREFERENCE_VALUE);
         }
         if(!isLandscape(context)){
             name+="_1";
