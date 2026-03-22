@@ -8,7 +8,6 @@ import android.widget.TextView;
 
 import com.limelight.R;
 import com.limelight.ui.BaseFragmentDialog.BaseGameMenuDialog;
-import com.limelight.ui.gamepad.GyroView;
 
 public class GameGyroFragment extends BaseGameMenuDialog implements View.OnClickListener{
     @Override
@@ -34,8 +33,10 @@ public class GameGyroFragment extends BaseGameMenuDialog implements View.OnClick
         }
         initViewData();
         ibtn_back.setOnClickListener(this);
-        gv_gyro_view.setSensorManager(sensorManager);
-        gv_gyro_view.start();
+        if (gv_gyro_view != null) {
+            gv_gyro_view.setSensorManager(sensorManager);
+            gv_gyro_view.start();
+        }
     }
 
     private void initViewData() {
@@ -72,7 +73,9 @@ public class GameGyroFragment extends BaseGameMenuDialog implements View.OnClick
     @Override
     public void onDestroy() {
         super.onDestroy();
-        gv_gyro_view.release();
+        if (gv_gyro_view != null) {
+            gv_gyro_view.release();
+        }
     }
 
     private SensorManager sensorManager;

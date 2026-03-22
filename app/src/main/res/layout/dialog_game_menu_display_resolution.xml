@@ -65,21 +65,58 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="信息"
+                    android:text="预设分辨率"
                     android:textStyle="bold"
                     android:textColor="@android:color/white"
                     android:textSize="12dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/layout_preset"
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <LinearLayout
+                android:id="@+id/ll_custom_title"
+                android:layout_marginTop="10dp"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:layout_marginBottom="5dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginLeft="5dp"
-                    android:text="输入宽和高 (只校验非空，别填奇怪的数值)"
-                    android:textStyle="italic"
+                    android:text="自定义分辨率"
+                    android:textStyle="bold"
                     android:textColor="@android:color/white"
-                    android:textSize="8dp" />
-
+                    android:textSize="12dp" />
             </LinearLayout>
 
+            <LinearLayout
+                android:id="@+id/layout_custom"
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <LinearLayout
+                android:layout_marginTop="10dp"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:layout_marginBottom="5dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="手动输入"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/white"
+                    android:textSize="12dp" />
+            </LinearLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -98,7 +135,7 @@
                     android:singleLine="true"
                     android:inputType="number"
                     android:layout_marginTop="4dp"
-                    android:hint="请输入宽度，比如1920"
+                    android:hint="请输入宽度"
                     android:paddingLeft="10dp"
                     android:paddingRight="10dp"
                     android:textSize="12dp"
@@ -120,7 +157,7 @@
                     android:singleLine="true"
                     android:inputType="number"
                     android:layout_marginTop="4dp"
-                    android:hint="请输入高度，比如1080"
+                    android:hint="请输入高度"
                     android:id="@+id/edt_height"
                     android:paddingLeft="10dp"
                     android:paddingRight="10dp"
@@ -128,6 +165,16 @@
                     android:background="@drawable/ic_game_menu_btn_selector"
                     android:layout_width="match_parent"
                     android:layout_height="30dp"/>
+
+                <Button
+                    android:id="@+id/btn_save"
+                    android:layout_width="match_parent"
+                    android:layout_height="30dp"
+                    android:layout_marginTop="10dp"
+                    android:text="保存此分辨率"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:textColor="@android:color/white"
+                    android:textSize="11dp" />
 
             </LinearLayout>
 

@@ -31,7 +31,7 @@
 
     </RelativeLayout>
 
-    <com.limelight.ui.gamepad.GyroView
+    <com.limelight.ui.gamemenu.GyroView
         android:id="@+id/gv_gyro_view"
         android:layout_width="match_parent"
         android:layout_height="200dp"/>
