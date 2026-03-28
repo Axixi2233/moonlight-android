@@ -93,6 +93,7 @@ import android.view.ViewGroup;
 import android.view.ViewOutlineProvider;
 import android.view.ViewParent;
 import android.view.Window;
+import android.view.WindowInsets;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.view.inputmethod.InputMethodManager;
@@ -1579,6 +1580,34 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         return (byte) modifierFlags;
     }
 
+    private boolean isSoftKeyboardVisible() {
+        View decorView = getWindow().getDecorView();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            WindowInsets rootInsets = decorView.getRootWindowInsets();
+            return rootInsets != null && rootInsets.isVisible(WindowInsets.Type.ime());
+        }
+
+        Rect visibleFrame = new Rect();
+        decorView.getWindowVisibleDisplayFrame(visibleFrame);
+        int keyboardHeight = decorView.getHeight() - visibleFrame.bottom;
+        return keyboardHeight > decorView.getHeight() * 0.15f;
+    }
+
+    private void sendVirtualKeyboardKey(int keyCode, byte keyDirection) {
+        short translated = keyboardTranslator.translate(keyCode, KeyCharacterMap.VIRTUAL_KEYBOARD);
+        if (translated == 0) {
+            return;
+        }
+
+        conn.sendKeyboardInput(translated, keyDirection, getModifierState(),
+                keyboardTranslator.hasNormalizedMapping(keyCode, KeyCharacterMap.VIRTUAL_KEYBOARD) ? 0 : MoonBridge.SS_KBE_FLAG_NON_NORMALIZED);
+    }
+
+    private void sendVirtualKeyboardKeyPress(int keyCode) {
+        sendVirtualKeyboardKey(keyCode, KeyboardPacket.KEY_DOWN);
+        sendVirtualKeyboardKey(keyCode, KeyboardPacket.KEY_UP);
+    }
+
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         return handleKeyDown(event) || super.onKeyDown(keyCode, event);
@@ -1747,6 +1776,30 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         return true;
     }
 
+    @Override
+    public void handleCommittedText(CharSequence text) {
+        if (!grabbedInput || text == null || text.length() == 0) {
+            return;
+        }
+
+        // 组合输入期间的文本留在本地，只有确认提交后才转发到远端。
+        conn.sendUtf8Text(text.toString());
+    }
+
+    @Override
+    public void handleDeleteSurroundingText(int beforeLength, int afterLength) {
+        if (!grabbedInput) {
+            return;
+        }
+
+        for (int i = 0; i < beforeLength; i++) {
+            sendVirtualKeyboardKeyPress(KeyEvent.KEYCODE_DEL);
+        }
+        for (int i = 0; i < afterLength; i++) {
+            sendVirtualKeyboardKeyPress(KeyEvent.KEYCODE_FORWARD_DEL);
+        }
+    }
+
     private TouchContext getTouchContext(int actionIndex)
     {
         if (actionIndex < touchContextMap.length) {
@@ -1761,7 +1814,20 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     public void toggleKeyboard() {
         LimeLog.info("Toggling keyboard overlay");
         InputMethodManager inputManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-        inputManager.toggleSoftInput(0, 0);
+        if (isSoftKeyboardVisible()) {
+            inputManager.hideSoftInputFromWindow(streamView.getWindowToken(), 0);
+            streamView.setImeInputConnectionActive(false);
+            inputManager.restartInput(streamView);
+            return;
+        }
+
+        // 先激活 StreamView 的 InputConnection，再请求显示软键盘。
+        streamView.setImeInputConnectionActive(true);
+        streamView.post(() -> {
+            streamView.requestFocus();
+            inputManager.restartInput(streamView);
+            inputManager.showSoftInput(streamView, InputMethodManager.SHOW_IMPLICIT);
+        });
     }
 
     private byte getLiTouchTypeFromEvent(MotionEvent event) {

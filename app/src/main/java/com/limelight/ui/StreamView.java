@@ -2,6 +2,9 @@ package com.limelight.ui;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.text.Editable;
+import android.text.InputType;
+import android.text.Selection;
 import android.util.AttributeSet;
 import android.view.GestureDetector;
 import android.view.KeyEvent;
@@ -9,10 +12,16 @@ import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.SurfaceView;
 import android.view.ViewGroup;
+import android.view.inputmethod.BaseInputConnection;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputConnection;
 
 public class StreamView extends SurfaceView {
     private double desiredAspectRatio;
     private InputCallbacks inputCallbacks;
+    // 仅作为 IME 的临时编辑缓冲区使用，组合输入不直接同步到远端
+    private final Editable imeEditable = Editable.Factory.getInstance().newEditable("");
+    private boolean imeInputConnectionActive;
 
 
     private boolean enableZoomAndPan = false;  // 开关变量，控制缩放和平移功能
@@ -32,6 +41,17 @@ public class StreamView extends SurfaceView {
 
     public void setInputCallbacks(InputCallbacks callbacks) {
         this.inputCallbacks = callbacks;
+    }
+
+    public void setImeInputConnectionActive(boolean active) {
+        this.imeInputConnectionActive = active;
+        if (!this.imeInputConnectionActive) {
+            clearImeEditable();
+        }
+    }
+
+    public boolean isImeInputConnectionActive() {
+        return imeInputConnectionActive;
     }
 
     public StreamView(Context context) {
@@ -85,7 +105,43 @@ public class StreamView extends SurfaceView {
     }
 
     @Override
+    public boolean onCheckIsTextEditor() {
+        return isImeInputConnectionActive();
+    }
+
+    @Override
+    public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
+        if (!isImeInputConnectionActive()) {
+            return super.onCreateInputConnection(outAttrs);
+        }
+
+        // 只在显式打开软键盘时把 StreamView 暂时暴露为文本编辑器，
+        // 避免进入串流界面后自动弹出输入法。
+        outAttrs.inputType = InputType.TYPE_CLASS_TEXT |
+                InputType.TYPE_TEXT_FLAG_AUTO_CORRECT |
+                InputType.TYPE_TEXT_FLAG_MULTI_LINE;
+        outAttrs.imeOptions = EditorInfo.IME_FLAG_NO_FULLSCREEN | EditorInfo.IME_ACTION_NONE;
+        int selectionStart = Selection.getSelectionStart(imeEditable);
+        int selectionEnd = Selection.getSelectionEnd(imeEditable);
+        if (selectionStart < 0 || selectionEnd < 0) {
+            selectionStart = imeEditable.length();
+            selectionEnd = imeEditable.length();
+            Selection.setSelection(imeEditable, selectionEnd);
+        }
+        outAttrs.initialSelStart = selectionStart;
+        outAttrs.initialSelEnd = selectionEnd;
+        return new StreamInputConnection();
+    }
+
+    @Override
     public boolean onKeyPreIme(int keyCode, KeyEvent event) {
+        if (isImeInputConnectionActive() && keyCode == KeyEvent.KEYCODE_BACK) {
+            if (event.getAction() == KeyEvent.ACTION_UP) {
+                setImeInputConnectionActive(false);
+            }
+            return super.onKeyPreIme(keyCode, event);
+        }
+
         // This callbacks allows us to override dumb IME behavior like when
         // Samsung's default keyboard consumes Shift+Space.
         if (inputCallbacks != null) {
@@ -107,6 +163,8 @@ public class StreamView extends SurfaceView {
     public interface InputCallbacks {
         boolean handleKeyUp(KeyEvent event);
         boolean handleKeyDown(KeyEvent event);
+        void handleCommittedText(CharSequence text);
+        void handleDeleteSurroundingText(int beforeLength, int afterLength);
     }
 
     public void setEnableZoomAndPan(boolean enableZoomAndPan) {
@@ -211,5 +269,73 @@ public class StreamView extends SurfaceView {
         return scaleFactor;
     }
 
+    private void clearImeEditable() {
+        imeEditable.clear();
+        Selection.setSelection(imeEditable, 0);
+    }
+
+    private boolean hasEditableText() {
+        return imeEditable.length() > 0;
+    }
+
+    private final class StreamInputConnection extends BaseInputConnection {
+        private StreamInputConnection() {
+            super(StreamView.this, true);
+            Selection.setSelection(imeEditable, imeEditable.length());
+        }
+
+        @Override
+        public Editable getEditable() {
+            return imeEditable;
+        }
+
+        @Override
+        public boolean commitText(CharSequence text, int newCursorPosition) {
+            boolean handled = super.commitText(text, newCursorPosition);
+            if (inputCallbacks != null && text != null && text.length() > 0) {
+                // 只把最终提交的文本发送给远端，避免与组合输入阶段重复。
+                inputCallbacks.handleCommittedText(text);
+            }
+            clearImeEditable();
+            return handled;
+        }
+
+        @Override
+        public boolean deleteSurroundingText(int beforeLength, int afterLength) {
+            if (hasEditableText()) {
+                return super.deleteSurroundingText(beforeLength, afterLength);
+            }
+
+            if (inputCallbacks != null) {
+                // 当本地缓冲区为空时，把删除操作映射为远端退格/前删按键。
+                inputCallbacks.handleDeleteSurroundingText(beforeLength, afterLength);
+            }
+            return true;
+        }
+
+        @Override
+        public boolean finishComposingText() {
+            boolean handled = super.finishComposingText();
+            if (!hasEditableText()) {
+                clearImeEditable();
+            }
+            return handled;
+        }
+
+        @Override
+        public boolean sendKeyEvent(KeyEvent event) {
+            if (inputCallbacks == null) {
+                return super.sendKeyEvent(event);
+            }
+
+            if (event.getAction() == KeyEvent.ACTION_DOWN) {
+                return inputCallbacks.handleKeyDown(event);
+            }
+            else if (event.getAction() == KeyEvent.ACTION_UP) {
+                return inputCallbacks.handleKeyUp(event);
+            }
+            return super.sendKeyEvent(event);
+        }
+    }
 
 }
