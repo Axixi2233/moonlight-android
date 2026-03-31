@@ -1024,9 +1024,13 @@ public class StreamSettings extends Activity {
                 try {
                     Uri uri = data.getData();
                     File dataBaseFile= null;
-                    String displayName = "axi_screen_bg.png";
+                    String displayName = "axi_screen_bg_"+System.currentTimeMillis()+".png";
                     dataBaseFile=new File(getActivity().getFilesDir().getAbsolutePath(), displayName);
                     FileUriUtils.copyUriToInternalStorage(getActivity(),uri,dataBaseFile);
+                    PreferenceManager.getDefaultSharedPreferences(getActivity())
+                            .edit()
+                            .putString("screen_bg_file_name",displayName)
+                            .apply();
                     Toast.makeText(getActivity(),"设置成功!",Toast.LENGTH_SHORT).show();
                 } catch (Exception e) {
                     e.printStackTrace();

@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_gradient_axi_main"
+    android:fitsSystemWindows="true"
+    android:orientation="vertical"
+    tools:ignore="MissingDefaultResource">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="10dp"
+        android:paddingTop="4dp"
+        android:paddingRight="10dp"
+        android:paddingBottom="4dp">
+
+        <ImageView
+            android:id="@+id/iv_back"
+            android:layout_width="@dimen/axi_gameplay_index_app_icon_size"
+            android:layout_height="@dimen/axi_gameplay_index_app_icon_size"
+            android:layout_alignParentLeft="true"
+            android:layout_centerVertical="true"
+            android:layout_marginRight="10dp"
+            android:focusable="false"
+            android:src="@drawable/axi_gameplay_ic_back_selector" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="鸣谢"
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+    </RelativeLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingLeft="9dp"
+            android:paddingRight="9dp"
+            android:paddingBottom="18dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="6dp"
+                android:layout_marginTop="12dp"
+                android:layout_marginRight="6dp"
+                android:background="@drawable/axi_gameplay_gamepad_item_bg"
+                android:gravity="center_vertical"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="感谢一路同行的你们"
+                    android:textColor="@android:color/white"
+                    android:textSize="17sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:lineSpacingExtra="2dp"
+                    android:text="这份名单献给每一位支持阿西西的朋友，因为你们，项目才得以持续前进。"
+                    android:textColor="@android:color/white"
+                    android:textSize="10sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="6dp"
+                android:layout_marginTop="18dp"
+                android:layout_marginRight="6dp"
+                android:background="@drawable/axi_gameplay_gamepad_item_bg"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:paddingTop="16dp"
+                android:paddingBottom="14dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="start"
+                    android:layout_marginLeft="20dp"
+                    android:text="鸣谢墙"
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="520dp"
+                    android:layout_marginLeft="6dp"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginRight="6dp"
+                    android:clipChildren="true"
+                    android:clipToPadding="true">
+
+                    <com.limelight.ui.CreditsWallView
+                        android:id="@+id/credits_wall"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:paddingLeft="4dp"
+                        android:paddingTop="12dp"
+                        android:paddingRight="4dp"
+                        android:paddingBottom="12dp" />
+
+<!--                    <View-->
+<!--                        android:layout_width="match_parent"-->
+<!--                        android:layout_height="28dp"-->
+<!--                        android:layout_gravity="top"-->
+<!--                        android:background="@drawable/bg_credits_fade_top"-->
+<!--                        android:clickable="false"-->
+<!--                        android:focusable="false" />-->
+
+<!--                    <View-->
+<!--                        android:layout_width="match_parent"-->
+<!--                        android:layout_height="28dp"-->
+<!--                        android:layout_gravity="bottom"-->
+<!--                        android:background="@drawable/bg_credits_fade_bottom"-->
+<!--                        android:clickable="false"-->
+<!--                        android:focusable="false" />-->
+
+                </FrameLayout>
+
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+</LinearLayout>

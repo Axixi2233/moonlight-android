@@ -60,6 +60,10 @@ public class AboutActivity extends BaseActivity implements View.OnClickListener 
             getToUrl("https://github.com/Axixi2233/moonlight-android/releases");
             return;
         }
+
+        if (v.getId() == R.id.lv_credits) {
+            startActivity(new Intent(this, CreditsActivity.class));
+        }
     }
 
     private void getToUrl(String url){

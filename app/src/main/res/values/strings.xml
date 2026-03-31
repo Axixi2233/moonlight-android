@@ -348,8 +348,8 @@
     <string name="analogscroll_right">Right analog stick</string>
     <string name="analogscroll_left">Left analog stick</string>
 
-    <string name="perf_overlay_lite_net">%1$dms</string>
-    <string name="perf_overlay_lite_dectime">%1$.2fms</string>
+    <string name="perf_overlay_lite_net">%1$d ms</string>
+    <string name="perf_overlay_lite_dectime">%1$.2f ms</string>
     <string name="perf_overlay_lite_netdrops">%1$.2f%%</string>
     <string name="perf_overlay_lite_streamdetails">%1$s</string>
     <string name="perf_overlay_lite_fps">%1$.2f</string>

@@ -41,6 +41,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -332,13 +333,14 @@ public class AppView extends Activity implements AdapterFragmentCallbacks {
         pref=PreferenceConfiguration.readPreferences(this);
 
         if(pref.enableScreenBg&&Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q){
-            File imageFile=new File(getFilesDir().getAbsolutePath(),"axi_screen_bg.png");
+            String fileName= PreferenceManager.getDefaultSharedPreferences(this).getString("screen_bg_file_name","axi_screen_bg.png");
+            File imageFile=new File(getFilesDir().getAbsolutePath(),fileName);
             if(imageFile.exists()){
                 try{
                     Glide.with(this)
                             .load(imageFile)
                             .skipMemoryCache(true)
-                            .diskCacheStrategy( DiskCacheStrategy.NONE )
+                            .diskCacheStrategy( DiskCacheStrategy.ALL )
                             .into(imageView);
                     imageView.setVisibility(View.VISIBLE);
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S&&pref.enableScreenObscure) {
