@@ -347,6 +347,71 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:text="HDR"
+                    android:textStyle="bold"
+                    android:textColor="@android:color/white"
+                    android:textSize="12dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="5dp"
+                    android:singleLine="true"
+                    android:ellipsize="end"
+                    android:text="重新打开串流页面生效！"
+                    android:textStyle="italic|bold"
+                    android:textColor="#FFC107"
+                    android:textSize="8dp" />
+            </LinearLayout>
+
+            <RadioGroup
+                android:layout_width="match_parent"
+                android:layout_height="27dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginRight="5dp"
+                android:layout_marginLeft="5dp"
+                android:layout_marginBottom="5dp"
+                android:id="@+id/rg_game_display_hdr"
+                android:orientation="horizontal">
+
+                <RadioButton
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/rbt_game_display_hdr_1"
+                    android:button="@null"
+                    android:text="开启"
+                    android:checked="true"
+                    android:textSize="10dp" />
+
+                <RadioButton
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/rbt_game_display_hdr_2"
+                    android:button="@null"
+                    android:text="关闭"
+                    android:textSize="10dp" />
+
+            </RadioGroup>
+
+            <LinearLayout
+                android:layout_marginTop="10dp"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:layout_marginBottom="5dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
                     android:text="解码低延迟模式Beta"
                     android:textStyle="bold"
                     android:textColor="@android:color/white"
@@ -412,7 +477,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="HDR"
+                    android:text="FSR1.0 超分Beta"
                     android:textStyle="bold"
                     android:textColor="@android:color/white"
                     android:textSize="12dp" />
@@ -422,10 +487,10 @@
                     android:layout_marginLeft="5dp"
                     android:singleLine="true"
                     android:ellipsize="end"
-                    android:text="重新打开串流页面生效！"
+                    android:text="HDR模式有色偏，使用下方选项手动微调。"
                     android:textStyle="italic|bold"
                     android:textColor="#FFC107"
-                    android:textSize="8dp" />
+                    android:textSize="6dp" />
             </LinearLayout>
 
             <RadioGroup
@@ -435,7 +500,7 @@
                 android:layout_marginRight="5dp"
                 android:layout_marginLeft="5dp"
                 android:layout_marginBottom="5dp"
-                android:id="@+id/rg_game_display_hdr"
+                android:id="@+id/rg_game_display_fsr"
                 android:orientation="horizontal">
 
                 <RadioButton
@@ -446,10 +511,9 @@
                     android:background="@drawable/ic_game_menu_btn_selector"
                     android:gravity="center"
                     android:padding="4dp"
-                    android:id="@+id/rbt_game_display_hdr_1"
+                    android:id="@+id/rbt_game_display_fsr_1"
                     android:button="@null"
                     android:text="开启"
-                    android:checked="true"
                     android:textSize="10dp" />
 
                 <RadioButton
@@ -460,12 +524,106 @@
                     android:background="@drawable/ic_game_menu_btn_selector"
                     android:gravity="center"
                     android:padding="4dp"
-                    android:id="@+id/rbt_game_display_hdr_2"
+                    android:id="@+id/rbt_game_display_fsr_2"
                     android:button="@null"
                     android:text="关闭"
                     android:textSize="10dp" />
 
             </RadioGroup>
+
+            <LinearLayout
+                android:id="@+id/v_game_display_fsr_details"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:text="FSR锐化强度：1x"
+                android:textStyle="italic|bold"
+                android:visibility="visible"
+                android:id="@+id/tx_game_display_fsr_sharpness"
+                android:textColor="@android:color/white"
+                android:textSize="8dp" />
+
+            <SeekBar
+                android:max="200"
+                android:min="0"
+                android:layout_marginTop="4dp"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:padding="0dp"
+                android:thumbOffset="0dp"
+                android:progress="100"
+                android:splitTrack="false"
+                android:id="@+id/sb_game_display_fsr_sharpness"
+                android:thumb="@android:color/transparent"
+                android:progressDrawable="@drawable/ic_game_menu_seek_bg"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+
+                <TextView
+                    android:id="@+id/tx_game_display_fsr_hdr_highlight_compression"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginLeft="5dp"
+                    android:layout_marginRight="5dp"
+                    android:text="HDR高亮压缩：100%"
+                    android:textColor="@android:color/white"
+                    android:textSize="8dp"
+                    android:textStyle="italic|bold" />
+
+                <SeekBar
+                    android:id="@+id/sb_game_display_fsr_hdr_highlight_compression"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginLeft="5dp"
+                    android:layout_marginRight="5dp"
+                    android:max="160"
+                    android:min="70"
+                    android:padding="0dp"
+                    android:progress="100"
+                    android:progressDrawable="@drawable/ic_game_menu_seek_bg"
+                    android:splitTrack="false"
+                    android:thumb="@android:color/transparent"
+                    android:thumbOffset="0dp" />
+
+                <TextView
+                    android:id="@+id/tx_game_display_fsr_hdr_shadow_lift"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginLeft="5dp"
+                    android:layout_marginRight="5dp"
+                    android:text="HDR暗部提升：100%"
+                    android:textColor="@android:color/white"
+                    android:textSize="8dp"
+                    android:textStyle="italic|bold" />
+
+                <SeekBar
+                    android:id="@+id/sb_game_display_fsr_hdr_shadow_lift"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginLeft="5dp"
+                    android:layout_marginRight="5dp"
+                    android:max="150"
+                    android:min="0"
+                    android:padding="0dp"
+                    android:progress="100"
+                    android:progressDrawable="@drawable/ic_game_menu_seek_bg"
+                    android:splitTrack="false"
+                    android:thumb="@android:color/transparent"
+                    android:thumbOffset="0dp" />
+
+            </LinearLayout>
 
             <LinearLayout
                 android:layout_marginTop="10dp"

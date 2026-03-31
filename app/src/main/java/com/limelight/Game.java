@@ -22,6 +22,8 @@ import com.limelight.binding.video.CrashListener;
 import com.limelight.binding.video.MediaCodecDecoderRenderer;
 import com.limelight.binding.video.MediaCodecHelper;
 import com.limelight.binding.video.PerfOverlayListener;
+import com.limelight.fsr.FsrVideoProcessor;
+import com.limelight.fsr.VideoProcessingGLSurfaceView;
 import com.limelight.nvstream.NvConnection;
 import com.limelight.nvstream.NvConnectionListener;
 import com.limelight.nvstream.StreamConfiguration;
@@ -62,6 +64,7 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Outline;
+import android.graphics.PixelFormat;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
@@ -168,6 +171,8 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     private boolean waitingForAllModifiersUp = false;
     private int specialKeyCode = KeyEvent.KEYCODE_UNKNOWN;
     private StreamView streamView;
+    private VideoProcessingGLSurfaceView fsrView;
+    private FsrVideoProcessor fsrVideoProcessor;
     private long lastAbsTouchUpTime = 0;
     private long lastAbsTouchDownTime = 0;
     private float lastAbsTouchUpX, lastAbsTouchUpY;
@@ -222,6 +227,10 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     private ConnectivityManager connManager;
 
     private TextView performanceRumble;
+    private boolean fsrEnabled;
+    private boolean fsrInputSurfaceReady;
+    private boolean fsrDisplaySurfaceCreated;
+    private Surface fsrInputSurface;
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -287,6 +296,8 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         streamView.setOnKeyListener(this);
         streamView.setInputCallbacks(this);
 
+        fsrEnabled = isFsrEnabled();
+
         performanceRumble=findViewById(R.id.performanceRumble);
         switchPerformanceRumbleHUD();
 
@@ -317,6 +328,52 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             case 6://底部居右
                 params.gravity= Gravity.RIGHT|Gravity.BOTTOM;
                 break;
+        }
+
+        if (fsrEnabled) {
+            fsrVideoProcessor = new FsrVideoProcessor(this);
+            fsrVideoProcessor.setSharpness(getFsrSharpness());
+            fsrVideoProcessor.setHdrWhiteScale(getFsrHdrWhiteScale());
+            fsrVideoProcessor.setHdrShadowLiftScale(getFsrHdrShadowLiftScale());
+            fsrView = new VideoProcessingGLSurfaceView(this, false, fsrVideoProcessor,
+                    new VideoProcessingGLSurfaceView.SurfaceListener() {
+                        @Override
+                        public void onInputSurfaceAvailable(android.graphics.SurfaceTexture surfaceTexture) {
+                            if (fsrInputSurface != null) {
+                                fsrInputSurface.release();
+                            }
+                            fsrInputSurface = new Surface(surfaceTexture);
+                            fsrInputSurfaceReady = true;
+                            startConnectionIfReady();
+                        }
+
+                        @Override
+                        public void onInputSurfaceDestroyed() {
+                            fsrInputSurfaceReady = false;
+                            if (fsrInputSurface != null) {
+                                fsrInputSurface.release();
+                                fsrInputSurface = null;
+                            }
+                        }
+                    });
+            fsrView.setFocusable(false);
+            fsrView.setFocusableInTouchMode(false);
+            fsrView.setClickable(false);
+
+            FrameLayout.LayoutParams fsrLayoutParams = new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT);
+            fsrLayoutParams.gravity = params.gravity;
+            fsrView.setLayoutParams(fsrLayoutParams);
+
+            ViewGroup parent = (ViewGroup) streamView.getParent();
+            int streamIndex = parent.indexOfChild(streamView);
+            parent.addView(fsrView, streamIndex + 1);
+
+            streamView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
+            streamView.setZOrderMediaOverlay(true);
+            fsrView.getHolder().addCallback(this);
+            fsrView.setFrameInputSize(prefConfig.width, prefConfig.height);
         }
 
         // Listen for touch events on the background touch view to enable trackpad mode
@@ -599,6 +656,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 new ComputerDetails.AddressTuple(host, port),
                 httpsPort, uniqueId, config,
                 PlatformBinding.getCryptoProvider(this), serverCert);
+        startConnectionIfReady();
         controllerHandler = new ControllerHandler(this, conn, this, prefConfig);
         keyboardTranslator = new KeyboardTranslator();
 
@@ -654,7 +712,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         }
 
         // The connection will be started when the surface gets created
-        streamView.getHolder().addCallback(this);
+        if (!fsrEnabled) {
+            streamView.getHolder().addCallback(this);
+        }
 
         //外接显示器模式
         if(prefConfig.enableExDisplay){
@@ -1185,10 +1245,16 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         if (prefConfig.stretchVideo || aspectRatioMatch) {
             // Set the surface to the size of the video
             streamView.getHolder().setFixedSize(prefConfig.width, prefConfig.height);
+            if (fsrView != null) {
+                fsrView.setDesiredAspectRatio(0.0);
+            }
         }
         else {
             // Set the surface to scale based on the aspect ratio of the stream
             streamView.setDesiredAspectRatio((double)prefConfig.width / (double)prefConfig.height);
+            if (fsrView != null) {
+                fsrView.setDesiredAspectRatio((double)prefConfig.width / (double)prefConfig.height);
+            }
             LimeLog.info("surfaceChanged-->"+(double)prefConfig.width / (double)prefConfig.height);
         }
 
@@ -1295,12 +1361,30 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             unbindService(usbDriverServiceConnection);
         }
 
+        if (fsrInputSurface != null) {
+            fsrInputSurface.release();
+            fsrInputSurface = null;
+        }
+
         // Destroy the capture provider
         inputCaptureProvider.destroy();
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+
+        if (fsrView != null) {
+            fsrView.onResume();
+        }
+    }
+
+    @Override
     protected void onPause() {
+        if (fsrView != null) {
+            fsrView.onPause();
+        }
+
         if (isFinishing()) {
             // Stop any further input device notifications before we lose focus (and pointer capture)
             if (controllerHandler != null) {
@@ -2905,6 +2989,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     public void setHdrMode(boolean enabled, byte[] hdrMetadata) {
         LimeLog.info("Display HDR mode: " + (enabled ? "enabled" : "disabled"));
         decoderRenderer.setHdrMode(enabled, hdrMetadata);
+        if (fsrVideoProcessor != null) {
+            fsrVideoProcessor.setHdrToneMappingEnabled(enabled);
+        }
     }
 
     @Override
@@ -2920,11 +3007,18 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+        if (fsrEnabled && (fsrView == null || holder != fsrView.getHolder())) {
+            return;
+        }
+
         if (!surfaceCreated) {
             throw new IllegalStateException("Surface changed before creation!");
         }
 
         LimeLog.info("surfaceChanged-->"+width+" x "+height + "----"+prefConfig.width+" x "+prefConfig.height);
+        if (fsrEnabled) {
+            return;
+        }
         if (!attemptedConnection) {
             attemptedConnection = true;
 
@@ -2940,6 +3034,14 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         float desiredFrameRate;
+
+        if (fsrEnabled) {
+            if (fsrView == null || holder != fsrView.getHolder()) {
+                return;
+            }
+            fsrDisplaySurfaceCreated = true;
+            startConnectionIfReady();
+        }
 
         surfaceCreated = true;
 
@@ -2975,9 +3077,18 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
+        if (fsrEnabled) {
+            if (fsrView == null || holder != fsrView.getHolder()) {
+                return;
+            }
+            fsrDisplaySurfaceCreated = false;
+        }
+
         if (!surfaceCreated) {
             throw new IllegalStateException("Surface destroyed before creation!");
         }
+
+        surfaceCreated = false;
 
         if (attemptedConnection) {
             // Let the decoder know immediately that the surface is gone
@@ -3081,13 +3192,42 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                String displayText = appendFsrPerfInfo(text);
                 if(prefConfig.enablePerfOverlayLite){
-                    performanceOverlayLite.setText(text);
+                    performanceOverlayLite.setText(displayText);
                 }else{
-                    performanceOverlayBig.setText(text);
+                    performanceOverlayBig.setText(displayText);
                 }
             }
         });
+    }
+
+    private String appendFsrPerfInfo(String text) {
+        if (!fsrEnabled || text == null || text.isEmpty()) {
+            return text;
+        }
+        String fsrInfo = buildFsrPerfLabel();
+        if(prefConfig.enablePerfOverlayLite){
+            String liteMarker = "延迟/解码：";
+            int liteIndex = text.indexOf(liteMarker);
+            if (liteIndex >= 0) {
+                return text.substring(0, liteIndex) + fsrInfo + "  " + text.substring(liteIndex);
+            }
+            return text;
+        }
+        return text+"\n"+fsrInfo;
+    }
+
+    private String buildFsrPerfLabel() {
+        return "FSR：" + formatPerfMultiplier(getFsrSharpness());
+    }
+
+    private String formatPerfMultiplier(float value) {
+        String formatted = String.format(Locale.US, "%.2f", value);
+        while (formatted.contains(".") && (formatted.endsWith("0") || formatted.endsWith("."))) {
+            formatted = formatted.substring(0, formatted.length() - 1);
+        }
+        return formatted + "x";
     }
 
     @Override
@@ -3396,6 +3536,41 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             }
         });
         streamView.setClipToOutline(true);
+    }
+
+    private boolean isFsrEnabled() {
+        if (prefConfig.enableExDisplay) {
+            return false;
+        }
+        return PreferenceManager.getDefaultSharedPreferences(this)
+                .getBoolean("checkbox_enable_fsr", false);
+    }
+
+    private float getFsrSharpness() {
+        return PreferenceManager.getDefaultSharedPreferences(this)
+                .getInt("seekbar_fsr_sharpness", 100) / 100.0f;
+    }
+
+    private float getFsrHdrWhiteScale() {
+        return PreferenceManager.getDefaultSharedPreferences(this)
+                .getInt("seekbar_fsr_hdr_highlight_compression", 100) / 100.0f;
+    }
+
+    private float getFsrHdrShadowLiftScale() {
+        return PreferenceManager.getDefaultSharedPreferences(this)
+                .getInt("seekbar_fsr_hdr_shadow_lift", 100) / 100.0f;
+    }
+
+    private void startConnectionIfReady() {
+        if (!fsrEnabled || attemptedConnection || conn == null || !fsrInputSurfaceReady || !fsrDisplaySurfaceCreated) {
+            return;
+        }
+
+        attemptedConnection = true;
+        UiHelper.notifyStreamConnecting(Game.this);
+        decoderRenderer.setRenderTarget(fsrInputSurface);
+        conn.start(new AndroidAudioRenderer(Game.this, prefConfig.enableAudioFx),
+                decoderRenderer, Game.this);
     }
 
     //是否退出串流

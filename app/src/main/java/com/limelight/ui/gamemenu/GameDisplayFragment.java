@@ -6,6 +6,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.RadioGroup;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -13,6 +14,8 @@ import com.limelight.R;
 import com.limelight.preferences.PreferenceConfiguration;
 import com.limelight.ui.BaseFragmentDialog.BaseGameMenuDialog;
 import com.limelight.utils.UiHelper;
+
+import java.util.Locale;
 
 
 /**
@@ -67,6 +70,22 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
 
     private RadioGroup rg_game_display_ignore_hdr;
 
+    private RadioGroup rg_game_display_fsr;
+
+    private View v_game_display_fsr_details;
+
+    private SeekBar sb_game_display_fsr_sharpness;
+
+    private SeekBar sb_game_display_fsr_hdr_highlight_compression;
+
+    private SeekBar sb_game_display_fsr_hdr_shadow_lift;
+
+    private TextView tx_game_display_fsr_sharpness;
+
+    private TextView tx_game_display_fsr_hdr_highlight_compression;
+
+    private TextView tx_game_display_fsr_hdr_shadow_lift;
+
     private int width;
 
     private int height;
@@ -78,6 +97,14 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
     private boolean direction;
 
     private boolean exDiaplay;
+
+    private boolean fsrEnabledPending;
+
+    private int fsrSharpnessPending;
+
+    private int fsrHdrHighlightCompressionPending;
+
+    private int fsrHdrShadowLiftPending;
 
     private boolean showLock=true;
     @Override
@@ -107,6 +134,14 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
         rg_game_display_lowlatency=v.findViewById(R.id.rg_game_display_lowlatency);
 
         rg_game_display_ignore_hdr=v.findViewById(R.id.rg_game_display_ignore_hdr);
+        rg_game_display_fsr=v.findViewById(R.id.rg_game_display_fsr);
+        v_game_display_fsr_details=v.findViewById(R.id.v_game_display_fsr_details);
+        sb_game_display_fsr_sharpness=v.findViewById(R.id.sb_game_display_fsr_sharpness);
+        sb_game_display_fsr_hdr_highlight_compression=v.findViewById(R.id.sb_game_display_fsr_hdr_highlight_compression);
+        sb_game_display_fsr_hdr_shadow_lift=v.findViewById(R.id.sb_game_display_fsr_hdr_shadow_lift);
+        tx_game_display_fsr_sharpness=v.findViewById(R.id.tx_game_display_fsr_sharpness);
+        tx_game_display_fsr_hdr_highlight_compression=v.findViewById(R.id.tx_game_display_fsr_hdr_highlight_compression);
+        tx_game_display_fsr_hdr_shadow_lift=v.findViewById(R.id.tx_game_display_fsr_hdr_shadow_lift);
 
         if(!TextUtils.isEmpty(title)){
             tx_title.setText(title);
@@ -122,6 +157,14 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
             direction=prefConfig.enablePortrait;
             exDiaplay=prefConfig.enableExDisplay;
         }
+        fsrEnabledPending = PreferenceManager.getDefaultSharedPreferences(getActivity())
+                .getBoolean("checkbox_enable_fsr", false);
+        fsrSharpnessPending = PreferenceManager.getDefaultSharedPreferences(getActivity())
+                .getInt("seekbar_fsr_sharpness", 100);
+        fsrHdrHighlightCompressionPending = PreferenceManager.getDefaultSharedPreferences(getActivity())
+                .getInt("seekbar_fsr_hdr_highlight_compression", 100);
+        fsrHdrShadowLiftPending = PreferenceManager.getDefaultSharedPreferences(getActivity())
+                .getInt("seekbar_fsr_hdr_shadow_lift", 100);
         initViewData();
         initLock();
         initAudio();
@@ -131,6 +174,10 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
         initVD();
         initVideoFormat();
         initEnfoce();
+        initFsr();
+        initFsrSharpness();
+        initFsrHdrHighlightCompression();
+        initFsrHdrShadowLift();
         ibtn_back.setOnClickListener(this);
         bt_display_screen.setOnClickListener(this);
         bt_display_exchange.setOnClickListener(this);
@@ -275,6 +322,73 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
             }
         });
 
+        rg_game_display_fsr.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(RadioGroup group, int checkedId) {
+                if (checkedId == R.id.rbt_game_display_fsr_1) {
+                    fsrEnabledPending = true;
+                }
+                else if (checkedId == R.id.rbt_game_display_fsr_2) {
+                    fsrEnabledPending = false;
+                }
+                updateFsrDetailState();
+            }
+        });
+
+        sb_game_display_fsr_sharpness.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                fsrSharpnessPending = progress;
+                initFsrSharpness();
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
+
+        sb_game_display_fsr_hdr_highlight_compression.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                fsrHdrHighlightCompressionPending = progress;
+                initFsrHdrHighlightCompression();
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
+
+        sb_game_display_fsr_hdr_shadow_lift.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                fsrHdrShadowLiftPending = progress;
+                initFsrHdrShadowLift();
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
+
     }
 
     private void initEnfoce() {
@@ -357,6 +471,49 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
                 rg_game_display_video_format.check(R.id.rbt_game_display_video_format_4);
                 break;
         }
+    }
+
+    private void initFsr() {
+        rg_game_display_fsr.check(fsrEnabledPending ? R.id.rbt_game_display_fsr_1 : R.id.rbt_game_display_fsr_2);
+        updateFsrDetailState();
+    }
+
+    private void initFsrSharpness() {
+        tx_game_display_fsr_sharpness.setText("FSR锐化强度：" + formatSharpness(fsrSharpnessPending));
+        sb_game_display_fsr_sharpness.setProgress(fsrSharpnessPending);
+    }
+
+    private void initFsrHdrHighlightCompression() {
+        tx_game_display_fsr_hdr_highlight_compression.setText("HDR高亮压缩：" + formatPercent(fsrHdrHighlightCompressionPending));
+        sb_game_display_fsr_hdr_highlight_compression.setProgress(fsrHdrHighlightCompressionPending);
+    }
+
+    private void initFsrHdrShadowLift() {
+        tx_game_display_fsr_hdr_shadow_lift.setText("HDR暗部提升：" + formatPercent(fsrHdrShadowLiftPending));
+        sb_game_display_fsr_hdr_shadow_lift.setProgress(fsrHdrShadowLiftPending);
+    }
+
+    private void updateFsrDetailState() {
+        int visibility = fsrEnabledPending ? View.VISIBLE : View.GONE;
+        v_game_display_fsr_details.setVisibility(visibility);
+        tx_game_display_fsr_sharpness.setEnabled(fsrEnabledPending);
+        sb_game_display_fsr_sharpness.setEnabled(fsrEnabledPending);
+        tx_game_display_fsr_hdr_highlight_compression.setEnabled(fsrEnabledPending);
+        sb_game_display_fsr_hdr_highlight_compression.setEnabled(fsrEnabledPending);
+        tx_game_display_fsr_hdr_shadow_lift.setEnabled(fsrEnabledPending);
+        sb_game_display_fsr_hdr_shadow_lift.setEnabled(fsrEnabledPending);
+    }
+
+    private String formatSharpness(int progress) {
+        String formatted = String.format(Locale.US, "%.2f", progress / 100.0f);
+        while (formatted.contains(".") && (formatted.endsWith("0") || formatted.endsWith("."))) {
+            formatted = formatted.substring(0, formatted.length() - 1);
+        }
+        return formatted + "x";
+    }
+
+    private String formatPercent(int progress) {
+        return progress + "%";
     }
 
     public void setShowLock(boolean showLock) {
@@ -453,6 +610,10 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
                     .putString("edit_diy_w_h",width+"x"+height)
                     .putBoolean("checkbox_enable_exdisplay",exDiaplay)
                     .putBoolean(PreferenceConfiguration.CHECKBOX_ENABLE_PORTRAIT,direction)
+                    .putBoolean("checkbox_enable_fsr", fsrEnabledPending)
+                    .putInt("seekbar_fsr_sharpness", fsrSharpnessPending)
+                    .putInt("seekbar_fsr_hdr_highlight_compression", fsrHdrHighlightCompressionPending)
+                    .putInt("seekbar_fsr_hdr_shadow_lift", fsrHdrShadowLiftPending)
                     .commit();
             if(prefConfig!=null){
                 prefConfig.width=width;

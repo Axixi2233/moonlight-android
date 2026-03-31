@@ -54,6 +54,48 @@
             android:defaultValue="true" />
 
         <CheckBoxPreference
+            android:key="checkbox_enable_fsr"
+            android:title="启用FSR1.0超分 Beta"
+            android:summary="SDR 使用常规 FSR，HDR 使用单通道色调映射 FSR，失败时回退为直通显示。"
+            android:defaultValue="false" />
+        <com.limelight.preferences.SeekBarPreference
+            android:key="seekbar_fsr_sharpness"
+            android:dependency="checkbox_enable_fsr"
+            android:defaultValue="100"
+            android:dialogMessage="调整 FSR 锐化强度。数值越低画面越柔和，越高越清晰，但也更容易出现振铃。"
+            seekbar:min="0"
+            seekbar:step="5"
+            seekbar:keyStep="10"
+            seekbar:divisor="100"
+            android:max="200"
+            android:summary="控制 SDR 下的 FSR 锐化强度，以及 HDR 下较轻的锐化路径。"
+            android:text="x"
+            android:title="FSR 锐化强度" />
+<!--        <com.limelight.preferences.SeekBarPreference-->
+<!--            android:key="seekbar_fsr_hdr_highlight_compression"-->
+<!--            android:dependency="checkbox_enable_fsr"-->
+<!--            android:defaultValue="100"-->
+<!--            android:dialogMessage="调整 HDR 高亮压缩强度。数值越高，白色和高亮区域越不容易过曝，但整体画面也可能稍微变暗。"-->
+<!--            seekbar:min="70"-->
+<!--            seekbar:step="5"-->
+<!--            seekbar:keyStep="5"-->
+<!--            android:max="160"-->
+<!--            android:summary="控制 HDR 白色和高亮区域在显示前的压缩强度。"-->
+<!--            android:text="%"-->
+<!--            android:title="HDR 高亮压缩" />-->
+<!--        <com.limelight.preferences.SeekBarPreference-->
+<!--            android:key="seekbar_fsr_hdr_shadow_lift"-->
+<!--            android:dependency="checkbox_enable_fsr"-->
+<!--            android:defaultValue="100"-->
+<!--            android:dialogMessage="调整 HDR 暗部提升强度。数值越高，暗部细节越容易看见，但过高会让黑位发灰。"-->
+<!--            seekbar:min="0"-->
+<!--            seekbar:step="5"-->
+<!--            seekbar:keyStep="5"-->
+<!--            android:max="150"-->
+<!--            android:summary="控制 HDR 暗部区域额外提亮的细节强度。"-->
+<!--            android:text="%"-->
+<!--            android:title="HDR 暗部提升" />-->
+        <CheckBoxPreference
             android:key="checkbox_stretch_video"
             android:title="@string/title_checkbox_stretch_video"
             android:defaultValue="false" />
