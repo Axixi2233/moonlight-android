@@ -34,6 +34,17 @@
             android:textColor="@android:color/white"
             android:textSize="14sp"
             android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:text="赞赏"
+            android:id="@+id/tx_sponsored"
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
     </RelativeLayout>
 
     <ScrollView

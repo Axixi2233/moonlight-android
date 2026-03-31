@@ -4,10 +4,13 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import android.app.Activity;
-import android.app.ProgressDialog;
+import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
-import android.graphics.drawable.Drawable;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.Window;
+import android.widget.TextView;
 
 import com.limelight.R;
 
@@ -15,7 +18,8 @@ public class SpinnerDialog implements Runnable,OnCancelListener {
     private final String title;
     private final String message;
     private final Activity activity;
-    private ProgressDialog progress;
+    private AlertDialog progress;
+    private TextView messageView;
     private final boolean finish;
 
     private static final ArrayList<SpinnerDialog> rundownDialogs = new ArrayList<>();
@@ -63,7 +67,9 @@ public class SpinnerDialog implements Runnable,OnCancelListener {
         activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                progress.setMessage(message);
+                if (messageView != null) {
+                    messageView.setText(message);
+                }
             }
         });
     }
@@ -78,12 +84,16 @@ public class SpinnerDialog implements Runnable,OnCancelListener {
 
         if (progress == null)
         {
-            progress = new ProgressDialog(activity);
+            View dialogView = LayoutInflater.from(activity).inflate(R.layout.dialog_spinner_prompt, null, false);
+            TextView titleView = dialogView.findViewById(R.id.tv_spinner_title);
+            messageView = dialogView.findViewById(R.id.tv_spinner_message);
 
-            progress.setTitle(title);
-            progress.setMessage(message);
-            progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-            progress.setIndeterminateDrawable(activity.getResources().getDrawable(R.drawable.ic_axi_progress_bg));
+            titleView.setText(title);
+            messageView.setText(message);
+
+            progress = new AlertDialog.Builder(activity)
+                    .setView(dialogView)
+                    .create();
             progress.setOnCancelListener(this);
 
             // If we want to finish the activity when this is killed, make it cancellable
@@ -100,6 +110,10 @@ public class SpinnerDialog implements Runnable,OnCancelListener {
             synchronized (rundownDialogs) {
                 rundownDialogs.add(this);
                 progress.show();
+                Window window = progress.getWindow();
+                if (window != null) {
+                    window.setBackgroundDrawableResource(android.R.color.transparent);
+                }
             }
         }
         else

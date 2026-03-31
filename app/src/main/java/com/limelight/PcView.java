@@ -31,6 +31,7 @@ import com.limelight.utils.HelpLauncher;
 import com.limelight.utils.ServerHelper;
 import com.limelight.utils.ShortcutHelper;
 import com.limelight.utils.UiHelper;
+import com.limelight.utils.UpdateChecker;
 
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -84,6 +85,7 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
     private ShortcutHelper shortcutHelper;
     private ComputerManagerService.ComputerManagerBinder managerBinder;
     private boolean freezeUpdates, runningPolling, inForeground, completeOnCreateCalled;
+    private boolean autoUpdateCheckStarted;
     private final ServiceConnection serviceConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder binder) {
             final ComputerManagerService.ComputerManagerBinder localBinder =
@@ -300,6 +302,11 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
         pcGridAdapter = new PcGridAdapter(this, PreferenceConfiguration.readPreferences(this));
 
         initializeViews();
+
+        if (!autoUpdateCheckStarted) {
+            autoUpdateCheckStarted = true;
+            UpdateChecker.checkForUpdates(this, false);
+        }
     }
 
     private void startComputerUpdates() {

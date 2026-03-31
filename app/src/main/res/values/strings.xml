@@ -296,11 +296,10 @@
     <string name="pacing_smoothness">Prefer smoothest video (may significantly increase latency)</string>
 
 
-    <string name="keyboard_service_label">Moonlight物理键盘</string>
+    <string name="keyboard_service_label">月光·阿西西物理键盘</string>
     <string name="accessibility_description_text">此功能仅用于外接实体键盘时，某些系统存在特定的键盘快捷键，此情况会影响串流过程中，无法将相关按键指令传输给目标PC。
-        \n\nMoonlight不会观察您输入的文本，也不会收集您的密码、信用卡号或任何其他信息。
+        \n\n月光·阿西西不会观察您输入的文本，也不会收集您的密码、信用卡号或任何其他信息。
         \n\n请关注：B站-阿西西的日常</string>
-
 
     <!-- In Game menu -->
     <string name="game_menu_toggle_keyboard">弹出软键盘</string>
@@ -363,13 +362,16 @@
     </string>
 
     <string name="axi_question_1">1、手柄测试界面可用，串流游戏中不识别？</string>
-    <string name="axi_question_answer_1">大概率电脑端没有安装虚拟手柄驱动ViGEmBus，在sunshine首页查看是否有相关报错信息.ps:点击上方获取新版本，网盘内有相关安装文件.
+    <string name="axi_question_answer_1">大概率电脑端没有安装虚拟手柄驱动ViGEmBus，在sunshine首页查看是否有相关报错信息.ps:点击网盘资源，内有相关安装文件.
         \n或者手柄识别为DS4手柄，部分游戏不适配,可在sunshine后台，输入选项卡修改手柄类型为xbox360解决。</string>
 
     <string name="axi_question_2">2、串流如何全屏显示？如何息屏游玩？</string>
     <string name="axi_question_answer_2">使用虚拟显示器或者HDMI欺骗器创建本机相对于分辨率的显示器屏幕.
         \nHDMI欺骗器需要借助显卡驱动程序创建，设置完成需要设置为主屏幕，sunshine默认捕获主屏幕（可在sunshine后台修改默认捕获屏幕）
         \n息屏可Win+P或者系统设置-显示器，选择仅显示器1或者2，或者部分sunshine版本后台内置相关无头显示器设置.
-        \n部分sunshine版本自带虚拟显示器，比如Apollo版 ps:点击上方获取新版本，网盘内有相关安装文件</string>
+        \n部分sunshine版本自带虚拟显示器，比如Apollo版 ps:点击网盘资源，内有相关安装文件</string>
+
+    <string name="about_get_res"><u>网盘资源</u></string>
+    <string name="about_update_tx"><u>检测更新</u></string>
 
 </resources>

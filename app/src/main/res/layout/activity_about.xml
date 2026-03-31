@@ -69,7 +69,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="随时随地，畅联你的电脑！"
+                    android:text="随时随地，畅连你的电脑！"
                     android:layout_marginTop="5dp"
                     android:textColor="@android:color/white"
                     android:textSize="8sp"/>
@@ -84,17 +84,36 @@
                     android:textColor="@android:color/white"
                     android:textSize="10sp"/>
 
-                <TextView
-                    android:onClick="onClick"
-                    android:id="@+id/iv_get"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/about_update_text"
-                    android:textStyle="bold"
-                    android:padding="4dp"
+                <LinearLayout
                     android:layout_marginTop="3dp"
-                    android:textColor="@android:color/white"
-                    android:textSize="9sp"/>
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+
+                    <TextView
+                        android:onClick="onClick"
+                        android:id="@+id/iv_res"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/about_get_res"
+                        android:textStyle="bold"
+                        android:padding="4dp"
+                        android:textColor="@android:color/white"
+                        android:textSize="9sp"/>
+
+                    <TextView
+                        android:onClick="onClick"
+                        android:id="@+id/iv_get"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/about_update_tx"
+                        android:textStyle="bold"
+                        android:layout_marginLeft="4dp"
+                        android:padding="4dp"
+                        android:textColor="@android:color/white"
+                        android:textSize="9sp"/>
+
+                </LinearLayout>
+
 
             </LinearLayout>
 

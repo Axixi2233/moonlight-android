@@ -1,31 +1,32 @@
 package com.limelight;
 
-import android.animation.ObjectAnimator;
-import android.animation.ValueAnimator;
-import android.graphics.Outline;
+import android.os.Build;
 import android.os.Bundle;
-import android.text.TextUtils;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewOutlineProvider;
-import android.view.animation.LinearInterpolator;
-import android.widget.FrameLayout;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.limelight.ui.CreditsWallView;
+import com.limelight.utils.UpdateChecker;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
 public class CreditsActivity extends BaseActivity {
 
-    private static final int WALL_BASE_DURATION_MS = 22000;
-    private static final int WALL_DURATION_STEP_MS = 2600;
-    private static final int ITEM_BLOCK_HEIGHT_DP = 140; // 对应 layout 中的高度
-    private static final int[] COLUMN_STAGGER_DP = new int[]{0, -70, -35, -100};
+    private static final String SPONSORED_CONFIG_URL = "https://axixi2233.github.io/res/config/sponsored.json";
+
+    private static final OkHttpClient CLIENT = new OkHttpClient();
+    private static final Gson GSON = new Gson();
 
     private static final CreditEntry[] CREDIT_ENTRIES = new CreditEntry[] {
             new CreditEntry("鹿***路", "https://i1.hdslb.com/bfs/face/f05e1dba1d95daa97da6c72cc0f56b21d11a65ce.jpg@128w_1o.webp"),
@@ -117,9 +118,7 @@ public class CreditsActivity extends BaseActivity {
             new CreditEntry("L***r", "https://i1.hdslb.com/bfs/face/2f6800e7765a2edd3e51d74b8ff4e9fd773a091b.jpg@128w_1o.webp")
     };
 
-    private final List<ColumnAnimationState> columnStates = new ArrayList<>();
-    private LinearLayout columnsContainer;
-    private com.limelight.ui.CreditsWallView creditsWallView;
+    private CreditsWallView creditsWallView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -127,194 +126,11 @@ public class CreditsActivity extends BaseActivity {
         setContentView(R.layout.activity_credits);
 
         findViewById(R.id.iv_back).setOnClickListener(v -> finish());
+        findViewById(R.id.tx_sponsored).setOnClickListener(v ->
+                UpdateChecker.openUrl(CreditsActivity.this, "https://axixi2233.github.io/credits.html"));
+
         creditsWallView = findViewById(R.id.credits_wall);
-
-        // 关键点 1：确保在容器测量完成后再构建墙，防止列数计算错误
-        creditsWallView.setEntries(buildWallEntries());
-    }
-
-    private List<com.limelight.ui.CreditsWallView.CreditEntry> buildWallEntries() {
-        List<com.limelight.ui.CreditsWallView.CreditEntry> wallEntries = new ArrayList<>(CREDIT_ENTRIES.length);
-        for (CreditEntry entry : CREDIT_ENTRIES) {
-            wallEntries.add(new com.limelight.ui.CreditsWallView.CreditEntry(entry.name, entry.avatarUrl));
-        }
-        return wallEntries;
-    }
-
-    private void buildCreditsWall() {
-        stopCreditsWallAnimations();
-        columnsContainer.removeAllViews();
-        columnStates.clear();
-
-        int columnCount = getColumnCount();
-        if (columnCount <= 0) return;
-
-        List<CreditEntry>[] entriesByColumn = splitEntries(columnCount);
-        // 增加最小循环高度，确保长屏手机也不会断层
-        int minLoopHeightPx = Math.max(dp(2500), columnsContainer.getHeight() * 2);
-
-        for (int i = 0; i < columnCount; i++) {
-            LinearLayout.LayoutParams viewportParams = new LinearLayout.LayoutParams(
-                    0, LinearLayout.LayoutParams.MATCH_PARENT, 1f);
-            int sideMargin = dp(6);
-            viewportParams.leftMargin = sideMargin;
-            viewportParams.rightMargin = sideMargin;
-
-            FrameLayout columnViewport = new FrameLayout(this);
-            columnViewport.setLayoutParams(viewportParams);
-            columnViewport.setClipChildren(true);
-
-            LinearLayout animatedTrack = new LinearLayout(this);
-            animatedTrack.setOrientation(LinearLayout.VERTICAL);
-            columnViewport.addView(animatedTrack, new FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.MATCH_PARENT,
-                    FrameLayout.LayoutParams.WRAP_CONTENT));
-
-            LinearLayout primaryContent = new LinearLayout(this);
-            primaryContent.setOrientation(LinearLayout.VERTICAL);
-
-            LinearLayout duplicateContent = new LinearLayout(this);
-            duplicateContent.setOrientation(LinearLayout.VERTICAL);
-
-            List<CreditEntry> displayEntries = expandEntries(entriesByColumn[i], minLoopHeightPx);
-            populateColumn(primaryContent, displayEntries);
-            populateColumn(duplicateContent, displayEntries);
-
-            int staggerPx = dp(COLUMN_STAGGER_DP[i % COLUMN_STAGGER_DP.length]);
-            animatedTrack.setTranslationY(staggerPx);
-
-            animatedTrack.addView(primaryContent);
-            animatedTrack.addView(duplicateContent);
-
-            columnsContainer.addView(columnViewport);
-            columnStates.add(new ColumnAnimationState(
-                    animatedTrack,
-                    primaryContent,
-                    staggerPx,
-                    WALL_BASE_DURATION_MS + (i * WALL_DURATION_STEP_MS)));
-        }
-
-        // 关键点 2：给 View 一点点时间完成二次测量
-        columnsContainer.postDelayed(this::startCreditsWallAnimations, 50);
-    }
-
-    private List<CreditEntry>[] splitEntries(int columnCount) {
-        List<CreditEntry>[] entriesByColumn = new ArrayList[columnCount];
-        for (int i = 0; i < columnCount; i++) {
-            entriesByColumn[i] = new ArrayList<>();
-        }
-        for (int i = 0; i < CREDIT_ENTRIES.length; i++) {
-            entriesByColumn[i % columnCount].add(CREDIT_ENTRIES[i]);
-        }
-        return entriesByColumn;
-    }
-
-    private List<CreditEntry> expandEntries(List<CreditEntry> entries, int minLoopHeightPx) {
-        List<CreditEntry> expandedEntries = new ArrayList<>(entries);
-        if (expandedEntries.isEmpty()) return expandedEntries;
-
-        int itemHeightPx = dp(ITEM_BLOCK_HEIGHT_DP);
-        int minItemCount = (int) Math.ceil((double) minLoopHeightPx / itemHeightPx);
-        while (expandedEntries.size() < minItemCount) {
-            expandedEntries.addAll(entries);
-        }
-        return expandedEntries;
-    }
-
-    private void populateColumn(LinearLayout column, List<CreditEntry> entries) {
-        LayoutInflater inflater = LayoutInflater.from(this);
-        int itemHeightPx = dp(ITEM_BLOCK_HEIGHT_DP);
-
-        for (CreditEntry entry : entries) {
-            View itemView = inflater.inflate(R.layout.item_credit_entry, column, false);
-
-            // 关键点 3：强制固定条目高度，防止加载图片时高度塌陷
-            LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) itemView.getLayoutParams();
-            lp.height = itemHeightPx;
-            itemView.setLayoutParams(lp);
-
-            ImageView avatarView = itemView.findViewById(R.id.iv_credit_avatar);
-            TextView nameView = itemView.findViewById(R.id.tv_credit_name);
-
-            nameView.setText(entry.name);
-            applyCircularOutline(avatarView);
-
-            String avatarUrl = entry.getNormalizedAvatarUrl();
-            if (!TextUtils.isEmpty(avatarUrl)) {
-                Glide.with(this)
-                        .load(avatarUrl)
-                        .override(dp(60), dp(60)) // 强制指定图片加载大小
-                        .diskCacheStrategy(DiskCacheStrategy.ALL)
-                        .centerCrop()
-                        .into(avatarView);
-            }
-            column.addView(itemView);
-        }
-    }
-
-    private void startCreditsWallAnimations() {
-        stopCreditsWallAnimations();
-
-        for (ColumnAnimationState state : columnStates) {
-            int contentHeight = state.primaryContent.getHeight();
-            // 如果还没测量出来，尝试重新触发
-            if (contentHeight <= 0) {
-                columnsContainer.postDelayed(this::startCreditsWallAnimations, 100);
-                return;
-            }
-
-            state.track.setTranslationY(state.staggerPx);
-
-            // 关键点 4：动画终点必须是 (起始偏移 - 单份内容高度)
-            ObjectAnimator animator = ObjectAnimator.ofFloat(
-                    state.track,
-                    View.TRANSLATION_Y,
-                    (float) state.staggerPx,
-                    (float) state.staggerPx - contentHeight);
-
-            animator.setDuration(state.durationMs);
-            animator.setRepeatCount(ValueAnimator.INFINITE);
-            animator.setInterpolator(new LinearInterpolator());
-            animator.start();
-            state.animator = animator;
-        }
-    }
-
-    private void stopCreditsWallAnimations() {
-        for (ColumnAnimationState state : columnStates) {
-            if (state.animator != null) {
-                state.animator.cancel();
-                state.animator = null;
-            }
-        }
-    }
-
-    private void applyCircularOutline(ImageView avatarView) {
-        avatarView.setClipToOutline(true);
-        avatarView.setOutlineProvider(new ViewOutlineProvider() {
-            @Override
-            public void getOutline(View view, Outline outline) {
-                outline.setOval(0, 0, view.getWidth(), view.getHeight());
-            }
-        });
-    }
-
-    private int getColumnCount() {
-        // 使用容器宽度而非屏幕宽度，更准确
-        int containerWidth = columnsContainer.getWidth();
-        if (containerWidth <= 0) {
-            containerWidth = getResources().getDisplayMetrics().widthPixels;
-        }
-        float widthDp = containerWidth / getResources().getDisplayMetrics().density;
-
-        if (widthDp >= 900f) return 4;
-        if (widthDp >= 640f) return 3;
-        if (widthDp >= 360f) return 2;
-        return 1;
-    }
-
-    private int dp(int value) {
-        return Math.round(getResources().getDisplayMetrics().density * value);
+        loadRemoteEntries();
     }
 
     @Override
@@ -323,9 +139,6 @@ public class CreditsActivity extends BaseActivity {
         if (creditsWallView != null) {
             creditsWallView.startAutoScroll();
         }
-        if (!columnStates.isEmpty()) {
-            startCreditsWallAnimations();
-        }
     }
 
     @Override
@@ -333,11 +146,137 @@ public class CreditsActivity extends BaseActivity {
         if (creditsWallView != null) {
             creditsWallView.stopAutoScroll();
         }
-        stopCreditsWallAnimations();
         super.onPause();
     }
 
-    // 内部类保持不变
+    private void loadRemoteEntries() {
+        Request request = new Request.Builder()
+                .url(SPONSORED_CONFIG_URL)
+                .get()
+                .build();
+
+        CLIENT.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                applyCreditsEntries(buildLocalWallEntries());
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                try (Response ignored = response) {
+                    if (!response.isSuccessful() || response.body() == null) {
+                        applyCreditsEntries(buildLocalWallEntries());
+                        return;
+                    }
+
+                    List<CreditsWallView.CreditEntry> remoteEntries = parseRemoteEntries(response.body().string());
+                    if (remoteEntries.isEmpty()) {
+                        applyCreditsEntries(buildLocalWallEntries());
+                    } else {
+                        applyCreditsEntries(remoteEntries);
+                    }
+                } catch (Exception ignoredException) {
+                    applyCreditsEntries(buildLocalWallEntries());
+                }
+            }
+        });
+    }
+
+    private void applyCreditsEntries(List<CreditsWallView.CreditEntry> entries) {
+        if (isFinishing()) {
+            return;
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed()) {
+            return;
+        }
+        runOnUiThread(() -> {
+            if (creditsWallView != null) {
+                creditsWallView.setEntries(entries);
+            }
+        });
+    }
+
+    private List<CreditsWallView.CreditEntry> buildLocalWallEntries() {
+        List<CreditsWallView.CreditEntry> wallEntries = new ArrayList<>(CREDIT_ENTRIES.length);
+        for (CreditEntry entry : CREDIT_ENTRIES) {
+            wallEntries.add(new CreditsWallView.CreditEntry(entry.name, entry.avatarUrl));
+        }
+        return wallEntries;
+    }
+
+    private List<CreditsWallView.CreditEntry> parseRemoteEntries(String json) {
+        List<CreditsWallView.CreditEntry> entries = new ArrayList<>();
+        JsonElement root = JsonParser.parseString(json);
+        JsonArray array = findEntriesArray(root);
+        if (array == null) {
+            return entries;
+        }
+
+        for (JsonElement element : array) {
+            if (!element.isJsonObject()) {
+                continue;
+            }
+
+            JsonObject object = element.getAsJsonObject();
+            String name = readString(object, "name", "title", "nickName", "nickname");
+            String avatarUrl = readString(object, "avatarUrl", "avatar", "avatar_url", "image", "img");
+
+            if (isBlank(name) || isBlank(avatarUrl)) {
+                continue;
+            }
+
+            entries.add(new CreditsWallView.CreditEntry(name.trim(), avatarUrl.trim()));
+        }
+
+        return entries;
+    }
+
+    private JsonArray findEntriesArray(JsonElement root) {
+        if (root == null || root.isJsonNull()) {
+            return null;
+        }
+        if (root.isJsonArray()) {
+            return root.getAsJsonArray();
+        }
+        if (!root.isJsonObject()) {
+            return null;
+        }
+
+        JsonObject object = root.getAsJsonObject();
+        String[] directKeys = {"entries", "list", "data", "sponsored", "credits"};
+        for (String key : directKeys) {
+            JsonElement candidate = object.get(key);
+            if (candidate != null && candidate.isJsonArray()) {
+                return candidate.getAsJsonArray();
+            }
+            if (candidate != null && candidate.isJsonObject()) {
+                JsonArray nestedArray = findEntriesArray(candidate);
+                if (nestedArray != null) {
+                    return nestedArray;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private String readString(JsonObject object, String... keys) {
+        for (String key : keys) {
+            JsonElement value = object.get(key);
+            if (value != null && value.isJsonPrimitive()) {
+                String text = value.getAsString();
+                if (!isBlank(text)) {
+                    return text;
+                }
+            }
+        }
+        return null;
+    }
+
+    private boolean isBlank(String text) {
+        return text == null || text.trim().isEmpty();
+    }
+
     private static final class CreditEntry {
         private final String name;
         private final String avatarUrl;
@@ -345,28 +284,6 @@ public class CreditsActivity extends BaseActivity {
         private CreditEntry(String name, String avatarUrl) {
             this.name = name;
             this.avatarUrl = avatarUrl;
-        }
-
-        private String getNormalizedAvatarUrl() {
-            int suffixIndex = avatarUrl.indexOf('@');
-            if (suffixIndex >= 0) return avatarUrl.substring(0, suffixIndex);
-            return avatarUrl;
-        }
-    }
-
-    private static final class ColumnAnimationState {
-        private final LinearLayout track;
-        private final LinearLayout primaryContent;
-        private final int staggerPx;
-        private final int durationMs;
-        private ObjectAnimator animator;
-
-        private ColumnAnimationState(LinearLayout track, LinearLayout primaryContent,
-                                     int staggerPx, int durationMs) {
-            this.track = track;
-            this.primaryContent = primaryContent;
-            this.staggerPx = staggerPx;
-            this.durationMs = durationMs;
         }
     }
 }

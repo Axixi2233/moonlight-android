@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="16dp"
+    android:background="@drawable/bg_update_dialog_panel"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:paddingLeft="22dp"
+    android:paddingTop="22dp"
+    android:paddingRight="22dp"
+    android:paddingBottom="20dp">
+
+    <ProgressBar
+        android:id="@+id/progress_spinner"
+        style="?android:attr/progressBarStyleLarge"
+        android:layout_width="42dp"
+        android:layout_height="42dp"
+        android:indeterminate="true"
+        android:indeterminateDrawable="@drawable/ic_axi_progress_bg" />
+
+    <TextView
+        android:id="@+id/tv_spinner_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:gravity="center"
+        android:textColor="@android:color/white"
+        android:textSize="17sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tv_spinner_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:lineSpacingExtra="2dp"
+        android:textColor="#D9FFFFFF"
+        android:textSize="12sp" />
+
+</LinearLayout>
