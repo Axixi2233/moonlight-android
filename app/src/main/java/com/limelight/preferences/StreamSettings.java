@@ -714,18 +714,19 @@ public class StreamSettings extends Activity {
                     return false;
                 }
             });
-
-            findPreference("import_gamepad_file").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-                @Override
-                public boolean onPreferenceClick(Preference preference) {
-                    Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-                    intent.addCategory(Intent.CATEGORY_OPENABLE);
-                    intent.setType("text/plain");
-                    startActivityForResult(intent, GAMEPAD_READ_REQUEST_CODE);
-                    return false;
-                }
-            });
-
+            Preference gamepad_import =findPreference("import_gamepad_file");
+            if(gamepad_import!=null){
+                gamepad_import.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+                    @Override
+                    public boolean onPreferenceClick(Preference preference) {
+                        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                        intent.addCategory(Intent.CATEGORY_OPENABLE);
+                        intent.setType("text/plain");
+                        startActivityForResult(intent, GAMEPAD_READ_REQUEST_CODE);
+                        return false;
+                    }
+                });
+            }
             findPreference("import_computers_data_file").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
                 @Override
                 public boolean onPreferenceClick(Preference preference) {
@@ -797,22 +798,25 @@ public class StreamSettings extends Activity {
                 }
             });
 
-            findPreference("export_gamepad_file").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-                @Override
-                public boolean onPreferenceClick(Preference preference) {
-                    String name = PreferenceManager.getDefaultSharedPreferences(getActivity()).getString(KeyBoardControllerConfigurationLoader.OSC_GAMEPAD_PREFERENCE, KeyBoardControllerConfigurationLoader.OSC_GAMEPAD_PREFERENCE_VALUE);
-                    Uri uri=FileUriUtils.getKeyBoardFile(getActivity(),"axi_"+name+".txt");
-                    if(uri==null){
+            Preference gamepad_export =findPreference("export_gamepad_file");
+            if(gamepad_export!=null){
+                gamepad_export.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+                    @Override
+                    public boolean onPreferenceClick(Preference preference) {
+                        String name = PreferenceManager.getDefaultSharedPreferences(getActivity()).getString(KeyBoardControllerConfigurationLoader.OSC_GAMEPAD_PREFERENCE, KeyBoardControllerConfigurationLoader.OSC_GAMEPAD_PREFERENCE_VALUE);
+                        Uri uri=FileUriUtils.getKeyBoardFile(getActivity(),"axi_"+name+".txt");
+                        if(uri==null){
+                            return false;
+                        }
+                        Intent intent = new Intent(Intent.ACTION_SEND);
+                        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        intent.putExtra(Intent.EXTRA_STREAM, uri);
+                        intent.setType("text/plain");
+                        startActivity(Intent.createChooser(intent,"保存配置文件"));
                         return false;
                     }
-                    Intent intent = new Intent(Intent.ACTION_SEND);
-                    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                    intent.putExtra(Intent.EXTRA_STREAM, uri);
-                    intent.setType("text/plain");
-                    startActivity(Intent.createChooser(intent,"保存配置文件"));
-                    return false;
-                }
-            });
+                });
+            }
 
             findPreference("export_computers_data_file").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
                 @Override

@@ -322,14 +322,6 @@
             android:key="checkbox_rocker_click_L3R3"
             android:summary="开启后，虚拟手柄摇杆无法触发L3和R3"
             android:title="禁用虚拟手柄摇杆中心区域" />
-<!--        <com.limelight.preferences.ConfirmDeleteOscPreference-->
-<!--            android:title="@string/title_reset_osc"-->
-<!--            android:summary="@string/summary_reset_osc"-->
-<!--            android:dialogTitle="@string/dialog_title_reset_osc"-->
-<!--            android:dialogMessage="@string/dialog_text_reset_osc"-->
-<!--            android:positiveButtonText="@string/yes"-->
-<!--            android:negativeButtonText="@string/no"-->
-<!--            />-->
 
         <Preference
             android:key="import_gamepad_file"
