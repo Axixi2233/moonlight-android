@@ -132,9 +132,9 @@
 
                 <ImageView
                     android:layout_marginLeft="10dp"
-                    android:src="@mipmap/ic_credits"
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"/>
+                    android:src="@drawable/ic_thanks"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"/>
 
                 <LinearLayout
                     android:layout_marginLeft="12dp"
