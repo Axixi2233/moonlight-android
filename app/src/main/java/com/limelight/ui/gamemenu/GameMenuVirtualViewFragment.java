@@ -40,6 +40,8 @@ public class GameMenuVirtualViewFragment extends BaseGameMenuDialog implements V
 
     private Button btn_vibration;
 
+    private Button btn_vibration_gamepad;
+
     private SeekBar sb_adjust_keyboard_all;
 
     private SeekBar sb_height_keyboard_all;
@@ -81,7 +83,7 @@ public class GameMenuVirtualViewFragment extends BaseGameMenuDialog implements V
         tx_title=v.findViewById(R.id.tx_title);
 
         btn_vibration=v.findViewById(R.id.btn_vibration);
-
+        btn_vibration_gamepad=v.findViewById(R.id.btn_vibration_gamepad);
         sb_adjust_keyboard_all=v.findViewById(R.id.sb_adjust_keyboard_all);
         sb_height_keyboard_all=v.findViewById(R.id.sb_height_keyboard_all);
         sb_adjust_virtual_gamepad=v.findViewById(R.id.sb_adjust_virtual_gamepad);
@@ -109,6 +111,7 @@ public class GameMenuVirtualViewFragment extends BaseGameMenuDialog implements V
 
         ibtn_back.setOnClickListener(this);
         btn_vibration.setOnClickListener(this);
+        btn_vibration_gamepad.setOnClickListener(this);
         v.findViewById(R.id.btn_right).setOnClickListener(this);
 
         sb_adjust_keyboard_all.setOnSeekBarChangeListener(this);
@@ -356,6 +359,7 @@ public class GameMenuVirtualViewFragment extends BaseGameMenuDialog implements V
 
     private void initViewData(){
         btn_vibration.setBackgroundResource(prefConfig.enableKeyboardVibrate?R.drawable.ic_game_menu_btn_green_selector:R.drawable.ic_game_menu_btn_selector);
+        btn_vibration_gamepad.setBackgroundResource(prefConfig.vibrateOsc?R.drawable.ic_game_menu_btn_green_selector:R.drawable.ic_game_menu_btn_selector);
     }
 
     private void initViewHeight(){
@@ -397,6 +401,15 @@ public class GameMenuVirtualViewFragment extends BaseGameMenuDialog implements V
             PreferenceManager.getDefaultSharedPreferences(getActivity())
                     .edit()
                     .putBoolean(PreferenceConfiguration.CHECKBOX_ENABLE_KEYBOARD_VIBRATE,prefConfig.enableKeyboardVibrate)
+                    .commit();
+            return;
+        }
+        if(v.getId()==R.id.btn_vibration_gamepad){
+            prefConfig.vibrateOsc=!prefConfig.vibrateOsc;
+            initViewData();
+            PreferenceManager.getDefaultSharedPreferences(getActivity())
+                    .edit()
+                    .putBoolean(PreferenceConfiguration.VIBRATE_OSC_PREF_STRING,prefConfig.vibrateOsc)
                     .commit();
             return;
         }

@@ -6,6 +6,7 @@ import android.view.View;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.RadioGroup;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -52,18 +53,23 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
     private CheckBox btn_game_force_gyro;
     private CheckBox btn_game_force_gyro_left_trgger;
     private CheckBox btn_game_force_gyro_switch;
+    private RadioGroup rg_game_audio_haptics_enable;
 
     private SeekBar sb_game_setting_pref_zoom;
 
     private SeekBar sb_game_setting_pref_magin_top;
+    private SeekBar sb_game_audio_haptics_strength;
 
     private TextView tx_game_setting_pref_magin_top;
 
     private TextView tx_game_setting_pref_zoom;
 
     private TextView tx_game_setting_gyro_sensitivity;
+    private TextView tx_game_audio_haptics_strength;
 
     private SeekBar sb_game_setting_gyro_sensitivity;
+    private RadioGroup rg_game_audio_haptics_voice_filter;
+    private LinearLayout layout_game_audio_haptics_details;
 
     @Override
     public void bindView(View v) {
@@ -85,6 +91,7 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
         btn_game_force_gyro=v.findViewById(R.id.btn_game_force_gyro);
         btn_game_force_gyro_left_trgger=v.findViewById(R.id.btn_game_force_gyro_left_trgger);
         btn_game_force_gyro_switch=v.findViewById(R.id.btn_game_force_gyro_switch);
+        rg_game_audio_haptics_enable=v.findViewById(R.id.rg_game_audio_haptics_enable);
         sb_game_setting_pref_zoom=v.findViewById(R.id.sb_game_setting_pref_zoom);
         tx_game_setting_pref_zoom=v.findViewById(R.id.tx_game_setting_pref_zoom);
 
@@ -93,6 +100,10 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
 
         tx_game_setting_gyro_sensitivity=v.findViewById(R.id.tx_game_setting_gyro_sensitivity);
         sb_game_setting_gyro_sensitivity=v.findViewById(R.id.sb_game_setting_gyro_sensitivity);
+        tx_game_audio_haptics_strength=v.findViewById(R.id.tx_game_audio_haptics_strength);
+        sb_game_audio_haptics_strength=v.findViewById(R.id.sb_game_audio_haptics_strength);
+        rg_game_audio_haptics_voice_filter=v.findViewById(R.id.rg_game_audio_haptics_voice_filter);
+        layout_game_audio_haptics_details=v.findViewById(R.id.layout_game_audio_haptics_details);
 
         if(!TextUtils.isEmpty(title)){
             tx_title.setText(title);
@@ -104,6 +115,7 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
         initPrefZoom();
         initPrefMagin();
         initGyroSensitivity();
+        initAudioHaptics();
         ibtn_back.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -285,6 +297,43 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
             }
         });
 
+        rg_game_audio_haptics_enable.setOnCheckedChangeListener((group, checkedId) -> {
+            if (checkedId == R.id.rbt_game_audio_haptics_enable_on) {
+                prefConfig.enableAudioHaptics = true;
+            }
+            else if (checkedId == R.id.rbt_game_audio_haptics_enable_off) {
+                prefConfig.enableAudioHaptics = false;
+            }
+            else {
+                return;
+            }
+
+            setSetting("checkbox_enable_audio_haptics", prefConfig.enableAudioHaptics);
+            updateAudioHapticsVisibility();
+            notifyAudioHapticsChanged();
+        });
+
+        rg_game_audio_haptics_voice_filter.setOnCheckedChangeListener((group, checkedId) -> {
+            if (checkedId == R.id.rbt_game_audio_haptics_voice_filter_1) {
+                prefConfig.audioHapticsVoiceFilter = "off";
+            }
+            else if (checkedId == R.id.rbt_game_audio_haptics_voice_filter_2) {
+                prefConfig.audioHapticsVoiceFilter = "low";
+            }
+            else if (checkedId == R.id.rbt_game_audio_haptics_voice_filter_3) {
+                prefConfig.audioHapticsVoiceFilter = "medium";
+            }
+            else if (checkedId == R.id.rbt_game_audio_haptics_voice_filter_4) {
+                prefConfig.audioHapticsVoiceFilter = "high";
+            }
+            else {
+                return;
+            }
+
+            saveSetting("list_audio_haptics_voice_filter", prefConfig.audioHapticsVoiceFilter);
+            notifyAudioHapticsChanged();
+        });
+
         sb_game_setting_pref_zoom.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -335,6 +384,26 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
                 prefConfig.gameForceGyroSensitivity=progress;
                 saveSetting("gameForceGyroSensitivity",progress);
                 initGyroSensitivity();
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
+
+        sb_game_audio_haptics_strength.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                prefConfig.audioHapticsStrength = progress;
+                saveSetting("seekbar_audio_haptics_strength", progress);
+                initAudioHapticsStrength();
+                notifyAudioHapticsChanged();
             }
 
             @Override
@@ -410,6 +479,13 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
                 .apply();
     }
 
+    private void saveSetting(String name,String value){
+        PreferenceManager.getDefaultSharedPreferences(getActivity())
+                .edit()
+                .putString(name,value)
+                .apply();
+    }
+
     private void saveSettingFloat(String name,float value){
         PreferenceManager.getDefaultSharedPreferences(getActivity())
                 .edit()
@@ -448,6 +524,12 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
         btn_game_force_gyro.setChecked(prefConfig.gameForceGyro);
         btn_game_force_gyro_left_trgger.setChecked(prefConfig.gameForceGyroLeftTrigger);
         btn_game_force_gyro_switch.setChecked(prefConfig.gameForceGyroXYSwitch);
+        if (prefConfig.enableAudioHaptics) {
+            rg_game_audio_haptics_enable.check(R.id.rbt_game_audio_haptics_enable_on);
+        }
+        else {
+            rg_game_audio_haptics_enable.check(R.id.rbt_game_audio_haptics_enable_off);
+        }
     }
 
     private void initPrefZoom(){
@@ -463,6 +545,45 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
     private void initGyroSensitivity(){
         tx_game_setting_gyro_sensitivity.setText("强制体感·灵敏度："+prefConfig.gameForceGyroSensitivity);
         sb_game_setting_gyro_sensitivity.setProgress(prefConfig.gameForceGyroSensitivity);
+    }
+
+    private void initAudioHaptics() {
+        initAudioHapticsVoiceFilter();
+        initAudioHapticsStrength();
+        updateAudioHapticsVisibility();
+    }
+
+    private void initAudioHapticsVoiceFilter() {
+        String filter = prefConfig.audioHapticsVoiceFilter;
+        if ("low".equals(filter)) {
+            rg_game_audio_haptics_voice_filter.check(R.id.rbt_game_audio_haptics_voice_filter_2);
+        }
+        else if ("medium".equals(filter)) {
+            rg_game_audio_haptics_voice_filter.check(R.id.rbt_game_audio_haptics_voice_filter_3);
+        }
+        else if ("high".equals(filter)) {
+            rg_game_audio_haptics_voice_filter.check(R.id.rbt_game_audio_haptics_voice_filter_4);
+        }
+        else {
+            rg_game_audio_haptics_voice_filter.check(R.id.rbt_game_audio_haptics_voice_filter_1);
+        }
+    }
+
+    private void initAudioHapticsStrength() {
+        tx_game_audio_haptics_strength.setText("音频震动强度：" + prefConfig.audioHapticsStrength + "%");
+        sb_game_audio_haptics_strength.setProgress(prefConfig.audioHapticsStrength);
+    }
+
+    private void updateAudioHapticsVisibility() {
+        if (layout_game_audio_haptics_details != null) {
+            layout_game_audio_haptics_details.setVisibility(prefConfig.enableAudioHaptics ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    private void notifyAudioHapticsChanged() {
+        if (onClick != null) {
+            onClick.click(6, prefConfig.enableAudioHaptics);
+        }
     }
 
     @Override

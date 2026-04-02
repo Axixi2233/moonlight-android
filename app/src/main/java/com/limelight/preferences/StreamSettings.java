@@ -359,10 +359,15 @@ public class StreamSettings extends Activity {
             }*/
             PreferenceCategory category_gamepad_settings =
                     (PreferenceCategory) findPreference("category_gamepad_settings");
+            PreferenceCategory category_audio_settings =
+                    (PreferenceCategory) findPreference("category_audio_settings");
             // Remove the vibration options if the device can't vibrate
             if (!((Vibrator)getActivity().getSystemService(Context.VIBRATOR_SERVICE)).hasVibrator()) {
                 category_gamepad_settings.removePreference(findPreference("checkbox_vibrate_fallback"));
                 category_gamepad_settings.removePreference(findPreference("seekbar_vibrate_fallback_strength"));
+                category_audio_settings.removePreference(findPreference("checkbox_enable_audio_haptics"));
+                category_audio_settings.removePreference(findPreference("seekbar_audio_haptics_strength"));
+                category_audio_settings.removePreference(findPreference("list_audio_haptics_voice_filter"));
                 // The entire OSC category may have already been removed by the touchscreen check above
                 PreferenceCategory category = (PreferenceCategory) findPreference("category_onscreen_controls");
                 if (category != null) {

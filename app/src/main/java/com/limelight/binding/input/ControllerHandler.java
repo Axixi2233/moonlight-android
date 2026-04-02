@@ -2311,7 +2311,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             // If we didn't find a matching device, it must be the on-screen
             // controls that triggered the rumble. Vibrate the device if
             // the user has requested that behavior.
-            if (!foundMatchingDevice && prefConfig.onscreenController && !prefConfig.onlyL3R3 && prefConfig.vibrateOsc) {
+            if (!foundMatchingDevice && prefConfig.onscreenController && !prefConfig.onlyL3R3 && PreferenceConfiguration.readPreferences(activityContext).vibrateOsc) {
                 rumbleSingleVibrator(deviceVibrator, lowFreqMotor, highFreqMotor);
             }
             else if (foundMatchingDevice && !vibrated && prefConfig.vibrateFallbackToDevice) {

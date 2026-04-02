@@ -54,7 +54,7 @@ public class PreferenceConfiguration {
     private static final String ANALOG_SCROLLING_PREF_STRING = "analog_scrolling";
     private static final String MOUSE_NAV_BUTTONS_STRING = "checkbox_mouse_nav_buttons";
     static final String UNLOCK_FPS_STRING = "checkbox_unlock_fps";
-    private static final String VIBRATE_OSC_PREF_STRING = "checkbox_vibrate_osc";
+    public static final String VIBRATE_OSC_PREF_STRING = "checkbox_vibrate_osc";
     private static final String VIBRATE_FALLBACK_PREF_STRING = "checkbox_vibrate_fallback";
     private static final String VIBRATE_FALLBACK_STRENGTH_PREF_STRING = "seekbar_vibrate_fallback_strength";
     private static final String FLIP_FACE_BUTTONS_PREF_STRING = "checkbox_flip_face_buttons";
@@ -63,6 +63,9 @@ public class PreferenceConfiguration {
     private static final String FRAME_PACING_PREF_STRING = "frame_pacing";
     private static final String ABSOLUTE_MOUSE_MODE_PREF_STRING = "checkbox_absolute_mouse_mode";
     private static final String ENABLE_AUDIO_FX_PREF_STRING = "checkbox_enable_audiofx";
+    private static final String ENABLE_AUDIO_HAPTICS_PREF_STRING = "checkbox_enable_audio_haptics";
+    private static final String AUDIO_HAPTICS_STRENGTH_PREF_STRING = "seekbar_audio_haptics_strength";
+    private static final String AUDIO_HAPTICS_VOICE_FILTER_PREF_STRING = "list_audio_haptics_voice_filter";
     private static final String REDUCE_REFRESH_RATE_PREF_STRING = "checkbox_reduce_refresh_rate";
     private static final String FULL_RANGE_PREF_STRING = "checkbox_full_range";
     private static final String GAMEPAD_TOUCHPAD_AS_MOUSE_PREF_STRING = "checkbox_gamepad_touchpad_as_mouse";
@@ -122,6 +125,9 @@ public class PreferenceConfiguration {
     private static final String DEFAULT_FRAME_PACING = "latency";
     private static final boolean DEFAULT_ABSOLUTE_MOUSE_MODE = false;
     private static final boolean DEFAULT_ENABLE_AUDIO_FX = false;
+    private static final boolean DEFAULT_ENABLE_AUDIO_HAPTICS = false;
+    private static final int DEFAULT_AUDIO_HAPTICS_STRENGTH = 100;
+    private static final String DEFAULT_AUDIO_HAPTICS_VOICE_FILTER = "off";
     private static final boolean DEFAULT_REDUCE_REFRESH_RATE = false;
     private static final boolean DEFAULT_FULL_RANGE = false;
     private static final boolean DEFAULT_GAMEPAD_TOUCHPAD_AS_MOUSE = false;
@@ -247,6 +253,9 @@ public class PreferenceConfiguration {
     public int framePacing;
     public boolean absoluteMouseMode;
     public boolean enableAudioFx;
+    public boolean enableAudioHaptics;
+    public int audioHapticsStrength;
+    public String audioHapticsVoiceFilter;
     public boolean reduceRefreshRate;
     public boolean fullRange;
     public boolean gamepadMotionSensors;
@@ -950,6 +959,9 @@ public class PreferenceConfiguration {
         config.enforceDisplayMode=prefs.getBoolean("checkbox_enforce_display_mode",false);
         config.absoluteMouseMode = prefs.getBoolean(ABSOLUTE_MOUSE_MODE_PREF_STRING, DEFAULT_ABSOLUTE_MOUSE_MODE);
         config.enableAudioFx = prefs.getBoolean(ENABLE_AUDIO_FX_PREF_STRING, DEFAULT_ENABLE_AUDIO_FX);
+        config.enableAudioHaptics = prefs.getBoolean(ENABLE_AUDIO_HAPTICS_PREF_STRING, DEFAULT_ENABLE_AUDIO_HAPTICS);
+        config.audioHapticsStrength = prefs.getInt(AUDIO_HAPTICS_STRENGTH_PREF_STRING, DEFAULT_AUDIO_HAPTICS_STRENGTH);
+        config.audioHapticsVoiceFilter = prefs.getString(AUDIO_HAPTICS_VOICE_FILTER_PREF_STRING, DEFAULT_AUDIO_HAPTICS_VOICE_FILTER);
         config.reduceRefreshRate = prefs.getBoolean(REDUCE_REFRESH_RATE_PREF_STRING, DEFAULT_REDUCE_REFRESH_RATE);
         config.fullRange = prefs.getBoolean(FULL_RANGE_PREF_STRING, DEFAULT_FULL_RANGE);
         config.gamepadTouchpadAsMouse = prefs.getBoolean(GAMEPAD_TOUCHPAD_AS_MOUSE_PREF_STRING, DEFAULT_GAMEPAD_TOUCHPAD_AS_MOUSE);

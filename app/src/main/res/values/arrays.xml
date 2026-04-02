@@ -43,6 +43,19 @@
         <item>71</item>
     </string-array>
 
+    <string-array name="audio_haptics_voice_filter_names">
+        <item>关闭</item>
+        <item>低</item>
+        <item>中</item>
+        <item>高</item>
+    </string-array>
+    <string-array name="audio_haptics_voice_filter_values" translatable="false">
+        <item>off</item>
+        <item>low</item>
+        <item>medium</item>
+        <item>high</item>
+    </string-array>
+
     <!-- Don't forget to update locales_config.xml when you modify this! -->
     <string-array name="language_names" translatable="false">
         <item>Default</item>

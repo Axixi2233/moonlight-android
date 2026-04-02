@@ -125,7 +125,8 @@
             android:defaultValue="true" />
 
     </PreferenceCategory>
-    <PreferenceCategory android:title="@string/category_audio_settings">
+    <PreferenceCategory android:title="@string/category_audio_settings"
+        android:key="category_audio_settings">
         <ListPreference
             android:key="list_audio_config"
             android:title="@string/title_audio_config_list"
@@ -138,6 +139,30 @@
             android:title="@string/title_checkbox_enable_audiofx"
             android:summary="@string/summary_checkbox_enable_audiofx"
             android:defaultValue="false" />
+        <CheckBoxPreference
+            android:key="checkbox_enable_audio_haptics"
+            android:title="启用音频震动（实验）"
+            android:summary="将解码后的串流音频转换为手机震动。更适合爆炸、撞击和低频场景，不是精确的原生游戏触觉。"
+            android:defaultValue="false" />
+        <com.limelight.preferences.SeekBarPreference
+            android:key="seekbar_audio_haptics_strength"
+            android:dependency="checkbox_enable_audio_haptics"
+            android:defaultValue="100"
+            seekbar:min="25"
+            seekbar:step="5"
+            seekbar:keyStep="5"
+            android:max="200"
+            android:summary="调整由串流音频生成的手机震动整体强度。"
+            android:text="%"
+            android:title="音频震动强度" />
+        <ListPreference
+            android:key="list_audio_haptics_voice_filter"
+            android:dependency="checkbox_enable_audio_haptics"
+            android:title="音频震动语音过滤"
+            android:summary="降低人声、语音聊天和播报声对音频震动的触发强度。"
+            android:entries="@array/audio_haptics_voice_filter_names"
+            android:entryValues="@array/audio_haptics_voice_filter_values"
+            android:defaultValue="off" />
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/category_gamepad_settings"
         android:key="category_gamepad_settings">

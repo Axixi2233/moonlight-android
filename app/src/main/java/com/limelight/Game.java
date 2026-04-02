@@ -188,6 +188,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     private TextView performanceOverlayBig;
 
     private MediaCodecDecoderRenderer decoderRenderer;
+    private AndroidAudioRenderer audioRenderer;
     private boolean reportedCrash;
 
     private WifiManager.WifiLock highPerfWifiLock;
@@ -2716,6 +2717,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         if (connecting || connected) {
             connecting = connected = false;
             updatePipAutoEnter();
+            audioRenderer = null;
 
             controllerHandler.stop();
 
@@ -3026,7 +3028,10 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             UiHelper.notifyStreamConnecting(Game.this);
 
             decoderRenderer.setRenderTarget(holder.getSurface());
-            conn.start(new AndroidAudioRenderer(Game.this, prefConfig.enableAudioFx),
+            audioRenderer = new AndroidAudioRenderer(Game.this, prefConfig.enableAudioFx,
+                    prefConfig.enableAudioHaptics, prefConfig.audioHapticsStrength,
+                    prefConfig.audioHapticsVoiceFilter);
+            conn.start(audioRenderer,
                     decoderRenderer, Game.this);
         }
     }
@@ -3569,7 +3574,10 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         attemptedConnection = true;
         UiHelper.notifyStreamConnecting(Game.this);
         decoderRenderer.setRenderTarget(fsrInputSurface);
-        conn.start(new AndroidAudioRenderer(Game.this, prefConfig.enableAudioFx),
+        audioRenderer = new AndroidAudioRenderer(Game.this, prefConfig.enableAudioFx,
+                prefConfig.enableAudioHaptics, prefConfig.audioHapticsStrength,
+                prefConfig.audioHapticsVoiceFilter);
+        conn.start(audioRenderer,
                 decoderRenderer, Game.this);
     }
 
@@ -3686,6 +3694,13 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         LinearLayout.LayoutParams params1= (LinearLayout.LayoutParams) performanceOverlayLite.getLayoutParams();
         params1.setMargins(0,UiHelper.dpToPx(this,prefConfig.performanceOverlayLiteMaginTop),0,0);
         performanceOverlayLite.setLayoutParams(params1);
+    }
+
+    public void setAudioHapticsSettings() {
+        if (audioRenderer != null) {
+            audioRenderer.updateAudioHapticsSettings(prefConfig.enableAudioHaptics,
+                    prefConfig.audioHapticsStrength, prefConfig.audioHapticsVoiceFilter);
+        }
     }
 
 }

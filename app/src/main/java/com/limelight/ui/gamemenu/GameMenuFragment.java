@@ -455,6 +455,10 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
                         game.setPerformanceOverlayLiteMagin();
                         return;
                     }
+                    if(index==6){
+                        game.setAudioHapticsSettings();
+                        return;
+                    }
 
                 }
             });

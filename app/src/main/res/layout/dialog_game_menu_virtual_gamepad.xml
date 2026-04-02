@@ -552,12 +552,25 @@
                     android:text="按键震动"
                     android:textSize="11dp" />
 
+                <Button
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:drawablePadding="4dp"
+                    android:drawableTop="@drawable/ic_axi_virtual_gamepad_rumble"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/btn_vibration_gamepad"
+                    android:text="虚拟手柄震动"
+                    android:textSize="11dp" />
+
                 <View
-                    android:layout_weight="0.5"
+                    android:layout_weight="1"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"/>
-
-<!--                <Button-->
+                <!--                <Button-->
 <!--                    android:layout_width="match_parent"-->
 <!--                    android:layout_height="match_parent"-->
 <!--                    android:layout_weight="1"-->
