@@ -226,6 +226,9 @@ public class UsbDriverService extends Service implements UsbDriverListener {
             else if (Xbox360WirelessDongle.canClaimDevice(device)) {
                 controller = new Xbox360WirelessDongle(device, connection, nextDeviceId++, this);
             }
+            else if (ProCon2Controller.canClaimDevice(device)) {
+                controller = new ProCon2Controller(device, connection, nextDeviceId++, this);
+            }
             else if (ProConController.canClaimDevice(device)) {
                 controller = new ProConController(device, connection, nextDeviceId++, this);
             }
@@ -324,6 +327,7 @@ public class UsbDriverService extends Service implements UsbDriverListener {
                 ((!isRecognizedInputDevice(device) || claimAllAvailable) && Xbox360Controller.canClaimDevice(device)) ||
                 // We must not call isRecognizedInputDevice() because wireless controllers don't share the same product ID as the dongle
                 ((!kernelSupportsXbox360W() || claimAllAvailable) && Xbox360WirelessDongle.canClaimDevice(device)) ||
+                ((!isRecognizedInputDevice(device) || claimAllAvailable) && ProCon2Controller.canClaimDevice(device)) ||
                 ((!isRecognizedInputDevice(device) || claimAllAvailable) && ProConController.canClaimDevice(device)) ||
                 ((!isRecognizedInputDevice(device) || claimAllAvailable) && DualSenseController.canClaimDevice(device))||
                 ((!isRecognizedInputDevice(device) || claimAllAvailable) && Dualshock4Controller.canClaimDevice(device));

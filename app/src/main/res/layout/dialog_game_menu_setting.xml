@@ -638,14 +638,26 @@
                     android:layout_height="wrap_content"
                     android:visibility="visible">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                    <LinearLayout
                         android:layout_marginTop="8dp"
-                        android:text="音频震动输出目标"
-                        android:textStyle="italic|bold"
-                        android:textColor="@android:color/white"
-                        android:textSize="8dp" />
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="音频震动输出目标"
+                            android:textStyle="italic|bold"
+                            android:textColor="@android:color/white"
+                            android:textSize="8dp" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginLeft="5dp"
+                            android:text="其中原装DS5有线驱动接管模式，有特殊优化."
+                            android:textStyle="italic|bold"
+                            android:textColor="#FFC107"
+                            android:textSize="6dp" />
+                    </LinearLayout>
 
                     <RadioGroup
                         android:id="@+id/rg_game_audio_haptics_output_target"

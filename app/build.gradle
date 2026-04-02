@@ -11,7 +11,7 @@ android {
         minSdk 21
         targetSdk 34
 
-        versionName "12.1-260402"
+        versionName "12.1-260403"
         versionCode = 314
         buildConfigField "int", "AXI_CODE", "3"
         // Generate native debug symbols to allow Google Play to symbolicate our native crashes
@@ -138,7 +138,7 @@ android {
 }
 
 dependencies {
-    implementation files('libs/axi_gamepad_1.0.4.aar')
+    implementation files('libs/axi_gamepad_1.0.5.aar')
     implementation 'org.bouncycastle:bcprov-jdk18on:1.77'
     implementation 'org.bouncycastle:bcpkix-jdk18on:1.77'
     implementation 'org.jcodec:jcodec:0.2.5'
