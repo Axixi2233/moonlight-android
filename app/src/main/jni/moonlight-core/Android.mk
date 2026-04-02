@@ -38,6 +38,7 @@ LOCAL_SRC_FILES := moonlight-common-c/src/AudioStream.c \
                    moonlight-common-c/enet/protocol.c \
                    moonlight-common-c/enet/unix.c \
                    moonlight-common-c/enet/win32.c \
+                   haptic_native.c \
                    simplejni.c \
                    callbacks.c \
                    minisdl.c \

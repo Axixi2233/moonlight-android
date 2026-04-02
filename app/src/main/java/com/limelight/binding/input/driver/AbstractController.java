@@ -76,6 +76,25 @@ public abstract class AbstractController {
 
     public abstract void rumbleTriggers(short leftTrigger, short rightTrigger);
 
+    public boolean hasAdvancedAudioHapticsSupport() {
+        return false;
+    }
+
+    public boolean startAdvancedAudioHaptics() {
+        return false;
+    }
+
+    public void stopAdvancedAudioHaptics() {
+    }
+
+    public boolean isAdvancedAudioHapticsActive() {
+        return false;
+    }
+
+    public boolean submitAdvancedAudioHapticsFrame(byte[] frame, float intensityGain) {
+        return false;
+    }
+
     protected void notifyDeviceRemoved() {
         listener.deviceRemoved(this);
     }

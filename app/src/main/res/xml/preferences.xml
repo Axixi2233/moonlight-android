@@ -139,31 +139,8 @@
             android:title="@string/title_checkbox_enable_audiofx"
             android:summary="@string/summary_checkbox_enable_audiofx"
             android:defaultValue="false" />
-        <CheckBoxPreference
-            android:key="checkbox_enable_audio_haptics"
-            android:title="启用音频震动（实验）"
-            android:summary="将解码后的串流音频转换为手机震动。更适合爆炸、撞击和低频场景，不是精确的原生游戏触觉。"
-            android:defaultValue="false" />
-        <com.limelight.preferences.SeekBarPreference
-            android:key="seekbar_audio_haptics_strength"
-            android:dependency="checkbox_enable_audio_haptics"
-            android:defaultValue="100"
-            seekbar:min="25"
-            seekbar:step="5"
-            seekbar:keyStep="5"
-            android:max="200"
-            android:summary="调整由串流音频生成的手机震动整体强度。"
-            android:text="%"
-            android:title="音频震动强度" />
-        <ListPreference
-            android:key="list_audio_haptics_voice_filter"
-            android:dependency="checkbox_enable_audio_haptics"
-            android:title="音频震动语音过滤"
-            android:summary="降低人声、语音聊天和播报声对音频震动的触发强度。"
-            android:entries="@array/audio_haptics_voice_filter_names"
-            android:entryValues="@array/audio_haptics_voice_filter_values"
-            android:defaultValue="off" />
     </PreferenceCategory>
+
     <PreferenceCategory android:title="@string/category_gamepad_settings"
         android:key="category_gamepad_settings">
         <com.limelight.preferences.SeekBarPreference
@@ -635,6 +612,49 @@
             android:title="导出虚拟按键配置"
             android:summary="导出默认选择的布局方案的配置文件。(仅横屏模式)"
             />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="音频震动Beta"
+        android:key="category_axixi_audio_rumble">
+        <CheckBoxPreference
+            android:key="checkbox_enable_audio_haptics"
+            android:title="启用音频震动"
+            android:summary="把串流音频转换成震动反馈，更适合爆炸、撞击、低频场景"
+            android:defaultValue="false" />
+        <ListPreference
+            android:key="list_audio_haptics_output_target"
+            android:dependency="checkbox_enable_audio_haptics"
+            android:title="音频震动输出目标"
+            android:summary="选择输出到手机，或输出到已接入的手柄"
+            android:entries="@array/audio_haptics_output_target_names"
+            android:entryValues="@array/audio_haptics_output_target_values"
+            android:defaultValue="phone" />
+        <com.limelight.preferences.SeekBarPreference
+            android:key="seekbar_audio_haptics_strength"
+            android:dependency="checkbox_enable_audio_haptics"
+            android:defaultValue="100"
+            seekbar:min="25"
+            seekbar:step="5"
+            seekbar:keyStep="5"
+            android:max="200"
+            android:summary="调整手机或者手柄音频震动强度。"
+            android:text="%"
+            android:title="音频震动强度" />
+        <ListPreference
+            android:key="list_audio_haptics_voice_filter"
+            android:dependency="checkbox_enable_audio_haptics"
+            android:title="语音过滤"
+            android:summary="降低人声、语音聊天、播报声对震动的触发"
+            android:entries="@array/audio_haptics_voice_filter_names"
+            android:entryValues="@array/audio_haptics_voice_filter_values"
+            android:defaultValue="off" />
+        <CheckBoxPreference
+            android:key="checkbox_audio_haptics_keep_controller_rumble"
+            android:dependency="checkbox_enable_audio_haptics"
+            android:title="保留普通手柄震动"
+            android:summary="当输出目标为手柄时，是否继续保留游戏原本的手柄震动。默认关闭。"
+            android:defaultValue="false" />
 
     </PreferenceCategory>
 

@@ -17,13 +17,32 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class AbstractDualSenseController extends AbstractController {
+    private static final int HAPTIC_AUDIO_ENDPOINT_PACKET_SIZE = 0x188;
+    private static final int HAPTIC_INIT_REPORT_SIZE = 48;
+    private static final int HAPTIC_INIT_TIMEOUT_MS = 1000;
+    private static final int REPORT_MIN_TRIGGER_LEN = 31;
+    private static final int REPORT_RIGHT_TRIGGER_TYPE_IDX = 11;
+    private static final int REPORT_RIGHT_TRIGGER_DATA_IDX = 12;
+    private static final int REPORT_LEFT_TRIGGER_TYPE_IDX = 22;
+    private static final int REPORT_LEFT_TRIGGER_DATA_IDX = 23;
+    private static final int TRIGGER_DATA_LEN = 10;
+
     protected final UsbDevice device;
     protected final UsbDeviceConnection connection;
 
     private Thread inputThread;
     private boolean stopped;
+    private boolean advancedAudioHapticsRequested;
+    private boolean advancedAudioHapticsPrimed;
+    private byte cachedLeftTriggerType;
+    private final byte[] cachedLeftTriggerData = new byte[TRIGGER_DATA_LEN];
+    private byte cachedRightTriggerType;
+    private final byte[] cachedRightTriggerData = new byte[TRIGGER_DATA_LEN];
+    private DualSenseHapticSender advancedAudioHapticsSender;
 
     protected UsbEndpoint inEndpt, outEndpt;
+    protected UsbInterface hapticIface;
+    protected UsbEndpoint hapticEndpt;
 
     public AbstractDualSenseController(UsbDevice device, UsbDeviceConnection connection, int deviceId, UsbDriverListener listener) {
         super(deviceId, listener, device.getVendorId(), device.getProductId());
@@ -111,10 +130,43 @@ public abstract class AbstractDualSenseController extends AbstractController {
         return null;
     }
 
+    private void detectHapticEndpoint() {
+        hapticIface = null;
+        hapticEndpt = null;
+
+        int count = device.getInterfaceCount();
+        for (int i = 0; i < count; i++) {
+            UsbInterface intf = device.getInterface(i);
+            if (intf.getInterfaceClass() != UsbConstants.USB_CLASS_AUDIO) {
+                continue;
+            }
+
+            for (int j = 0; j < intf.getEndpointCount(); j++) {
+                UsbEndpoint endpt = intf.getEndpoint(j);
+                if (endpt.getDirection() == UsbConstants.USB_DIR_OUT &&
+                        endpt.getType() == UsbConstants.USB_ENDPOINT_XFER_ISOC &&
+                        endpt.getMaxPacketSize() == HAPTIC_AUDIO_ENDPOINT_PACKET_SIZE) {
+                    hapticIface = intf;
+                    hapticEndpt = endpt;
+                    Log.d("DualSenseController", "Found advanced haptics endpoint iface=" +
+                            intf.getId() + " alt=" + intf.getAlternateSetting() +
+                            " addr=" + endpt.getAddress());
+                    return;
+                }
+            }
+        }
+    }
+
     private List<UsbInterface> ifaces=new ArrayList<>();
 
     public boolean start() {
         ifaces.clear();
+        advancedAudioHapticsRequested = false;
+        advancedAudioHapticsPrimed = false;
+        inEndpt = null;
+        outEndpt = null;
+        hapticIface = null;
+        hapticEndpt = null;
         Log.d("DualSenseController", "start");
         // Force claim all interfaces
         for (int i = 0; i < device.getInterfaceCount(); i++) {
@@ -128,6 +180,7 @@ public abstract class AbstractDualSenseController extends AbstractController {
             }
         }
         Log.d("DualSenseController", "getInterfaceCount:" + device.getInterfaceCount());
+        detectHapticEndpoint();
 
         // Find the endpoints
         UsbInterface iface = findInterface(device);
@@ -176,6 +229,7 @@ public abstract class AbstractDualSenseController extends AbstractController {
         }
 
         stopped = true;
+        stopAdvancedAudioHaptics();
 
         // Cancel any rumble effects
         rumble((short)0, (short)0);
@@ -199,6 +253,151 @@ public abstract class AbstractDualSenseController extends AbstractController {
 
         // Report the device removed
         notifyDeviceRemoved();
+    }
+
+    @Override
+    public boolean hasAdvancedAudioHapticsSupport() {
+        return hapticIface != null && hapticEndpt != null;
+    }
+
+    @Override
+    public boolean startAdvancedAudioHaptics() {
+        if (advancedAudioHapticsRequested && advancedAudioHapticsSender != null) {
+            return true;
+        }
+
+        if (!hasAdvancedAudioHapticsSupport()) {
+            Log.d("DualSenseController", "Advanced audio haptics endpoint not available");
+            return false;
+        }
+
+        final int fd = connection.getFileDescriptor();
+        if (fd < 0) {
+            Log.d("DualSenseController", "Invalid USB file descriptor for advanced haptics");
+            return false;
+        }
+
+        if (!HapticNative.nativeConnectHaptics(fd,
+                getAdvancedAudioHapticsInterfaceId(),
+                getAdvancedAudioHapticsAlternateSetting(),
+                (byte) getAdvancedAudioHapticsEndpointAddress())) {
+            return false;
+        }
+
+        if (!HapticNative.nativeEnableHaptics()) {
+            HapticNative.nativeCleanupHaptics();
+            return false;
+        }
+
+        advancedAudioHapticsSender = new DualSenseHapticSender();
+        advancedAudioHapticsSender.start();
+        advancedAudioHapticsRequested = true;
+        advancedAudioHapticsPrimed = false;
+        Log.d("DualSenseController", "Advanced audio haptics requested");
+        return true;
+    }
+
+    @Override
+    public void stopAdvancedAudioHaptics() {
+        if (advancedAudioHapticsSender != null) {
+            advancedAudioHapticsSender.stop();
+            advancedAudioHapticsSender = null;
+        }
+        HapticNative.nativeCleanupHaptics();
+        advancedAudioHapticsRequested = false;
+        advancedAudioHapticsPrimed = false;
+    }
+
+    @Override
+    public boolean isAdvancedAudioHapticsActive() {
+        return advancedAudioHapticsRequested && hasAdvancedAudioHapticsSupport();
+    }
+
+    @Override
+    public boolean submitAdvancedAudioHapticsFrame(byte[] frame, float intensityGain) {
+        if (!isAdvancedAudioHapticsActive() || frame == null || frame.length == 0) {
+            return false;
+        }
+
+        if (!advancedAudioHapticsPrimed && !tryPrimeAdvancedAudioHaptics()) {
+            return false;
+        }
+
+        return advancedAudioHapticsSender != null &&
+                advancedAudioHapticsSender.enqueue(frame, clampAdvancedAudioHapticsGain(intensityGain));
+    }
+
+    public int getAdvancedAudioHapticsInterfaceId() {
+        return hapticIface != null ? hapticIface.getId() : -1;
+    }
+
+    public int getAdvancedAudioHapticsAlternateSetting() {
+        return hapticIface != null ? hapticIface.getAlternateSetting() : -1;
+    }
+
+    public int getAdvancedAudioHapticsEndpointAddress() {
+        return hapticEndpt != null ? hapticEndpt.getAddress() : -1;
+    }
+
+    protected synchronized void invalidateAdvancedAudioHapticsPrime() {
+        if (advancedAudioHapticsRequested) {
+            advancedAudioHapticsPrimed = false;
+        }
+    }
+
+    protected synchronized void updateAdvancedAudioHapticsTriggerCache(byte[] report) {
+        if (report == null || report.length < REPORT_MIN_TRIGGER_LEN || report[0] != 0x02) {
+            return;
+        }
+
+        cachedRightTriggerType = report[REPORT_RIGHT_TRIGGER_TYPE_IDX];
+        System.arraycopy(report, REPORT_RIGHT_TRIGGER_DATA_IDX,
+                cachedRightTriggerData, 0, TRIGGER_DATA_LEN);
+        cachedLeftTriggerType = report[REPORT_LEFT_TRIGGER_TYPE_IDX];
+        System.arraycopy(report, REPORT_LEFT_TRIGGER_DATA_IDX,
+                cachedLeftTriggerData, 0, TRIGGER_DATA_LEN);
+    }
+
+    private boolean tryPrimeAdvancedAudioHaptics() {
+        if (outEndpt == null) {
+            return false;
+        }
+
+        byte[] initReport = new byte[HAPTIC_INIT_REPORT_SIZE];
+        initReport[0] = 0x02;
+        initReport[1] = 0x0C;
+        initReport[2] = 0x40;
+
+        synchronized (this) {
+            initReport[REPORT_RIGHT_TRIGGER_TYPE_IDX] = cachedRightTriggerType;
+            System.arraycopy(cachedRightTriggerData, 0,
+                    initReport, REPORT_RIGHT_TRIGGER_DATA_IDX, TRIGGER_DATA_LEN);
+            initReport[REPORT_LEFT_TRIGGER_TYPE_IDX] = cachedLeftTriggerType;
+            System.arraycopy(cachedLeftTriggerData, 0,
+                    initReport, REPORT_LEFT_TRIGGER_DATA_IDX, TRIGGER_DATA_LEN);
+        }
+
+        int res = connection.bulkTransfer(outEndpt, initReport, initReport.length, HAPTIC_INIT_TIMEOUT_MS);
+        if (res == initReport.length) {
+            advancedAudioHapticsPrimed = true;
+            return true;
+        }
+
+        Log.w("DualSenseController", "Advanced haptics prime failed: " + res);
+        return false;
+    }
+
+    private float clampAdvancedAudioHapticsGain(float gain) {
+        if (Float.isNaN(gain) || Float.isInfinite(gain)) {
+            return 0.5f;
+        }
+        if (gain < 0f) {
+            return 0f;
+        }
+        if (gain > 2.75f) {
+            return 2.75f;
+        }
+        return gain;
     }
 
     protected abstract boolean handleRead(ByteBuffer buffer);

@@ -265,10 +265,14 @@ public class DualSenseController extends AbstractDualSenseController {
    @Override
    public void sendCommand(byte[] data) {
       Log.d("DualController", "sendCommand");
+      updateAdvancedAudioHapticsTriggerCache(data);
       int res = connection.bulkTransfer(outEndpt, data, data.length, 1000);
       Log.e("DualController", "Command transfer result: " + res);
       if (res != data.length) {
          Log.d("DualController", "Command set transfer failed: " + res);
+      }
+      else if (data.length > 0 && data[0] == 0x02) {
+         invalidateAdvancedAudioHapticsPrime();
       }
    }
 

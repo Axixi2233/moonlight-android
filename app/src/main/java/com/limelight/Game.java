@@ -3028,9 +3028,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             UiHelper.notifyStreamConnecting(Game.this);
 
             decoderRenderer.setRenderTarget(holder.getSurface());
-            audioRenderer = new AndroidAudioRenderer(Game.this, prefConfig.enableAudioFx,
+            audioRenderer = new AndroidAudioRenderer(Game.this, controllerHandler, prefConfig.enableAudioFx,
                     prefConfig.enableAudioHaptics, prefConfig.audioHapticsStrength,
-                    prefConfig.audioHapticsVoiceFilter);
+                    prefConfig.audioHapticsVoiceFilter, prefConfig.audioHapticsOutputTarget);
             conn.start(audioRenderer,
                     decoderRenderer, Game.this);
         }
@@ -3574,9 +3574,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         attemptedConnection = true;
         UiHelper.notifyStreamConnecting(Game.this);
         decoderRenderer.setRenderTarget(fsrInputSurface);
-        audioRenderer = new AndroidAudioRenderer(Game.this, prefConfig.enableAudioFx,
+        audioRenderer = new AndroidAudioRenderer(Game.this, controllerHandler, prefConfig.enableAudioFx,
                 prefConfig.enableAudioHaptics, prefConfig.audioHapticsStrength,
-                prefConfig.audioHapticsVoiceFilter);
+                prefConfig.audioHapticsVoiceFilter, prefConfig.audioHapticsOutputTarget);
         conn.start(audioRenderer,
                 decoderRenderer, Game.this);
     }
@@ -3699,7 +3699,11 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     public void setAudioHapticsSettings() {
         if (audioRenderer != null) {
             audioRenderer.updateAudioHapticsSettings(prefConfig.enableAudioHaptics,
-                    prefConfig.audioHapticsStrength, prefConfig.audioHapticsVoiceFilter);
+                    prefConfig.audioHapticsStrength, prefConfig.audioHapticsVoiceFilter,
+                    prefConfig.audioHapticsOutputTarget);
+        }
+        if (controllerHandler != null) {
+            controllerHandler.refreshAudioHapticsState();
         }
     }
 

@@ -575,35 +575,25 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"/>
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:text="音频震动（实验）"
-                    android:textStyle="italic|bold"
-                    android:textColor="@android:color/white"
-                    android:textSize="8dp" />
-
                 <LinearLayout
-                    android:visibility="gone"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="4dp"
+                    android:layout_marginTop="10dp"
                     android:layout_width="match_parent"
-                    android:layout_height="32dp">
-
-                    <CheckBox
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:layout_marginRight="5dp"
-                        android:layout_weight="1"
-                        android:background="@drawable/ic_game_menu_btn_selector"
-                        android:gravity="center"
-                        android:padding="4dp"
-                        android:button="@null"
-                        android:id="@+id/btn_game_audio_haptics"
-                        android:text="启用音频震动"
+                    android:layout_height="wrap_content">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="音频震动（Beta）"
+                        android:textStyle="italic|bold"
+                        android:textColor="@android:color/white"
                         android:textSize="8dp" />
-
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="5dp"
+                        android:text="把串流音频转换成震动反馈，更适合爆炸、撞击、低频场景"
+                        android:textStyle="italic|bold"
+                        android:textColor="#FFC107"
+                        android:textSize="6dp" />
                 </LinearLayout>
 
                 <RadioGroup
@@ -646,7 +636,98 @@
                     android:orientation="vertical"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:visibility="gone">
+                    android:visibility="visible">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="音频震动输出目标"
+                        android:textStyle="italic|bold"
+                        android:textColor="@android:color/white"
+                        android:textSize="8dp" />
+
+                    <RadioGroup
+                        android:id="@+id/rg_game_audio_haptics_output_target"
+                        android:layout_width="match_parent"
+                        android:layout_height="27dp"
+                        android:layout_marginTop="4dp"
+                        android:orientation="horizontal">
+
+                        <RadioButton
+                            android:id="@+id/rbt_game_audio_haptics_output_target_phone"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_marginRight="5dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/ic_game_menu_btn_selector"
+                            android:button="@null"
+                            android:gravity="center"
+                            android:padding="4dp"
+                            android:text="手机"
+                            android:textSize="8dp" />
+
+                        <RadioButton
+                            android:id="@+id/rbt_game_audio_haptics_output_target_controller"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_marginRight="5dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/ic_game_menu_btn_selector"
+                            android:button="@null"
+                            android:gravity="center"
+                            android:padding="4dp"
+                            android:text="手柄"
+                            android:textSize="8dp" />
+
+                    </RadioGroup>
+
+                    <TextView
+                        android:id="@+id/tx_game_audio_haptics_keep_controller_rumble"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="保留游戏内手柄震动"
+                        android:textStyle="italic|bold"
+                        android:textColor="@android:color/white"
+                        android:textSize="8dp"
+                        android:visibility="gone" />
+
+                    <RadioGroup
+                        android:id="@+id/rg_game_audio_haptics_keep_controller_rumble"
+                        android:layout_width="match_parent"
+                        android:layout_height="27dp"
+                        android:layout_marginTop="4dp"
+                        android:orientation="horizontal"
+                        android:visibility="gone">
+
+                        <RadioButton
+                            android:id="@+id/rbt_game_audio_haptics_keep_controller_rumble_on"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_marginRight="5dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/ic_game_menu_btn_selector"
+                            android:button="@null"
+                            android:gravity="center"
+                            android:padding="4dp"
+                            android:text="开启"
+                            android:textSize="8dp" />
+
+                        <RadioButton
+                            android:id="@+id/rbt_game_audio_haptics_keep_controller_rumble_off"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_marginRight="5dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/ic_game_menu_btn_selector"
+                            android:button="@null"
+                            android:gravity="center"
+                            android:padding="4dp"
+                            android:text="关闭"
+                            android:textSize="8dp" />
+
+                    </RadioGroup>
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -673,14 +754,26 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"/>
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                    <LinearLayout
                         android:layout_marginTop="8dp"
-                        android:text="音频震动语音过滤"
-                        android:textStyle="italic|bold"
-                        android:textColor="@android:color/white"
-                        android:textSize="8dp" />
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="音频震动语音过滤"
+                            android:textStyle="italic|bold"
+                            android:textColor="@android:color/white"
+                            android:textSize="8dp" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginLeft="5dp"
+                            android:text="降低人声、语音聊天、播报声对震动的触发"
+                            android:textStyle="italic|bold"
+                            android:textColor="#FFC107"
+                            android:textSize="6dp" />
+                    </LinearLayout>
 
                     <RadioGroup
                         android:layout_width="match_parent"

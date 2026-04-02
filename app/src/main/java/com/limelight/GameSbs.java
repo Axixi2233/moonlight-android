@@ -2420,9 +2420,9 @@ public class GameSbs extends Activity implements TextureView.SurfaceTextureListe
     @Override
     public void onGlReady() {
         decoderRenderer.setRenderTarget(new Surface(renderer.getVideoTexture()));
-        conn.start(new AndroidAudioRenderer(GameSbs.this, prefConfig.enableAudioFx,
+        conn.start(new AndroidAudioRenderer(GameSbs.this, controllerHandler, prefConfig.enableAudioFx,
                         prefConfig.enableAudioHaptics, prefConfig.audioHapticsStrength,
-                        prefConfig.audioHapticsVoiceFilter),
+                        prefConfig.audioHapticsVoiceFilter, prefConfig.audioHapticsOutputTarget),
                 decoderRenderer, GameSbs.this);
     }
 }

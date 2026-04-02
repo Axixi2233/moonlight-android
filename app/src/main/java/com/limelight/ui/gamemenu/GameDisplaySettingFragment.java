@@ -69,7 +69,10 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
 
     private SeekBar sb_game_setting_gyro_sensitivity;
     private RadioGroup rg_game_audio_haptics_voice_filter;
+    private RadioGroup rg_game_audio_haptics_output_target;
+    private RadioGroup rg_game_audio_haptics_keep_controller_rumble;
     private LinearLayout layout_game_audio_haptics_details;
+    private TextView tx_game_audio_haptics_keep_controller_rumble;
 
     @Override
     public void bindView(View v) {
@@ -103,7 +106,10 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
         tx_game_audio_haptics_strength=v.findViewById(R.id.tx_game_audio_haptics_strength);
         sb_game_audio_haptics_strength=v.findViewById(R.id.sb_game_audio_haptics_strength);
         rg_game_audio_haptics_voice_filter=v.findViewById(R.id.rg_game_audio_haptics_voice_filter);
+        rg_game_audio_haptics_output_target=v.findViewById(R.id.rg_game_audio_haptics_output_target);
+        rg_game_audio_haptics_keep_controller_rumble=v.findViewById(R.id.rg_game_audio_haptics_keep_controller_rumble);
         layout_game_audio_haptics_details=v.findViewById(R.id.layout_game_audio_haptics_details);
+        tx_game_audio_haptics_keep_controller_rumble=v.findViewById(R.id.tx_game_audio_haptics_keep_controller_rumble);
 
         if(!TextUtils.isEmpty(title)){
             tx_title.setText(title);
@@ -334,6 +340,38 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
             notifyAudioHapticsChanged();
         });
 
+        rg_game_audio_haptics_output_target.setOnCheckedChangeListener((group, checkedId) -> {
+            if (checkedId == R.id.rbt_game_audio_haptics_output_target_phone) {
+                prefConfig.audioHapticsOutputTarget = "phone";
+            }
+            else if (checkedId == R.id.rbt_game_audio_haptics_output_target_controller) {
+                prefConfig.audioHapticsOutputTarget = "controller";
+            }
+            else {
+                return;
+            }
+
+            saveSetting("list_audio_haptics_output_target", prefConfig.audioHapticsOutputTarget);
+            updateAudioHapticsVisibility();
+            notifyAudioHapticsChanged();
+        });
+
+        rg_game_audio_haptics_keep_controller_rumble.setOnCheckedChangeListener((group, checkedId) -> {
+            if (checkedId == R.id.rbt_game_audio_haptics_keep_controller_rumble_on) {
+                prefConfig.audioHapticsKeepControllerRumble = true;
+            }
+            else if (checkedId == R.id.rbt_game_audio_haptics_keep_controller_rumble_off) {
+                prefConfig.audioHapticsKeepControllerRumble = false;
+            }
+            else {
+                return;
+            }
+
+            saveSetting("checkbox_audio_haptics_keep_controller_rumble", prefConfig.audioHapticsKeepControllerRumble);
+            updateAudioHapticsVisibility();
+            notifyAudioHapticsChanged();
+        });
+
         sb_game_setting_pref_zoom.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -548,9 +586,19 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
     }
 
     private void initAudioHaptics() {
+        initAudioHapticsOutputTarget();
         initAudioHapticsVoiceFilter();
         initAudioHapticsStrength();
         updateAudioHapticsVisibility();
+    }
+
+    private void initAudioHapticsOutputTarget() {
+        if ("controller".equals(prefConfig.audioHapticsOutputTarget)) {
+            rg_game_audio_haptics_output_target.check(R.id.rbt_game_audio_haptics_output_target_controller);
+        }
+        else {
+            rg_game_audio_haptics_output_target.check(R.id.rbt_game_audio_haptics_output_target_phone);
+        }
     }
 
     private void initAudioHapticsVoiceFilter() {
@@ -577,6 +625,19 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
     private void updateAudioHapticsVisibility() {
         if (layout_game_audio_haptics_details != null) {
             layout_game_audio_haptics_details.setVisibility(prefConfig.enableAudioHaptics ? View.VISIBLE : View.GONE);
+        }
+        boolean showKeepControllerRumble = prefConfig.enableAudioHaptics &&
+                "controller".equals(prefConfig.audioHapticsOutputTarget);
+        if (tx_game_audio_haptics_keep_controller_rumble != null) {
+            tx_game_audio_haptics_keep_controller_rumble.setVisibility(
+                    showKeepControllerRumble ? View.VISIBLE : View.GONE);
+        }
+        if (rg_game_audio_haptics_keep_controller_rumble != null) {
+            rg_game_audio_haptics_keep_controller_rumble.check(prefConfig.audioHapticsKeepControllerRumble ?
+                    R.id.rbt_game_audio_haptics_keep_controller_rumble_on :
+                    R.id.rbt_game_audio_haptics_keep_controller_rumble_off);
+            rg_game_audio_haptics_keep_controller_rumble.setVisibility(
+                    showKeepControllerRumble ? View.VISIBLE : View.GONE);
         }
     }
 

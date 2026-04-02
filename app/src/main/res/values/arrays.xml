@@ -56,6 +56,15 @@
         <item>high</item>
     </string-array>
 
+    <string-array name="audio_haptics_output_target_names">
+        <item>手机</item>
+        <item>手柄</item>
+    </string-array>
+    <string-array name="audio_haptics_output_target_values" translatable="false">
+        <item>phone</item>
+        <item>controller</item>
+    </string-array>
+
     <!-- Don't forget to update locales_config.xml when you modify this! -->
     <string-array name="language_names" translatable="false">
         <item>Default</item>
