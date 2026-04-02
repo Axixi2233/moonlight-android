@@ -145,7 +145,7 @@ public class TvChannelHelper {
                     .setType(TYPE_GAME)
                     .setTitle(app.getAppName())
                     .setPosterArtAspectRatio(ASPECT_RATIO_MOVIE_POSTER)
-                    .setPosterArtUri(PosterContentProvider.createBoxArtUri(computer.uuid, ""+app.getAppId()))
+                    .setPosterArtUri(PosterContentProvider.createBoxArtUri(context, computer.uuid, ""+app.getAppId()))
                     .setIntent(ServerHelper.createAppShortcutIntent(context, computer, app))
                     .setInternalProviderId(""+app.getAppId())
                     // Weight should increase each time we run the game

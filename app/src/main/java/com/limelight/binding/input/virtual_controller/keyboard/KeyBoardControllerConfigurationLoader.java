@@ -424,7 +424,7 @@ public class KeyBoardControllerConfigurationLoader {
         if(config.enableCustomKeyboardFile){
             String displayName = "axi_keyboard.json";
             File dataBaseFile=new File(context.getFilesDir().getAbsolutePath(), displayName);
-            String authority= BuildConfig.APPLICATION_ID+".fileprovider";
+            String authority= context.getPackageName()+".fileprovider";
             Uri uri= FileProvider.getUriForFile(context,authority,dataBaseFile);
             result=FileUriUtils.openUriForRead(context,uri);
         }

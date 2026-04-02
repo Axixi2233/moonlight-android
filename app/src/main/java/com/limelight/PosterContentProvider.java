@@ -17,24 +17,19 @@ import java.util.List;
 public class PosterContentProvider extends ContentProvider {
 
 
-    public static final String AUTHORITY = "poster." + BuildConfig.APPLICATION_ID;
+    private static final String AUTHORITY_PREFIX = "poster.";
     public static final String PNG_MIME_TYPE = "image/png";
     public static final int APP_ID_PATH_INDEX = 2;
     public static final int COMPUTER_UUID_PATH_INDEX = 1;
     private DiskAssetLoader mDiskAssetLoader;
 
-    private static final UriMatcher sUriMatcher;
+    private UriMatcher uriMatcher;
     private static final String BOXART_PATH = "boxart";
     private static final int BOXART_URI_ID = 1;
 
-    static {
-        sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
-        sUriMatcher.addURI(AUTHORITY, BOXART_PATH, BOXART_URI_ID);
-    }
-
     @Override
     public ParcelFileDescriptor openFile(Uri uri, String mode) throws FileNotFoundException {
-        int match = sUriMatcher.match(uri);
+        int match = uriMatcher.match(uri);
         if (match == BOXART_URI_ID) {
             return openBoxArtFile(uri, mode);
         }
@@ -78,6 +73,8 @@ public class PosterContentProvider extends ContentProvider {
     @Override
     public boolean onCreate() {
         mDiskAssetLoader = new DiskAssetLoader(getContext());
+        uriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
+        uriMatcher.addURI(getAuthority(getContext()), BOXART_PATH, BOXART_URI_ID);
         return true;
     }
 
@@ -94,10 +91,14 @@ public class PosterContentProvider extends ContentProvider {
     }
 
 
-    public static Uri createBoxArtUri(String uuid, String appId) {
+    public static String getAuthority(android.content.Context context) {
+        return AUTHORITY_PREFIX + context.getPackageName();
+    }
+
+    public static Uri createBoxArtUri(android.content.Context context, String uuid, String appId) {
         return new Uri.Builder()
                 .scheme(ContentResolver.SCHEME_CONTENT)
-                .authority(AUTHORITY)
+                .authority(getAuthority(context))
                 .appendPath(BOXART_PATH)
                 .appendPath(uuid)
                 .appendPath(appId)

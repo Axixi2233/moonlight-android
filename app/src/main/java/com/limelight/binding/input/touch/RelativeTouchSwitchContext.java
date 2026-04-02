@@ -17,6 +17,8 @@ public class RelativeTouchSwitchContext implements TouchContext {
 
     private final NvConnection conn;
     private final int actionIndex;
+    private final int referenceWidth;
+    private final int referenceHeight;
     private final View targetView;
     private final PreferenceConfiguration prefConfig;
     private final boolean clickEnabled; // 新增：是否启用点击
@@ -31,16 +33,25 @@ public class RelativeTouchSwitchContext implements TouchContext {
     {
         this.conn = conn;
         this.actionIndex = actionIndex;
+        this.referenceWidth = referenceWidth;
+        this.referenceHeight = referenceHeight;
         this.targetView = view;
         this.prefConfig = prefConfig;
         this.clickEnabled = clickEnabled;
-
-        this.xFactor = (double) referenceWidth / targetView.getWidth();
-        this.yFactor = (double) referenceHeight / targetView.getHeight();
     }
 
     @Override
     public int getActionIndex() { return actionIndex; }
+
+    private void updateScaleFactors() {
+        int viewWidth = targetView.getWidth();
+        int viewHeight = targetView.getHeight();
+
+        if (viewWidth > 0 && viewHeight > 0) {
+            xFactor = (double) referenceWidth / viewWidth;
+            yFactor = (double) referenceHeight / viewHeight;
+        }
+    }
 
     private boolean isWithinTapBounds(int touchX, int touchY) {
         return Math.abs(touchX - originalTouchX) <= TAP_MOVEMENT_THRESHOLD &&
@@ -50,6 +61,8 @@ public class RelativeTouchSwitchContext implements TouchContext {
     @Override
     public boolean touchDownEvent(int eventX, int eventY, long eventTime, boolean isNewFinger) {
         if (actionIndex != 0) return true;
+
+        updateScaleFactors();
 
         originalTouchX = lastTouchX = eventX;
         originalTouchY = lastTouchY = eventY;
@@ -78,6 +91,8 @@ public class RelativeTouchSwitchContext implements TouchContext {
         if (cancelled || actionIndex != 0) return true;
 
         if (eventX != lastTouchX || eventY != lastTouchY) {
+            updateScaleFactors();
+
             if (!confirmedMove && !isWithinTapBounds(eventX, eventY)) {
                 confirmedMove = true;
             }
@@ -96,8 +111,12 @@ public class RelativeTouchSwitchContext implements TouchContext {
                             (short) (deltaY * prefConfig.mouseTouchPadSensitityY * 0.01f)
                     );
                 }
-                lastTouchX = eventX;
-                lastTouchY = eventY;
+                if (deltaX != 0) {
+                    lastTouchX = eventX;
+                }
+                if (deltaY != 0) {
+                    lastTouchY = eventY;
+                }
             }
         }
         return true;

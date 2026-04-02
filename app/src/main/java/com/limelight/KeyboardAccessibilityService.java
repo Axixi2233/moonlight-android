@@ -44,7 +44,7 @@ public class KeyboardAccessibilityService extends AccessibilityService {
         }
         String displayName = "axi_switch_keyboard.json";
         File dataBaseFile=new File(getFilesDir().getAbsolutePath(), displayName);
-        String authority= BuildConfig.APPLICATION_ID+".fileprovider";
+        String authority= getApplicationContext().getPackageName()+".fileprovider";
         Uri uri= FileProvider.getUriForFile(this,authority,dataBaseFile);
         String result= FileUriUtils.openUriForRead(this,uri);
         //主要解决系统自带快捷键在pc端无法使用问题 home键 scancode=172 code- 3
@@ -106,7 +106,7 @@ public class KeyboardAccessibilityService extends AccessibilityService {
     public void onServiceConnected() {
         LimeLog.info("Keyboard service is connected");
         AccessibilityServiceInfo info = new AccessibilityServiceInfo();
-        info.packageNames = new String[] { BuildConfig.APPLICATION_ID };
+        info.packageNames = new String[] { getApplicationContext().getPackageName() };
         info.eventTypes = AccessibilityEvent.TYPES_ALL_MASK;
         info.notificationTimeout = 100;
         info.flags = AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS;

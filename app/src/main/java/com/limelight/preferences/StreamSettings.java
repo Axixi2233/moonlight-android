@@ -828,7 +828,7 @@ public class StreamSettings extends Activity {
                     Uri uri;
                     Intent intent = new Intent(Intent.ACTION_SEND);
                     intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                    String authority= BuildConfig.APPLICATION_ID+".fileprovider";
+                    String authority= getActivity().getPackageName()+".fileprovider";
                     uri= FileProvider.getUriForFile(getActivity(),authority,dataFile);
                     intent.putExtra(Intent.EXTRA_STREAM, uri);
                     intent.setType("*/*");
@@ -847,7 +847,7 @@ public class StreamSettings extends Activity {
                     Uri uri;
                     Intent intent = new Intent(Intent.ACTION_SEND);
                     intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                    String authority= BuildConfig.APPLICATION_ID+".fileprovider";
+                    String authority= getActivity().getPackageName()+".fileprovider";
                     uri= FileProvider.getUriForFile(getActivity(),authority,dataFile);
                     intent.putExtra(Intent.EXTRA_STREAM, uri);
                     intent.setType("*/*");
@@ -866,7 +866,7 @@ public class StreamSettings extends Activity {
                     Uri uri;
                     Intent intent = new Intent(Intent.ACTION_SEND);
                     intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                    String authority= BuildConfig.APPLICATION_ID+".fileprovider";
+                    String authority= getActivity().getPackageName()+".fileprovider";
                     uri= FileProvider.getUriForFile(getActivity(),authority,dataFile);
                     intent.putExtra(Intent.EXTRA_STREAM, uri);
                     intent.setType("*/*");

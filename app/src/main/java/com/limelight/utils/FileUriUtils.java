@@ -31,14 +31,14 @@ public class FileUriUtils {
     //获取json文件内容
     public static String getKeyBoardJson(Context context,String name){
         File dataBaseFile=new File(context.getFilesDir().getAbsolutePath()+File.separator, name);
-        String authority= BuildConfig.APPLICATION_ID+".fileprovider";
+        String authority= context.getPackageName()+".fileprovider";
         Uri uri= FileProvider.getUriForFile(context,authority,dataBaseFile);
         return FileUriUtils.openUriForRead(context,uri);
     }
 
     public static Uri getKeyBoardFile(Context context,String name){
         File dataBaseFile=new File(context.getFilesDir().getAbsolutePath(), name);
-        String authority= BuildConfig.APPLICATION_ID+".fileprovider";
+        String authority= context.getPackageName()+".fileprovider";
         return FileProvider.getUriForFile(context,authority,dataBaseFile);
     }
 
