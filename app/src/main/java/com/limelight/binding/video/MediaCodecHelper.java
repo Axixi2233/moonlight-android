@@ -378,7 +378,13 @@ public class MediaCodecHelper {
                 refFrameInvalidationHevcPrefixes.add("omx.qcom");
                 refFrameInvalidationAvcPrefixes.add("c2.qti");
                 refFrameInvalidationHevcPrefixes.add("c2.qti");
+
+                refFrameInvalidationAvcPrefixes.add("c2.mtk"); //derflacco
+                refFrameInvalidationHevcPrefixes.add("c2.mtk"); //derflacco
+                refFrameInvalidationAvcPrefixes.add("omx.mtk"); //derflacco
+                refFrameInvalidationHevcPrefixes.add("omx.mtk"); //derflacco
             }
+
 
             // Qualcomm's early HEVC decoders break hard on our HEVC stream. The best check to
             // tell the good from the bad decoders are the generation of Adreno GPU included:
@@ -582,13 +588,39 @@ public class MediaCodecHelper {
             }
             else if (lowLatencyExperiment&isDecoderInList(mtkDecoderPrefixes, decoderInfo.getName())) {//todo mtk解码
                 if (tryNumber < 4) {
-                    videoFormat.setInteger("vendor.mtk.vdec.cpu.boost.mode.value", 2);
-                    videoFormat.setInteger("vendor.mtk.ext.dolby.vision.cpu-boost", 1);
-                    videoFormat.setInteger("vendor.mtk.vdec.bq.guard.interval.time.value", 2);
-                    videoFormat.setInteger("vendor.mtk.vdec.buffer.fetch.timeout.ms.value", 2);
+                    // Boost/DVFS: moderate profile
+                    safeSet(videoFormat, "vdec-lowlatency", 1);
+                    safeSet(videoFormat, "vendor.mtk.vdec.cpu.boost.mode", 1);
+                    safeSet(videoFormat, "vendor.mtk.vdec.cpu.boost.mode.value", 1);
+                    safeSet(videoFormat, "vendor.mtk.vdec.dvfs.mode", 1);
+                    safeSet(videoFormat, "vendor.mtk.vdec.dvfs.level", 1);
 
-                    setNewOption = true;
+                    // Pipeline / code path
+                    safeSet(videoFormat, "vendor.mtk.vdec.low-latency.mode", 1);    // Enable low-latency path
+                    safeSet(videoFormat, "vendor.mtk.vdec.ultra-low-latency", 0);   // ULL off for stability
+                    safeSet(videoFormat, "vendor.mtk.vdec.disable-idle", 1);        // Prevent clock downscaling
+                    safeSet(videoFormat, "vendor.mtk.vdec.preload.frame.count", 1); // Light prebuffering
+
+                    // Queue / timeouts (moderate)
+                    safeSet(videoFormat, "vendor.mtk.vdec.buffer.fetch.timeout.ms", 4);
+                    safeSet(videoFormat, "vendor.mtk.vdec.bq.guard.interval.time", 4);
+                    safeSet(videoFormat, "vendor.mtk.vdec.input.max.queue.depth", 3);
+                    safeSet(videoFormat, "vendor.mtk.vdec.output.max.queue.depth", 3);
+
+                    // Pacing: controlled by the app
+                    safeSet(videoFormat, "vendor.mtk.vdec.vsync.adjust.enable", 0);
+
+                    // Skip/drop: only NVOP
+                    safeSet(videoFormat, "vendor.mtk.vdec.nvop.skip", 1);
+                    safeSet(videoFormat, "vendor.mtk.vdec.skip.mode", 0);
+                    safeSet(videoFormat, "vendor.mtk.vdec.drop.nonref.frame", 0);
+                    safeSet(videoFormat, "vendor.mtk.vdec.frame-drop.policy", 0);
+
+                    // Standard Android hints
+                    safeSet(videoFormat, MediaFormat.KEY_OPERATING_RATE, (int) Short.MAX_VALUE);
+                    safeSet(videoFormat, MediaFormat.KEY_PRIORITY, 0);
                 }
+                setNewOption = true;
             }
             else if (isDecoderInList(kirinDecoderPrefixes, decoderInfo.getName())) {
                 if (tryNumber < 4) {
@@ -1038,5 +1070,14 @@ public class MediaCodecHelper {
         }
         
         return false;
+    }
+
+    // --- Helpers to safely set vendor-specific flags without crashing ---
+    private static void safeSet(MediaFormat format, String key, int value) {
+        try {
+            format.setInteger(key, value);
+        } catch (Throwable ignored) {
+            // key not supported, ignore
+        }
     }
 }
