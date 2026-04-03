@@ -332,7 +332,17 @@ public final class ControllerAudioHapticsController {
             return bassSample;
         }
 
-        return Math.max(0.0f, bassSample - (voiceResidual * suppression));
+        float filtered = Math.max(0.0f, bassSample - (voiceResidual * suppression));
+
+        if (AudioHapticsController.VOICE_FILTER_HIGH.equals(voiceFilterMode)) {
+            float voiceDominance = voiceResidual / Math.max(0.0025f, Math.abs(bassSample) + voiceResidual);
+            if (voiceDominance > 0.40f) {
+                float attenuation = Math.max(0.08f, 1.0f - ((voiceDominance - 0.40f) * 2.4f));
+                filtered *= attenuation;
+            }
+        }
+
+        return filtered;
     }
 
     private float applyVoiceAttenuation(float sample, float voiceResidual, float suppression) {
@@ -340,7 +350,8 @@ public final class ControllerAudioHapticsController {
             return sample;
         }
 
-        float attenuation = Math.max(0.30f, 1.0f - (voiceResidual * suppression * 6.0f));
+        float attenuationFloor = AudioHapticsController.VOICE_FILTER_HIGH.equals(voiceFilterMode) ? 0.14f : 0.30f;
+        float attenuation = Math.max(attenuationFloor, 1.0f - (voiceResidual * suppression * 6.0f));
         return sample * attenuation;
     }
 
@@ -351,7 +362,7 @@ public final class ControllerAudioHapticsController {
             case AudioHapticsController.VOICE_FILTER_MEDIUM:
                 return 0.44f;
             case AudioHapticsController.VOICE_FILTER_HIGH:
-                return 0.72f;
+                return 1.02f;
             case AudioHapticsController.VOICE_FILTER_OFF:
             default:
                 return 0.0f;
@@ -365,7 +376,7 @@ public final class ControllerAudioHapticsController {
             case AudioHapticsController.VOICE_FILTER_MEDIUM:
                 return 0.38f;
             case AudioHapticsController.VOICE_FILTER_HIGH:
-                return 0.60f;
+                return 0.92f;
             case AudioHapticsController.VOICE_FILTER_OFF:
             default:
                 return 0.0f;
@@ -379,7 +390,7 @@ public final class ControllerAudioHapticsController {
             case AudioHapticsController.VOICE_FILTER_MEDIUM:
                 return 0.12f;
             case AudioHapticsController.VOICE_FILTER_HIGH:
-                return 0.20f;
+                return 0.34f;
             case AudioHapticsController.VOICE_FILTER_OFF:
             default:
                 return 0.0f;

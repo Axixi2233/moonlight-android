@@ -147,7 +147,17 @@ public final class AudioHapticsController {
             return bassLevel;
         }
 
-        return Math.max(0.0f, bassLevel - (voiceLevel * suppression));
+        float filtered = Math.max(0.0f, bassLevel - (voiceLevel * suppression));
+
+        if (VOICE_FILTER_HIGH.equals(voiceFilterMode)) {
+            float voiceDominance = voiceLevel / Math.max(0.0025f, bassLevel + voiceLevel);
+            if (voiceDominance > 0.42f) {
+                float attenuation = Math.max(0.10f, 1.0f - ((voiceDominance - 0.42f) * 2.2f));
+                filtered *= attenuation;
+            }
+        }
+
+        return filtered;
     }
 
     private float getVoiceSuppressionStrength() {
@@ -157,7 +167,7 @@ public final class AudioHapticsController {
             case VOICE_FILTER_MEDIUM:
                 return 0.50f;
             case VOICE_FILTER_HIGH:
-                return 0.80f;
+                return 1.12f;
             case VOICE_FILTER_OFF:
             default:
                 return 0.0f;

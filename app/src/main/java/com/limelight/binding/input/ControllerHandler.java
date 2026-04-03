@@ -1020,8 +1020,10 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                 (Build.VERSION.SDK_INT == Build.VERSION_CODES.S &&
                         (context.vendorId == 0x054c || context.vendorId == 0x057e))) && // Sony or Nintendo
                 prefConfig.gamepadMotionSensors) {
-            if (dev.getSensorManager().getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null || dev.getSensorManager().getDefaultSensor(Sensor.TYPE_GYROSCOPE) != null) {
-                context.sensorManager = dev.getSensorManager();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (dev.getSensorManager().getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null || dev.getSensorManager().getDefaultSensor(Sensor.TYPE_GYROSCOPE) != null) {
+                    context.sensorManager = dev.getSensorManager();
+                }
             }
         }
 
