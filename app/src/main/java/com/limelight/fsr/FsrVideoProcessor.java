@@ -3,11 +3,13 @@ package com.limelight.fsr;
 import android.content.Context;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
+import android.util.Log;
 
 import java.io.IOException;
 import java.nio.FloatBuffer;
 
 public class FsrVideoProcessor implements VideoProcessingGLSurfaceView.VideoProcessor {
+    private static final String TAG = "FsrVideoProcessor";
     private static final String FSR_VERTEX_SHADER = "fsr/2.0/opt_fsr_vertex.glsl";
     private static final String FSR_FRAGMENT_SHADER = "fsr/2.0/opt_fsr_fragment.glsl";
     private static final String FSR_EASU_VERTEX_SHADER = "fsr/2.0/fsr_easu_vertex.glsl";
@@ -294,30 +296,36 @@ public class FsrVideoProcessor implements VideoProcessingGLSurfaceView.VideoProc
             return;
         }
 
-        GLES20.glGenFramebuffers(1, intermediateFramebuffer, 0);
-        GlUtil.checkGlError("glGenFramebuffers");
+        try {
+            GLES20.glGenFramebuffers(1, intermediateFramebuffer, 0);
+            GlUtil.checkGlError("glGenFramebuffers");
 
-        intermediateTexture[0] = GlUtil.createTexture2D();
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, intermediateTexture[0]);
-        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA,
-                outputWidth, outputHeight, 0, GLES20.GL_RGBA,
-                GLES20.GL_UNSIGNED_BYTE, null);
-        GlUtil.checkGlError("glTexImage2D(intermediate)");
+            intermediateTexture[0] = GlUtil.createTexture2D();
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, intermediateTexture[0]);
+            GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA,
+                    outputWidth, outputHeight, 0, GLES20.GL_RGBA,
+                    GLES20.GL_UNSIGNED_BYTE, null);
+            GlUtil.checkGlError("glTexImage2D(intermediate)");
 
-        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, intermediateFramebuffer[0]);
-        GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0,
-                GLES20.GL_TEXTURE_2D, intermediateTexture[0], 0);
-        GlUtil.checkGlError("glFramebufferTexture2D");
+            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, intermediateFramebuffer[0]);
+            GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0,
+                    GLES20.GL_TEXTURE_2D, intermediateTexture[0], 0);
+            GlUtil.checkGlError("glFramebufferTexture2D");
 
-        int status = GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER);
-        if (status != GLES20.GL_FRAMEBUFFER_COMPLETE) {
+            int status = GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER);
+            if (status != GLES20.GL_FRAMEBUFFER_COMPLETE) {
+                throw new GlUtil.GlException("Framebuffer creation failed with status 0x" + Integer.toHexString(status));
+            }
+
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+        } catch (GlUtil.GlException e) {
+            Log.w(TAG, "Disabling two-pass FSR framebuffer path after GL init failure", e);
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
             GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
             deleteIntermediateFramebuffer();
-            throw new GlUtil.GlException("Framebuffer creation failed with status 0x" + Integer.toHexString(status));
+            twoPassInitializationFailed = true;
         }
-
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
-        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
     }
 
     private void deleteIntermediateFramebuffer() {

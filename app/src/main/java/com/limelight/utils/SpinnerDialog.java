@@ -21,6 +21,7 @@ public class SpinnerDialog implements Runnable,OnCancelListener {
     private AlertDialog progress;
     private TextView messageView;
     private final boolean finish;
+    private boolean finishOnCancelEnabled;
 
     private static final ArrayList<SpinnerDialog> rundownDialogs = new ArrayList<>();
 
@@ -31,6 +32,7 @@ public class SpinnerDialog implements Runnable,OnCancelListener {
         this.message = message;
         this.progress = null;
         this.finish = finish;
+        this.finishOnCancelEnabled = finish;
     }
 
     public static SpinnerDialog displayDialog(Activity activity, String title, String message, boolean finish)
@@ -69,6 +71,23 @@ public class SpinnerDialog implements Runnable,OnCancelListener {
             public void run() {
                 if (messageView != null) {
                     messageView.setText(message);
+                }
+            }
+        });
+    }
+
+    public void setFinishOnCancelEnabled(final boolean enabled) {
+        finishOnCancelEnabled = enabled;
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (progress == null) {
+                    return;
+                }
+
+                if (finish) {
+                    progress.setCancelable(enabled);
+                    progress.setCanceledOnTouchOutside(false);
                 }
             }
         });
@@ -132,7 +151,8 @@ public class SpinnerDialog implements Runnable,OnCancelListener {
             rundownDialogs.remove(this);
         }
 
-        // This will only be called if finish was true, so we don't need to check again
-        activity.finish();
+        if (finish && finishOnCancelEnabled) {
+            activity.finish();
+        }
     }
 }

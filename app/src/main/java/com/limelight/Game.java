@@ -232,6 +232,8 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     private boolean fsrInputSurfaceReady;
     private boolean fsrDisplaySurfaceCreated;
     private Surface fsrInputSurface;
+    private boolean usbPermissionPromptVisible;
+    private boolean fsrViewLifecyclePaused;
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -345,6 +347,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                             }
                             fsrInputSurface = new Surface(surfaceTexture);
                             fsrInputSurfaceReady = true;
+                            if (attemptedConnection) {
+                                decoderRenderer.setRenderTarget(fsrInputSurface);
+                            }
                             startConnectionIfReady();
                         }
 
@@ -1375,15 +1380,17 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     protected void onResume() {
         super.onResume();
 
-        if (fsrView != null) {
+        if (fsrView != null && fsrViewLifecyclePaused) {
             fsrView.onResume();
+            fsrViewLifecyclePaused = false;
         }
     }
 
     @Override
     protected void onPause() {
-        if (fsrView != null) {
+        if (fsrView != null && !(usbPermissionPromptVisible && !isFinishing())) {
             fsrView.onPause();
+            fsrViewLifecyclePaused = true;
         }
 
         if (isFinishing()) {
@@ -3237,6 +3244,10 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     @Override
     public void onUsbPermissionPromptStarting() {
+        usbPermissionPromptVisible = true;
+        if (spinner != null) {
+            spinner.setFinishOnCancelEnabled(false);
+        }
         // Disable PiP auto-enter while the USB permission prompt is on-screen. This prevents
         // us from entering PiP while the user is interacting with the OS permission dialog.
         suppressPipRefCount++;
@@ -3245,6 +3256,10 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     @Override
     public void onUsbPermissionPromptCompleted() {
+        usbPermissionPromptVisible = false;
+        if (spinner != null) {
+            spinner.setFinishOnCancelEnabled(true);
+        }
         suppressPipRefCount--;
         updatePipAutoEnter();
     }

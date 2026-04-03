@@ -299,6 +299,21 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
 
     public void setRenderTarget(Surface renderTarget) {
         this.renderTarget = renderTarget;
+
+        MediaCodec decoder = videoDecoder;
+        if (decoder == null || renderTarget == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            return;
+        }
+
+        try {
+            decoder.setOutputSurface(renderTarget);
+            LimeLog.info("Updated MediaCodec output surface without restart");
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            LimeLog.warning("Unable to hot-swap MediaCodec output surface; requesting decoder restart");
+            if (!codecRecoveryType.compareAndSet(CR_RECOVERY_TYPE_NONE, CR_RECOVERY_TYPE_RESTART)) {
+                codecRecoveryType.compareAndSet(CR_RECOVERY_TYPE_FLUSH, CR_RECOVERY_TYPE_RESTART);
+            }
+        }
     }
 
     public MediaCodecDecoderRenderer(Activity activity, PreferenceConfiguration prefs,
