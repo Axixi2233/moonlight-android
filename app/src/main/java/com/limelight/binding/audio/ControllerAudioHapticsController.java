@@ -23,8 +23,8 @@ public final class ControllerAudioHapticsController {
     private static final float STANDARD_RELEASE_FLOOR = 0.0010f;
     private static final float STANDARD_TRANSIENT_BLEND = 0.18f;
     private static final float STANDARD_SUSTAIN_FLOOR = 0.060f;
-    private static final float STANDARD_LOW_MOTOR_MULTIPLIER = 1.75f;
-    private static final float STANDARD_HIGH_MOTOR_MULTIPLIER = 0.95f;
+    private static final float STANDARD_LOW_MOTOR_MULTIPLIER = 2.45f;
+    private static final float STANDARD_HIGH_MOTOR_MULTIPLIER = 1.35f;
     private static final short STANDARD_STOP_THRESHOLD = 1100;
 
     private static final float KISHI_LOWPASS_CUTOFF_HZ = 220.0f;
