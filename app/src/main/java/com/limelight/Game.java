@@ -79,6 +79,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
+import android.util.Log;
 import android.util.Rational;
 import android.util.TypedValue;
 import android.view.Display;
@@ -120,9 +121,12 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         OnGenericMotionListener, OnTouchListener, NvConnectionListener, EvdevListener,
         OnSystemUiVisibilityChangeListener, GameGestures, StreamView.InputCallbacks,
         PerfOverlayListener, UsbDriverService.UsbDriverStateListener, View.OnKeyListener{
+    private static final float EXTERNAL_TOUCHPAD_SCROLL_FACTOR = 0.15f;
     public static Game instance;
 
     private int lastButtonState = 0;
+    private float externalTouchpadScrollRemainderX = 0f;
+    private float externalTouchpadScrollRemainderY = 0f;
 
     // Only 2 touches are supported
     private final TouchContext[] touchContextMap = new TouchContext[2];
@@ -2282,6 +2286,27 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                     changedButtons = buttonState ^ lastButtonState;
                 }
 
+                // Some external touchpads report a 2-finger tap as a primary action button press
+                // while keeping the pointer source as SOURCE_TOUCHPAD. Promote that gesture to
+                // a secondary click so it behaves like a desktop touchpad right-click.
+                if (eventSource == InputDevice.SOURCE_TOUCHPAD &&
+                        event.getPointerCount() == 2 &&
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+                        event.getActionButton() == MotionEvent.BUTTON_PRIMARY) {
+                    if (event.getActionMasked() == MotionEvent.ACTION_BUTTON_PRESS) {
+                        buttonState |= MotionEvent.BUTTON_SECONDARY;
+                    }
+                    else if (event.getActionMasked() == MotionEvent.ACTION_BUTTON_RELEASE) {
+                        buttonState &= ~MotionEvent.BUTTON_SECONDARY;
+                    }
+
+                    // Keep any previously faked primary state, but don't let this gesture look
+                    // like a left click in addition to the synthesized right click.
+                    buttonState &= ~MotionEvent.BUTTON_PRIMARY;
+                    buttonState |= (lastButtonState & MotionEvent.BUTTON_PRIMARY);
+                    changedButtons = buttonState ^ lastButtonState;
+                }
+
                 // Ignore mouse input if we're not capturing from our input source
                 if (!inputCaptureProvider.isCapturingActive()) {
                     // We return true here because otherwise the events may end up causing
@@ -2294,17 +2319,53 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 // significantly different than before.
                 if (inputCaptureProvider.eventHasRelativeMouseAxes(event)) {
                     // Send the deltas straight from the motion event
-                    short deltaX = (short)inputCaptureProvider.getRelativeAxisX(event);
-                    short deltaY = (short)inputCaptureProvider.getRelativeAxisY(event);
+                    float rawDeltaX = inputCaptureProvider.getRelativeAxisX(event);
+                    float rawDeltaY = inputCaptureProvider.getRelativeAxisY(event);
+                    short deltaX = (short)(rawDeltaX * prefConfig.externalTouchPadSensitityX * 0.01f);
+                    short deltaY = (short)(rawDeltaY * prefConfig.externalTouchPadSensitityY * 0.01f);
 
                     if (deltaX != 0 || deltaY != 0) {
-                        if (prefConfig.absoluteMouseMode) {
-                            // NB: view may be null, but we can unconditionally use streamView because we don't need to adjust
-                            // relative axis deltas for the position of the streamView within the parent's coordinate system.
-                            conn.sendMouseMoveAsMousePosition(deltaX, deltaY, (short)streamView.getWidth(), (short)streamView.getHeight());
+                        boolean isTwoFingerTouchpadScroll =
+                                eventSource == InputDevice.SOURCE_TOUCHPAD &&
+                                        event.getPointerCount() == 2 &&
+                                        event.getActionMasked() == MotionEvent.ACTION_MOVE;
+
+                        if (isTwoFingerTouchpadScroll) {
+                            float scrollFactor = prefConfig.externalTouchPadScrollAmount * EXTERNAL_TOUCHPAD_SCROLL_FACTOR;
+                            externalTouchpadScrollRemainderX += -rawDeltaX * scrollFactor;
+                            externalTouchpadScrollRemainderY += -rawDeltaY * scrollFactor;
+
+                            short hScroll = 0;
+                            short vScroll = 0;
+
+                            if (Math.abs(externalTouchpadScrollRemainderX) >= 1f) {
+                                hScroll = (short) externalTouchpadScrollRemainderX;
+                                externalTouchpadScrollRemainderX -= hScroll;
+                            }
+                            if (Math.abs(externalTouchpadScrollRemainderY) >= 1f) {
+                                vScroll = (short) externalTouchpadScrollRemainderY;
+                                externalTouchpadScrollRemainderY -= vScroll;
+                            }
+
+                            if (vScroll != 0) {
+                                conn.sendMouseHighResScroll(vScroll);
+                            }
+                            if (hScroll != 0) {
+                                conn.sendMouseHighResHScroll(hScroll);
+                            }
                         }
                         else {
-                            conn.sendMouseMove(deltaX, deltaY);
+                            externalTouchpadScrollRemainderX = 0f;
+                            externalTouchpadScrollRemainderY = 0f;
+
+                            if (prefConfig.absoluteMouseMode) {
+                                // NB: view may be null, but we can unconditionally use streamView because we don't need to adjust
+                                // relative axis deltas for the position of the streamView within the parent's coordinate system.
+                                conn.sendMouseMoveAsMousePosition(deltaX, deltaY, (short)streamView.getWidth(), (short)streamView.getHeight());
+                            }
+                            else {
+                                conn.sendMouseMove(deltaX, deltaY);
+                            }
                         }
                     }
                 }
@@ -2347,6 +2408,12 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                     // Send the vertical scroll packet
                     conn.sendMouseHighResScroll((short)(event.getAxisValue(MotionEvent.AXIS_VSCROLL) * 120));
                     conn.sendMouseHighResHScroll((short)(event.getAxisValue(MotionEvent.AXIS_HSCROLL) * 120));
+                }
+
+                if (eventSource == InputDevice.SOURCE_TOUCHPAD &&
+                        event.getActionMasked() != MotionEvent.ACTION_MOVE) {
+                    externalTouchpadScrollRemainderX = 0f;
+                    externalTouchpadScrollRemainderY = 0f;
                 }
 
                 if ((changedButtons & MotionEvent.BUTTON_PRIMARY) != 0) {

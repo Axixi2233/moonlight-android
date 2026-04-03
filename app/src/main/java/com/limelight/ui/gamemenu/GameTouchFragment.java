@@ -63,6 +63,12 @@ public class GameTouchFragment extends BaseGameMenuDialog implements View.OnClic
 
     private SeekBar sb_mouse_sc_amount;
     private TextView tx_mouse_sc_amount;
+    private SeekBar sb_touchpad_equipment_view_x;
+    private SeekBar sb_touchpad_equipment_view_y;
+    private SeekBar sb_touchpad_equipment_amount;
+    private TextView tx_touchpad_equipment_view_x;
+    private TextView tx_touchpad_equipment_view_y;
+    private TextView tx_touchpad_equipment_amount;
 
     @Override
     public void bindView(View v) {
@@ -93,6 +99,12 @@ public class GameTouchFragment extends BaseGameMenuDialog implements View.OnClic
 
         sb_mouse_sc_amount=v.findViewById(R.id.sb_mouse_sc_amount);
         tx_mouse_sc_amount=v.findViewById(R.id.tx_mouse_sc_amount);
+        sb_touchpad_equipment_view_x=v.findViewById(R.id.sb_touchpad_equipment_view_x);
+        sb_touchpad_equipment_view_y=v.findViewById(R.id.sb_touchpad_equipment_view_y);
+        sb_touchpad_equipment_amount=v.findViewById(R.id.sb_touchpad_equipment_amount);
+        tx_touchpad_equipment_view_x=v.findViewById(R.id.tx_touchpad_equipment_view_x);
+        tx_touchpad_equipment_view_y=v.findViewById(R.id.tx_touchpad_equipment_view_y);
+        tx_touchpad_equipment_amount=v.findViewById(R.id.tx_touchpad_equipment_amount);
 
         tx_title.setText(title);
         initViewData();
@@ -102,6 +114,7 @@ public class GameTouchFragment extends BaseGameMenuDialog implements View.OnClic
         initViewMouseGamePadView();
 
         initViewMouseSCView();
+        initViewExternalTouchPadView();
 
         ibtn_back.setOnClickListener(this);
         btn_touch_switch.setOnClickListener(this);
@@ -118,6 +131,9 @@ public class GameTouchFragment extends BaseGameMenuDialog implements View.OnClic
         sb_touchpad_view_y.setOnSeekBarChangeListener(this);
         sb_mouse_gamepad_sensitity.setOnSeekBarChangeListener(this);
         sb_mouse_sc_amount.setOnSeekBarChangeListener(this);
+        sb_touchpad_equipment_view_x.setOnSeekBarChangeListener(this);
+        sb_touchpad_equipment_view_y.setOnSeekBarChangeListener(this);
+        sb_touchpad_equipment_amount.setOnSeekBarChangeListener(this);
     }
 
     @Override
@@ -167,6 +183,15 @@ public class GameTouchFragment extends BaseGameMenuDialog implements View.OnClic
         tx_mouse_sc_amount.setText("距离："+prefConfig.mouseSCAmount);
     }
 
+    private void initViewExternalTouchPadView(){
+        sb_touchpad_equipment_view_x.setProgress(prefConfig.externalTouchPadSensitityX);
+        sb_touchpad_equipment_view_y.setProgress(prefConfig.externalTouchPadSensitityY);
+        sb_touchpad_equipment_amount.setProgress(prefConfig.externalTouchPadScrollAmount);
+        tx_touchpad_equipment_view_x.setText("X轴：" + prefConfig.externalTouchPadSensitityX + "%");
+        tx_touchpad_equipment_view_y.setText("Y轴：" + prefConfig.externalTouchPadSensitityY + "%");
+        tx_touchpad_equipment_amount.setText("滚轮速度：" + prefConfig.externalTouchPadScrollAmount);
+    }
+
     @Override
     public void onClick(View v) {
         if(v.getId()==R.id.ibtn_back){
@@ -188,6 +213,9 @@ public class GameTouchFragment extends BaseGameMenuDialog implements View.OnClic
             //触控板模式灵敏度
             prefConfig.touchPadSensitivity=100;
             prefConfig.touchPadYSensitity=100;
+            prefConfig.externalTouchPadSensitityX=100;
+            prefConfig.externalTouchPadSensitityY=100;
+            prefConfig.externalTouchPadScrollAmount=5;
 
             prefConfig.mouseSCAmount=5;
 
@@ -199,6 +227,9 @@ public class GameTouchFragment extends BaseGameMenuDialog implements View.OnClic
             saveSetting("seekbar_mouse_touchpad_sensitivity_y_opacity",100);
             saveSetting("seekbar_touchpad_sensitivity_opacity",100);
             saveSetting("seekbar_touchpad_sensitivity_y_opacity",100);
+            saveSetting("touchpad_equipment_view_x",100);
+            saveSetting("touchpad_equipment_view_y",100);
+            saveSetting("touchpad_equipment_amount",5);
             saveSetting("mouse_gamepad_sensitity",100);
             saveSetting("mouse_sc_amount",5);
 
@@ -213,6 +244,7 @@ public class GameTouchFragment extends BaseGameMenuDialog implements View.OnClic
 
             initViewMouseGamePadView();
             initViewMouseSCView();
+            initViewExternalTouchPadView();
 
             return;
         }
@@ -287,6 +319,24 @@ public class GameTouchFragment extends BaseGameMenuDialog implements View.OnClic
             prefConfig.mouseSCAmount=progress;
             saveSetting("mouse_sc_amount",progress);
             initViewMouseSCView();
+        }
+
+        if(seekBar==sb_touchpad_equipment_view_x){
+            prefConfig.externalTouchPadSensitityX=progress;
+            saveSetting("touchpad_equipment_view_x",progress);
+            initViewExternalTouchPadView();
+        }
+
+        if(seekBar==sb_touchpad_equipment_view_y){
+            prefConfig.externalTouchPadSensitityY=progress;
+            saveSetting("touchpad_equipment_view_y",progress);
+            initViewExternalTouchPadView();
+        }
+
+        if(seekBar==sb_touchpad_equipment_amount){
+            prefConfig.externalTouchPadScrollAmount=progress;
+            saveSetting("touchpad_equipment_amount",progress);
+            initViewExternalTouchPadView();
         }
 
     }

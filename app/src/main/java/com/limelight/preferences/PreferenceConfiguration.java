@@ -213,6 +213,11 @@ public class PreferenceConfiguration {
     public int mouseTouchPadSensitityX;
     public int mouseTouchPadSensitityY;
 
+    // 外设触控板灵敏度
+    public int externalTouchPadSensitityX;
+    public int externalTouchPadSensitityY;
+    public int externalTouchPadScrollAmount;
+
     //多点触控模式
     public boolean enableMultiTouchScreen;
 
@@ -903,6 +908,9 @@ public class PreferenceConfiguration {
 
         config.mouseTouchPadSensitityX=prefs.getInt("seekbar_mouse_touchpad_sensitivity_x_opacity",100);
         config.mouseTouchPadSensitityY=prefs.getInt("seekbar_mouse_touchpad_sensitivity_y_opacity",100);
+        config.externalTouchPadSensitityX=prefs.getInt("touchpad_equipment_view_x",100);
+        config.externalTouchPadSensitityY=prefs.getInt("touchpad_equipment_view_y",100);
+        config.externalTouchPadScrollAmount=prefs.getInt("touchpad_equipment_amount",5);
 
         config.uiThemeColorWhite=prefs.getBoolean("checkbox_ui_theme_white",true);
         config.quickSoftKeyboardFingers=prefs.getInt("touch_number_quick_soft_keyboard",0);

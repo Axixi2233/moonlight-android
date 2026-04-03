@@ -1664,6 +1664,26 @@ public class GameSbs extends Activity implements TextureView.SurfaceTextureListe
                     changedButtons = buttonState ^ lastButtonState;
                 }
 
+                // Some external touchpads report a 2-finger tap as a primary action button press
+                // while keeping the pointer source as SOURCE_TOUCHPAD. Promote that gesture to
+                // a secondary click so it behaves like a desktop touchpad right-click.
+                if (eventSource == InputDevice.SOURCE_TOUCHPAD &&
+                        event.getPointerCount() == 2 &&
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+                        event.getActionButton() == MotionEvent.BUTTON_PRIMARY) {
+                    if (event.getActionMasked() == MotionEvent.ACTION_BUTTON_PRESS) {
+                        buttonState |= MotionEvent.BUTTON_SECONDARY;
+                    } else if (event.getActionMasked() == MotionEvent.ACTION_BUTTON_RELEASE) {
+                        buttonState &= ~MotionEvent.BUTTON_SECONDARY;
+                    }
+
+                    // Keep any previously faked primary state, but don't let this gesture look
+                    // like a left click in addition to the synthesized right click.
+                    buttonState &= ~MotionEvent.BUTTON_PRIMARY;
+                    buttonState |= (lastButtonState & MotionEvent.BUTTON_PRIMARY);
+                    changedButtons = buttonState ^ lastButtonState;
+                }
+
                 // Ignore mouse input if we're not capturing from our input source
 //                if (!inputCaptureProvider.isCapturingActive()) {
 //                    // We return true here because otherwise the events may end up causing
