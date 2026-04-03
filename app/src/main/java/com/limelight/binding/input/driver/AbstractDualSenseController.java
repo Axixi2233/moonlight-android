@@ -14,6 +14,7 @@ import com.limelight.nvstream.jni.MoonBridge;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public abstract class AbstractDualSenseController extends AbstractController {
@@ -26,6 +27,7 @@ public abstract class AbstractDualSenseController extends AbstractController {
     private static final int REPORT_LEFT_TRIGGER_TYPE_IDX = 22;
     private static final int REPORT_LEFT_TRIGGER_DATA_IDX = 23;
     private static final int TRIGGER_DATA_LEN = 10;
+    private static final int TOUCHPAD_FINGER_COUNT = 2;
 
     protected final UsbDevice device;
     protected final UsbDeviceConnection connection;
@@ -39,6 +41,10 @@ public abstract class AbstractDualSenseController extends AbstractController {
     private byte cachedRightTriggerType;
     private final byte[] cachedRightTriggerData = new byte[TRIGGER_DATA_LEN];
     private DualSenseHapticSender advancedAudioHapticsSender;
+    private final boolean[] activeTouchpadFingers = new boolean[TOUCHPAD_FINGER_COUNT];
+    private final int[] activeTouchpadFingerIds = new int[TOUCHPAD_FINGER_COUNT];
+    private final float[] activeTouchpadFingerX = new float[TOUCHPAD_FINGER_COUNT];
+    private final float[] activeTouchpadFingerY = new float[TOUCHPAD_FINGER_COUNT];
 
     protected UsbEndpoint inEndpt, outEndpt;
     protected UsbInterface hapticIface;
@@ -49,13 +55,16 @@ public abstract class AbstractDualSenseController extends AbstractController {
         this.device = device;
         this.connection = connection;
         this.type = MoonBridge.LI_CTYPE_PS;
-        this.capabilities = MoonBridge.LI_CCAP_GYRO | MoonBridge.LI_CCAP_ACCEL | MoonBridge.LI_CCAP_RUMBLE;
-        this.buttonFlags =
+        this.capabilities = MoonBridge.LI_CCAP_GYRO | MoonBridge.LI_CCAP_ACCEL |
+                MoonBridge.LI_CCAP_RUMBLE | MoonBridge.LI_CCAP_TOUCHPAD;
+        this.supportedButtonFlags =
                 ControllerPacket.A_FLAG | ControllerPacket.B_FLAG | ControllerPacket.X_FLAG | ControllerPacket.Y_FLAG |
                         ControllerPacket.UP_FLAG | ControllerPacket.DOWN_FLAG | ControllerPacket.LEFT_FLAG | ControllerPacket.RIGHT_FLAG |
                         ControllerPacket.LB_FLAG | ControllerPacket.RB_FLAG |
                         ControllerPacket.LS_CLK_FLAG | ControllerPacket.RS_CLK_FLAG |
-                        ControllerPacket.BACK_FLAG | ControllerPacket.PLAY_FLAG | ControllerPacket.SPECIAL_BUTTON_FLAG;
+                        ControllerPacket.BACK_FLAG | ControllerPacket.PLAY_FLAG |
+                        ControllerPacket.SPECIAL_BUTTON_FLAG | ControllerPacket.TOUCHPAD_FLAG;
+        this.buttonFlags = supportedButtonFlags;
     }
 
     private Thread createInputThread() {
@@ -229,6 +238,7 @@ public abstract class AbstractDualSenseController extends AbstractController {
         }
 
         stopped = true;
+        cancelActiveTouchpadFingers();
         stopAdvancedAudioHaptics();
 
         // Cancel any rumble effects
@@ -398,6 +408,75 @@ public abstract class AbstractDualSenseController extends AbstractController {
             return 2.75f;
         }
         return gain;
+    }
+
+    protected void updateTouchpadFinger(int fingerIndex, boolean active, int pointerId, float x, float y) {
+        if (fingerIndex < 0 || fingerIndex >= TOUCHPAD_FINGER_COUNT) {
+            return;
+        }
+
+        boolean wasActive = activeTouchpadFingers[fingerIndex];
+        int previousPointerId = activeTouchpadFingerIds[fingerIndex];
+        float previousX = activeTouchpadFingerX[fingerIndex];
+        float previousY = activeTouchpadFingerY[fingerIndex];
+
+        float normalizedX = clampUnitRange(x);
+        float normalizedY = clampUnitRange(y);
+
+        if (active) {
+            if (!wasActive) {
+                reportTouchpadEvent(MoonBridge.LI_TOUCH_EVENT_DOWN, pointerId, normalizedX, normalizedY, 1.0f);
+            }
+            else if (previousPointerId != pointerId) {
+                reportTouchpadEvent(MoonBridge.LI_TOUCH_EVENT_UP, previousPointerId, previousX, previousY, 0.0f);
+                reportTouchpadEvent(MoonBridge.LI_TOUCH_EVENT_DOWN, pointerId, normalizedX, normalizedY, 1.0f);
+            }
+            else if (Float.compare(previousX, normalizedX) != 0 || Float.compare(previousY, normalizedY) != 0) {
+                reportTouchpadEvent(MoonBridge.LI_TOUCH_EVENT_MOVE, pointerId, normalizedX, normalizedY, 1.0f);
+            }
+
+            activeTouchpadFingers[fingerIndex] = true;
+            activeTouchpadFingerIds[fingerIndex] = pointerId;
+            activeTouchpadFingerX[fingerIndex] = normalizedX;
+            activeTouchpadFingerY[fingerIndex] = normalizedY;
+        }
+        else if (wasActive) {
+            reportTouchpadEvent(MoonBridge.LI_TOUCH_EVENT_UP, previousPointerId, previousX, previousY, 0.0f);
+            activeTouchpadFingers[fingerIndex] = false;
+        }
+    }
+
+    protected void cancelActiveTouchpadFingers() {
+        boolean hasActiveTouch = false;
+        for (boolean activeTouchpadFinger : activeTouchpadFingers) {
+            if (activeTouchpadFinger) {
+                hasActiveTouch = true;
+                break;
+            }
+        }
+
+        if (hasActiveTouch) {
+            reportTouchpadEvent(MoonBridge.LI_TOUCH_EVENT_CANCEL_ALL, 0, 0.0f, 0.0f, 0.0f);
+        }
+
+        Arrays.fill(activeTouchpadFingers, false);
+    }
+
+    protected float normalizeTouchCoordinate(int rawValue, float range) {
+        return clampUnitRange(rawValue / range);
+    }
+
+    private float clampUnitRange(float value) {
+        if (Float.isNaN(value) || Float.isInfinite(value)) {
+            return 0.0f;
+        }
+        if (value < 0.0f) {
+            return 0.0f;
+        }
+        if (value > 1.0f) {
+            return 1.0f;
+        }
+        return value;
     }
 
     protected abstract boolean handleRead(ByteBuffer buffer);

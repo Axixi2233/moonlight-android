@@ -151,46 +151,33 @@ public class Dualshock4Controller extends AbstractDualSenseController {
 //      LimeLog.info("axi->gyroy:"+gyroY);
 
 
-      // Touch pad
-//      int touch00 = buffer.get(33) & 0xFF;
-//      int touch01 = buffer.get(34) & 0xFF;
-//      int touch02 = buffer.get(35) & 0xFF;
-//      int touch03 = buffer.get(36) & 0xFF;
-//      int touch10 = buffer.get(37) & 0xFF;
-//      int touch11 = buffer.get(38) & 0xFF;
-//      int touch12 = buffer.get(39) & 0xFF;
-//      int touch13 = buffer.get(40) & 0xFF;
-//
-//      boolean touch0active = (touch00 & 0x80) == 0;
-//      int touch0id = touch00 & 0x7F;
-//      int touch0x = ((touch02 & 0x0F) << 8) | touch01;
-//      int touch0y = (touch03 << 4) | ((touch02 & 0xF0) >> 4);
-//      if(touch0active){
-////         LimeLog.info("axi->touch0active:"+touch0active);
-////         LimeLog.info("axi->touch0id:"+touch0id);
-////         LimeLog.info("axi->touch0x:"+touch0x);
-////         LimeLog.info("axi->touch0y:"+touch0y);
-////         t0x = normalizeTouchValue(touch0x, 0, 1920);
-////         t0y = normalizeTouchValue(touch0y, 0, 1080);
-//      }
-//      boolean touch1active = (touch10 & 0x80) == 0;
-//      int touch1id = touch10 & 0x7F;
-//      int touch1x = ((touch12 & 0x0F) << 8) | touch11;
-//      int touch1y = (touch13 << 4) | ((touch12 & 0xF0) >> 4);
-//      if(touch1active){
-//         LimeLog.info("axi->touch1active:"+touch1active);
-//         LimeLog.info("axi->touch1id:"+touch1id);
-//         LimeLog.info("axi->touch1x:"+touch1x);
-//         LimeLog.info("axi->touch1y:"+touch1y);
-//      }
+      int touch00 = buffer.get(33) & 0xFF;
+      int touch01 = buffer.get(34) & 0xFF;
+      int touch02 = buffer.get(35) & 0xFF;
+      int touch03 = buffer.get(36) & 0xFF;
+      int touch10 = buffer.get(37) & 0xFF;
+      int touch11 = buffer.get(38) & 0xFF;
+      int touch12 = buffer.get(39) & 0xFF;
+      int touch13 = buffer.get(40) & 0xFF;
+
+      boolean touch0active = (touch00 & 0x80) == 0;
+      int touch0id = touch00 & 0x7F;
+      int touch0x = ((touch02 & 0x0F) << 8) | touch01;
+      int touch0y = (touch03 << 4) | ((touch02 & 0xF0) >> 4);
+      updateTouchpadFinger(0, touch0active, touch0id,
+              normalizeTouchCoordinate(touch0x, 1920.0f),
+              normalizeTouchCoordinate(touch0y, 920.0f));
+
+      boolean touch1active = (touch10 & 0x80) == 0;
+      int touch1id = touch10 & 0x7F;
+      int touch1x = ((touch12 & 0x0F) << 8) | touch11;
+      int touch1y = (touch13 << 4) | ((touch12 & 0xF0) >> 4);
+      updateTouchpadFinger(1, touch1active, touch1id,
+              normalizeTouchCoordinate(touch1x, 1920.0f),
+              normalizeTouchCoordinate(touch1y, 920.0f));
       // Return true to send input
       return true;
    }
-
-   private float normalizeTouchValue(float value, float min, float max) {
-      return (value - min) / (max - min);
-   }
-
 
    @Override
    protected boolean doInit() {

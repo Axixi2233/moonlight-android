@@ -3403,6 +3403,19 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         sendControllerInputPacket(context);
     }
 
+    private float clampUnitRange(float value) {
+        if (Float.isNaN(value) || Float.isInfinite(value)) {
+            return 0.0f;
+        }
+        if (value < 0.0f) {
+            return 0.0f;
+        }
+        if (value > 1.0f) {
+            return 1.0f;
+        }
+        return value;
+    }
+
     @Override
     public void reportControllerMotion(int controllerId, byte motionType, float motionX, float motionY, float motionZ) {
         GenericControllerContext context = usbDeviceContexts.get(controllerId);
@@ -3413,6 +3426,20 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             return;
         }
         conn.sendControllerMotionEvent((byte)context.controllerNumber, motionType, motionX, motionY, motionZ);
+    }
+
+    @Override
+    public void reportControllerTouchpadEvent(int controllerId, byte eventType, int pointerId,
+                                              float x, float y, float pressure) {
+        UsbDeviceContext context = usbDeviceContexts.get(controllerId);
+        if (context == null) {
+            return;
+        }
+
+        assignControllerNumberIfNeeded(context);
+
+        conn.sendControllerTouchEvent((byte) context.controllerNumber, eventType, pointerId,
+                clampUnitRange(x), clampUnitRange(y), clampUnitRange(pressure));
     }
 
     @Override

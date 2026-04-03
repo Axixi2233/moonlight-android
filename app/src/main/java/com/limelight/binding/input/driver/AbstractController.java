@@ -65,6 +65,10 @@ public abstract class AbstractController {
         listener.reportControllerMotion(deviceId, MoonBridge.LI_MOTION_TYPE_ACCEL, accelX, accelY, accelZ);
     }
 
+    protected void reportTouchpadEvent(byte eventType, int pointerId, float x, float y, float pressure) {
+        listener.reportControllerTouchpadEvent(deviceId, eventType, pointerId, x, y, pressure);
+    }
+
     public AbstractController(int deviceId, UsbDriverListener listener, int vendorId, int productId) {
         this.deviceId = deviceId;
         this.listener = listener;
