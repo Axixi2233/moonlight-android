@@ -19,6 +19,9 @@ public final class AudioHapticsController {
     private static final long EFFECT_DURATION_MS = 36L;
     private static final long LEGACY_INTERVAL_MS = 45L;
     private static final long LEGACY_PULSE_MS = 22L;
+    private static final int LEGACY_MIN_AMPLITUDE = 42;
+    private static final long LEGACY_MIN_PULSE_MS = 8L;
+    private static final long LEGACY_MAX_INTERVAL_MS = 125L;
 
     public static final String VOICE_FILTER_OFF = "off";
     public static final String VOICE_FILTER_LOW = "low";
@@ -189,8 +192,9 @@ public final class AudioHapticsController {
             return 0;
         }
 
-        float curved = (float) Math.pow(Math.min(1.0f, level), 0.75f);
-        int amplitude = Math.round(curved * 255.0f * (strengthPercent / 100.0f));
+        float curved = (float) Math.pow(Math.min(1.0f, level), 0.82f);
+        float strengthScale = (float) Math.pow(strengthPercent / 100.0f, 2.35f);
+        int amplitude = Math.round(curved * 255.0f * strengthScale);
         return Math.max(0, Math.min(255, amplitude));
     }
 
@@ -234,12 +238,21 @@ public final class AudioHapticsController {
             return;
         }
 
-        if (now - lastVibrationTimeMs < LEGACY_INTERVAL_MS) {
+        if (amplitude < LEGACY_MIN_AMPLITUDE) {
+            return;
+        }
+
+        float legacyStrengthScale = amplitude / 255.0f;
+        long legacyIntervalMs = Math.round(LEGACY_INTERVAL_MS +
+                ((1.0f - legacyStrengthScale) * (LEGACY_MAX_INTERVAL_MS - LEGACY_INTERVAL_MS)));
+        if (now - lastVibrationTimeMs < legacyIntervalMs) {
             return;
         }
 
         try {
-            vibrator.vibrate(LEGACY_PULSE_MS);
+            long legacyPulseMs = Math.max(LEGACY_MIN_PULSE_MS,
+                    Math.round(LEGACY_PULSE_MS * Math.max(0.35f, legacyStrengthScale)));
+            vibrator.vibrate(legacyPulseMs);
             lastVibrationTimeMs = now;
             lastAmplitude = amplitude;
         }
