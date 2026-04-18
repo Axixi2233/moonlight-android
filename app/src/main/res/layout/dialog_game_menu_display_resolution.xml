@@ -73,7 +73,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="5dp"
-                    android:text="输入宽和高 (只校验非空，别填奇怪的数值)"
+                    android:text="输入宽和高 (保存并使用)"
                     android:textStyle="italic"
                     android:textColor="@android:color/white"
                     android:textSize="8dp" />
@@ -215,6 +215,23 @@
                         android:textColor="@android:color/white"
                         android:textSize="9sp" />
 
+                </org.apmem.tools.layouts.FlowLayout>
+
+                <TextView
+                    android:id="@+id/tx_custom_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="left"
+                    android:layout_marginTop="10dp"
+                    android:text="自定义分辨率 (长按删除)"
+                    android:textStyle="bold"
+                    android:textSize="10dp"
+                    android:visibility="gone" />
+
+                <org.apmem.tools.layouts.FlowLayout
+                    android:id="@+id/flow_custom"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
                 </org.apmem.tools.layouts.FlowLayout>
 
             </LinearLayout>
