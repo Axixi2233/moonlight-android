@@ -51,6 +51,10 @@ public class GameFunctionFragment extends BaseGameMenuDialog implements View.OnC
         v.findViewById(R.id.btn_win_center).setOnClickListener(this);
         v.findViewById(R.id.btn_win_p).setOnClickListener(this);
 
+        v.findViewById(R.id.btn_display_1).setOnClickListener(this);
+        v.findViewById(R.id.btn_display_2).setOnClickListener(this);
+        v.findViewById(R.id.btn_display_3).setOnClickListener(this);
+        v.findViewById(R.id.btn_display_4).setOnClickListener(this);
     }
 
     public void setTitle(String title) {
@@ -109,6 +113,22 @@ public class GameFunctionFragment extends BaseGameMenuDialog implements View.OnC
             return;
         }
 
+        if(v.getId()==R.id.btn_display_1){
+            click.click("显示器1",11);
+            return;
+        }
+        if(v.getId()==R.id.btn_display_2){
+            click.click("显示器2",12);
+            return;
+        }
+        if(v.getId()==R.id.btn_display_3){
+            click.click("显示器3",13);
+            return;
+        }
+        if(v.getId()==R.id.btn_display_4){
+            click.click("显示器4",14);
+            return;
+        }
 
     }
 

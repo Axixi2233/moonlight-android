@@ -710,7 +710,7 @@
                     android:layout_marginLeft="5dp"
                     android:singleLine="true"
                     android:ellipsize="end"
-                    android:text="使用雷蛇Cortex雷游生效，兼容Apollo版(仅支持扩展模式)"
+                    android:text="使用sunshine·阿西西、雷蛇雷游生效，兼容Apollo扩展模式"
                     android:textStyle="italic|bold"
                     android:textColor="#FFC107"
                     android:textSize="6dp" />

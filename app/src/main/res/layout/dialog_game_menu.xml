@@ -306,7 +306,7 @@
                 android:layout_weight="1"
                 android:background="@drawable/ic_game_menu_btn_selector"
                 android:drawablePadding="4dp"
-                android:drawableTop="@drawable/ic_axi_switch_screen"
+                android:drawableTop="@drawable/ic_axi_mic"
                 android:gravity="center"
                 android:padding="4dp"
                 android:id="@+id/btn_mic"

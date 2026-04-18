@@ -139,8 +139,8 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
 
     @Override
     public void onClick(View v) {
-        //操作
-        if(v.getId()==R.id.btn_soft_function){
+        //操作 或 显示器
+        if(v.getId()==R.id.btn_soft_function || v.getId()==R.id.btn_display_1){
             GameFunctionFragment fragment=new GameFunctionFragment();
             fragment.setWidth(UiHelper.dpToPx(getActivity(),364));
             fragment.setTitle("操作");
@@ -189,6 +189,18 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
                             break;
                         case 10://Win+P
                             sendKeys(new short[]{KeyboardTranslator.VK_LWIN, KeyboardTranslator.VK_P});
+                            break;
+                        case 11://显示器1
+                            sendKeys(new short[]{KeyboardTranslator.VK_LCONTROL,KeyboardTranslator.VK_LMENU, KeyboardTranslator.VK_LSHIFT, KeyboardTranslator.VK_F1});
+                            break;
+                        case 12://显示器2
+                            sendKeys(new short[]{KeyboardTranslator.VK_LCONTROL,KeyboardTranslator.VK_LMENU, KeyboardTranslator.VK_LSHIFT, KeyboardTranslator.VK_F2});
+                            break;
+                        case 13://显示器3
+                            sendKeys(new short[]{KeyboardTranslator.VK_LCONTROL,KeyboardTranslator.VK_LMENU, KeyboardTranslator.VK_LSHIFT, KeyboardTranslator.VK_F3});
+                            break;
+                        case 14://显示器4
+                            sendKeys(new short[]{KeyboardTranslator.VK_LCONTROL,KeyboardTranslator.VK_LMENU, KeyboardTranslator.VK_LSHIFT, KeyboardTranslator.VK_F4});
                             break;
                     }
                 }
@@ -285,13 +297,6 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
         if(v.getId()==R.id.btn_hdr){
             if(conn!=null){
                 sendKeys(new short[]{KeyboardTranslator.VK_LWIN, KeyboardTranslator.VK_LMENU, KeyboardTranslator.VK_B});
-            }
-            return;
-        }
-
-        if(v.getId()==R.id.btn_display_1){
-            if(conn!=null){
-                sendKeys(new short[]{KeyboardTranslator.VK_LCONTROL,KeyboardTranslator.VK_LMENU, KeyboardTranslator.VK_LSHIFT, KeyboardTranslator.VK_F1});
             }
             return;
         }

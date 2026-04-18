@@ -81,6 +81,70 @@
                     android:layout_weight="1"
                     android:background="@drawable/ic_game_menu_btn_selector"
                     android:drawablePadding="4dp"
+                    android:drawableTop="@drawable/ic_axi_switch_screen"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/btn_display_1"
+                    android:text="显示器1"
+                    android:textSize="9dp" />
+
+                <Button
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:drawablePadding="4dp"
+                    android:drawableTop="@drawable/ic_axi_switch_screen"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/btn_display_2"
+                    android:text="显示器2"
+                    android:textSize="9dp" />
+
+                <Button
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:drawablePadding="4dp"
+                    android:drawableTop="@drawable/ic_axi_switch_screen"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/btn_display_3"
+                    android:text="显示器3"
+                    android:textSize="9dp" />
+
+                <Button
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:drawablePadding="4dp"
+                    android:drawableTop="@drawable/ic_axi_switch_screen"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:id="@+id/btn_display_4"
+                    android:text="显示器4"
+                    android:textSize="9dp" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:layout_margin="5dp"
+                android:orientation="horizontal">
+
+                <Button
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:drawablePadding="4dp"
                     android:drawableTop="@drawable/ic_axi_logout"
                     android:gravity="center"
                     android:padding="4dp"
