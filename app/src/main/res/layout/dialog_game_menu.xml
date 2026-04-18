@@ -296,7 +296,7 @@
                 android:gravity="center"
                 android:padding="4dp"
                 android:id="@+id/btn_display_1"
-                android:text="显示器1"
+                android:text="显示器"
                 android:textSize="11dp" />
 
             <Button
@@ -309,8 +309,8 @@
                 android:drawableTop="@drawable/ic_axi_switch_screen"
                 android:gravity="center"
                 android:padding="4dp"
-                android:id="@+id/btn_display_2"
-                android:text="显示器2"
+                android:id="@+id/btn_mic"
+                android:text="麦克风"
                 android:textSize="11dp" />
 
             <Button

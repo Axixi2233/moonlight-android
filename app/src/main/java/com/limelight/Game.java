@@ -1,6 +1,7 @@
 package com.limelight;
 
 
+import android.Manifest;
 import com.limelight.binding.PlatformBinding;
 import com.limelight.binding.audio.AndroidAudioRenderer;
 import com.limelight.binding.input.ControllerHandler;
@@ -24,6 +25,7 @@ import com.limelight.binding.video.MediaCodecHelper;
 import com.limelight.binding.video.PerfOverlayListener;
 import com.limelight.fsr.FsrVideoProcessor;
 import com.limelight.fsr.VideoProcessingGLSurfaceView;
+import com.limelight.nvstream.MicUplinkConnection;
 import com.limelight.nvstream.NvConnection;
 import com.limelight.nvstream.NvConnectionListener;
 import com.limelight.nvstream.StreamConfiguration;
@@ -122,6 +124,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         OnSystemUiVisibilityChangeListener, GameGestures, StreamView.InputCallbacks,
         PerfOverlayListener, UsbDriverService.UsbDriverStateListener, View.OnKeyListener{
     private static final float EXTERNAL_TOUCHPAD_SCROLL_FACTOR = 0.15f;
+    private static final int REQUEST_RECORD_AUDIO_PERMISSION = 1001;
     public static Game instance;
 
     private int lastButtonState = 0;
@@ -159,6 +162,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     private boolean displayedFailureDialog = false;
     private boolean connecting = false;
     public boolean connected = false;
+    private boolean awaitingRecordAudioPermission = false;
     private boolean autoEnterPip = false;
     private boolean surfaceCreated = false;
     private boolean attemptedConnection = false;
@@ -194,6 +198,8 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     private MediaCodecDecoderRenderer decoderRenderer;
     private AndroidAudioRenderer audioRenderer;
     private boolean reportedCrash;
+    private boolean micToggleInFlight;
+    private boolean pendingMicToggleAfterPermission;
 
     private WifiManager.WifiLock highPerfWifiLock;
     private WifiManager.WifiLock lowLatencyWifiLock;
@@ -3180,6 +3186,29 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     }
 
     @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode != REQUEST_RECORD_AUDIO_PERMISSION) {
+            return;
+        }
+
+        awaitingRecordAudioPermission = false;
+
+        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            if (pendingMicToggleAfterPermission) {
+                pendingMicToggleAfterPermission = false;
+                switchMic();
+            }
+            return;
+        }
+
+        pendingMicToggleAfterPermission = false;
+
+        Toast.makeText(this, getResources().getString(R.string.mic_uplink_permission_denied), Toast.LENGTH_LONG).show();
+    }
+
+    @Override
     public void mouseMove(int deltaX, int deltaY) {
         conn.sendMouseMove((short) deltaX, (short) deltaY);
     }
@@ -3271,7 +3300,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                String displayText = appendFsrPerfInfo(text);
+                String displayText = appendMicPerfInfo(appendFsrPerfInfo(text));
                 if(prefConfig.enablePerfOverlayLite){
                     performanceOverlayLite.setText(displayText);
                 }else{
@@ -3279,6 +3308,16 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 }
             }
         });
+    }
+
+    private String appendMicPerfInfo(String text) {
+        if (micStatus != 1 || text == null || text.isEmpty()) {
+            return text;
+        }
+        if(prefConfig.enablePerfOverlayLite){
+            return text+" Mic";
+        }
+        return text+"\n麦克风：开启";
     }
 
     private String appendFsrPerfInfo(String text) {
@@ -3663,6 +3702,11 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 decoderRenderer, Game.this);
     }
 
+    private boolean isRecordAudioPermissionGranted() {
+        return Build.VERSION.SDK_INT < Build.VERSION_CODES.M ||
+                checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
+    }
+
     //是否退出串流
     public boolean isQuitSteamingFlag;
 
@@ -3787,6 +3831,58 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         if (controllerHandler != null) {
             controllerHandler.refreshAudioHapticsState();
         }
+    }
+
+    //麦克风状态 0 关闭 1开启
+    public int micStatus=0;
+
+    //开启关闭 麦克风
+    public void switchMic(){
+        if (conn == null || micToggleInFlight) {
+            return;
+        }
+
+        if (micStatus == 1) {
+            conn.stopMicUplink();
+            micStatus = 0;
+            Toast.makeText(this, "麦克风已关闭", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (!MicUplinkConnection.isSupported()) {
+            Toast.makeText(this, getResources().getString(R.string.mic_uplink_not_supported), Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        if (!isRecordAudioPermissionGranted()) {
+            if (awaitingRecordAudioPermission) {
+                return;
+            }
+
+            pendingMicToggleAfterPermission = true;
+            awaitingRecordAudioPermission = true;
+            requestPermissions(new String[] {Manifest.permission.RECORD_AUDIO}, REQUEST_RECORD_AUDIO_PERMISSION);
+            return;
+        }
+
+        micToggleInFlight = true;
+        final NvConnection currentConn = conn;
+        new Thread(() -> {
+            boolean started = currentConn.startMicUplink();
+            String message = currentConn.getLastMicUplinkMessage();
+            runOnUiThread(() -> {
+                micToggleInFlight = false;
+                if (started) {
+                    micStatus = 1;
+                } else {
+                    micStatus = 0;
+                }
+
+                if (message != null && !message.isEmpty()) {
+                    Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+                }
+            });
+        }, "MicToggle").start();
     }
 
 }

@@ -36,6 +36,12 @@ import java.util.List;
  */
 public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClickListener{
 
+    private void refreshMicButton() {
+        if (btn_mic != null && game != null) {
+            btn_mic.setBackgroundResource(game.micStatus == 0?R.drawable.ic_game_menu_btn_selector:R.drawable.ic_game_menu_btn_green_selector);
+        }
+    }
+
     @Override
     public int getLayoutRes() {
         return R.layout.dialog_game_menu;
@@ -52,6 +58,8 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
     private Button btn_screen_move;
 
     private TextView tx_title_battery;
+
+    private Button btn_mic;
 
     private Game game;
     private NvConnection conn;
@@ -91,7 +99,8 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
         v.findViewById(R.id.btn_window).setOnClickListener(this);
         v.findViewById(R.id.bt_touch_sensitivity).setOnClickListener(this);
         v.findViewById(R.id.btn_hdr).setOnClickListener(this);
-        v.findViewById(R.id.btn_display_2).setOnClickListener(this);
+        btn_mic=v.findViewById(R.id.btn_mic);
+        btn_mic.setOnClickListener(this);
         v.findViewById(R.id.btn_display_1).setOnClickListener(this);
         v.findViewById(R.id.bt_virtual_view).setOnClickListener(this);
         v.findViewById(R.id.bt_display).setOnClickListener(this);
@@ -108,7 +117,7 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
                 return false;
             }
         });
-
+        refreshMicButton();
 //        v.findViewById(R.id.btn_soft_keyboard).setOnLongClickListener(new View.OnLongClickListener() {
 //            @Override
 //            public boolean onLongClick(View v) {
@@ -287,9 +296,15 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
             return;
         }
 
-        if(v.getId()==R.id.btn_display_2){
-            if(conn!=null){
-                sendKeys(new short[]{KeyboardTranslator.VK_LCONTROL,KeyboardTranslator.VK_LMENU, KeyboardTranslator.VK_LSHIFT, KeyboardTranslator.VK_F12});
+        if(v.getId()==R.id.btn_mic){
+//            if(conn!=null){
+//                sendKeys(new short[]{KeyboardTranslator.VK_LCONTROL,KeyboardTranslator.VK_LMENU, KeyboardTranslator.VK_LSHIFT, KeyboardTranslator.VK_F12});
+//            }
+            if(game!=null){
+                game.switchMic();
+                refreshMicButton();
+                btn_mic.postDelayed(this::refreshMicButton, 400);
+                btn_mic.postDelayed(this::refreshMicButton, 1200);
             }
             return;
         }

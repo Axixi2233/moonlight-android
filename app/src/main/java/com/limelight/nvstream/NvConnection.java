@@ -48,6 +48,8 @@ public class NvConnection {
     private static Semaphore connectionAllowed = new Semaphore(1);
     private final boolean isMonkey;
     private final Context appContext;
+    private MicUplinkConnection micUplinkConnection;
+    private String lastMicUplinkMessage;
 
     public NvConnection(Context appContext, ComputerDetails.AddressTuple host, int httpsPort, String uniqueId, StreamConfiguration config, LimelightCryptoProvider cryptoProvider, X509Certificate serverCert)
     {
@@ -87,6 +89,11 @@ public class NvConnection {
     }
 
     public void stop() {
+        if (micUplinkConnection != null) {
+            micUplinkConnection.stop();
+            micUplinkConnection = null;
+        }
+
         // Interrupt any pending connection. This is thread-safe.
         MoonBridge.interruptConnection();
 
@@ -99,6 +106,99 @@ public class NvConnection {
 
         // Now a pending connection can be processed
         connectionAllowed.release();
+    }
+
+    public String getLastMicUplinkMessage() {
+        return lastMicUplinkMessage;
+    }
+
+    public synchronized boolean isMicUplinkActive() {
+        return micUplinkConnection != null;
+    }
+
+    public synchronized void stopMicUplink() {
+        if (micUplinkConnection != null) {
+            micUplinkConnection.stop();
+            micUplinkConnection = null;
+        }
+        context.negotiatedMicUplinkEnabled = false;
+        context.negotiatedMicPort = 0;
+        context.negotiatedMicSessionId = 0;
+        context.negotiatedMicCodec = null;
+        context.negotiatedMicSampleRate = 0;
+        context.negotiatedMicChannels = 0;
+        context.negotiatedMicFrameMs = 0;
+        context.negotiatedMicToken = null;
+        lastMicUplinkMessage = "mic-uplink stopped";
+    }
+
+    public synchronized boolean startMicUplink() {
+        if (micUplinkConnection != null) {
+            lastMicUplinkMessage = "mic-uplink is already active";
+            return true;
+        }
+
+        try {
+            NvHTTP h = new NvHTTP(context.serverAddress, context.httpsPort, uniqueId, context.serverCert, cryptoProvider);
+            if (!h.requestMicUplink(context)) {
+                lastMicUplinkMessage = "Host did not enable mic-uplink";
+                return false;
+            }
+
+            LimeLog.info("Starting mic-uplink with host=" + context.serverAddress.address +
+                    " port=" + context.negotiatedMicPort +
+                    " sessionId=" + Integer.toUnsignedString(context.negotiatedMicSessionId) +
+                    " codec=" + context.negotiatedMicCodec +
+                    " sampleRate=" + context.negotiatedMicSampleRate +
+                    " channels=" + context.negotiatedMicChannels +
+                    " frameMs=" + context.negotiatedMicFrameMs +
+                    " tokenPrefix=" + tokenPrefixHex(context.negotiatedMicToken, 4));
+
+            micUplinkConnection = new MicUplinkConnection(
+                    context.serverAddress.address,
+                    context.negotiatedMicPort,
+                    context.negotiatedMicSessionId,
+                    context.negotiatedMicToken,
+                    context.negotiatedMicCodec,
+                    context.negotiatedMicSampleRate,
+                    context.negotiatedMicChannels,
+                    context.negotiatedMicFrameMs);
+            if (!micUplinkConnection.start()) {
+                lastMicUplinkMessage = micUplinkConnection.getLastErrorMessage();
+                LimeLog.warning("Failed to start mic-uplink: " + lastMicUplinkMessage);
+                micUplinkConnection.stop();
+                micUplinkConnection = null;
+                return false;
+            }
+
+            lastMicUplinkMessage = "mic-uplink started";
+            return true;
+        }
+        catch (Exception e) {
+            lastMicUplinkMessage = "mic-uplink unavailable: " + e.getMessage();
+            LimeLog.warning(lastMicUplinkMessage);
+            if (micUplinkConnection != null) {
+                micUplinkConnection.stop();
+                micUplinkConnection = null;
+            }
+            return false;
+        }
+    }
+
+    private static String tokenPrefixHex(byte[] token, int byteCount) {
+        if (token == null) {
+            return "null";
+        }
+
+        int count = Math.min(byteCount, token.length);
+        final char[] lut = "0123456789ABCDEF".toCharArray();
+        char[] chars = new char[count * 2];
+        for (int i = 0; i < count; i++) {
+            int value = token[i] & 0xFF;
+            chars[i * 2] = lut[value >>> 4];
+            chars[i * 2 + 1] = lut[value & 0x0F];
+        }
+        return new String(chars);
     }
 
     private InetAddress resolveServerAddress() throws IOException {
@@ -446,6 +546,7 @@ public class NvConnection {
                         return;
                     }
                 }
+
             }
         }).start();
     }

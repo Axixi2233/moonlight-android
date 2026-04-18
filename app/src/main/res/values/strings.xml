@@ -234,6 +234,8 @@
     <string name="summary_checkbox_enable_sops">Allow GFE to modify game settings for optimal streaming</string>
     <string name="title_checkbox_host_audio">Play audio on PC</string>
     <string name="summary_checkbox_host_audio">Play audio from the computer and this device</string>
+    <string name="mic_uplink_not_supported">Microphone uplink requires Android 10 or a device with an Opus encoder. Streaming will continue without microphone uplink.</string>
+    <string name="mic_uplink_permission_denied">Microphone permission was denied. Streaming will continue without microphone uplink.</string>
 
     <string name="category_advanced_settings">Advanced Settings</string>
     <string name="title_unlock_fps">Unlock all possible frame rates</string>

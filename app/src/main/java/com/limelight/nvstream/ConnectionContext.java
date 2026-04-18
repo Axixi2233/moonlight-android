@@ -23,6 +23,15 @@ public class ConnectionContext {
 
     // This is the sessionUrl0 tag from /resume and /launch
     public String rtspSessionUrl;
+
+    public boolean negotiatedMicUplinkEnabled;
+    public int negotiatedMicPort;
+    public int negotiatedMicSessionId;
+    public String negotiatedMicCodec;
+    public int negotiatedMicSampleRate;
+    public int negotiatedMicChannels;
+    public int negotiatedMicFrameMs;
+    public byte[] negotiatedMicToken;
     
     public int negotiatedWidth, negotiatedHeight;
     public boolean negotiatedHdr;

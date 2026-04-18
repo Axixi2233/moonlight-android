@@ -25,6 +25,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.LinkedList;
 import java.util.ListIterator;
+import java.util.Locale;
 import java.util.Stack;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -772,6 +773,23 @@ public class NvHTTP {
         }
         return new String(hexChars);
     }
+
+    private static byte[] hexToBytes(String hex) {
+        if (hex == null || (hex.length() & 1) != 0) {
+            throw new IllegalArgumentException("Invalid hex string length");
+        }
+
+        byte[] bytes = new byte[hex.length() / 2];
+        for (int i = 0; i < bytes.length; i++) {
+            int high = Character.digit(hex.charAt(i * 2), 16);
+            int low = Character.digit(hex.charAt(i * 2 + 1), 16);
+            if (high < 0 || low < 0) {
+                throw new IllegalArgumentException("Invalid hex string character");
+            }
+            bytes[i] = (byte) ((high << 4) | low);
+        }
+        return bytes;
+    }
     
     public boolean launchApp(ConnectionContext context, String verb, int appId, boolean enableHdr) throws IOException, XmlPullParserException {
         // Using an FPS value over 60 causes SOPS to default to 720p60,
@@ -836,5 +854,76 @@ public class NvHTTP {
         }
 
         return true;
+    }
+
+    public boolean requestMicUplink(ConnectionContext context) throws IOException, XmlPullParserException {
+        String xmlStr = openHttpConnectionToString(
+                httpClientLongConnectTimeout,
+                getHttpsUrl(true),
+                "mic-uplink",
+                "uniqueid=" + uniqueId);
+
+        context.negotiatedMicUplinkEnabled = "1".equals(getXmlString(xmlStr, "axiMicEnabled", false));
+        if (!context.negotiatedMicUplinkEnabled) {
+            context.negotiatedMicPort = 0;
+            context.negotiatedMicSessionId = 0;
+            context.negotiatedMicCodec = null;
+            context.negotiatedMicSampleRate = 0;
+            context.negotiatedMicChannels = 0;
+            context.negotiatedMicFrameMs = 0;
+            context.negotiatedMicToken = null;
+            return false;
+        }
+
+        try {
+            String rawTokenHex = getXmlString(xmlStr, "axiMicToken", true);
+            context.negotiatedMicPort = Integer.parseInt(getXmlString(xmlStr, "axiMicPort", true));
+            context.negotiatedMicSessionId = Integer.parseUnsignedInt(getXmlString(xmlStr, "axiMicSessionId", true));
+            context.negotiatedMicCodec = getXmlString(xmlStr, "axiMicCodec", true);
+            context.negotiatedMicSampleRate = Integer.parseInt(getXmlString(xmlStr, "axiMicSampleRate", true));
+            context.negotiatedMicChannels = Integer.parseInt(getXmlString(xmlStr, "axiMicChannels", true));
+            context.negotiatedMicFrameMs = Integer.parseInt(getXmlString(xmlStr, "axiMicFrameMs", true));
+            context.negotiatedMicToken = hexToBytes(rawTokenHex);
+
+            LimeLog.info("Parsed /mic-uplink response: sessionId=" +
+                    Integer.toUnsignedString(context.negotiatedMicSessionId) +
+                    " port=" + context.negotiatedMicPort +
+                    " codec=" + context.negotiatedMicCodec +
+                    " sampleRate=" + context.negotiatedMicSampleRate +
+                    " channels=" + context.negotiatedMicChannels +
+                    " frameMs=" + context.negotiatedMicFrameMs +
+                    " rawTokenPrefix=" + tokenPrefixHex(rawTokenHex, 8) +
+                    " parsedTokenPrefix=" + tokenPrefixHex(context.negotiatedMicToken, 4));
+        }
+        catch (IllegalArgumentException e) {
+            throw new XmlPullParserException("Invalid mic-uplink fields in host response: " + e.getMessage());
+        }
+
+        return true;
+    }
+
+    private static String tokenPrefixHex(String tokenHex, int maxChars) {
+        if (tokenHex == null) {
+            return "null";
+        }
+
+        int count = Math.min(maxChars, tokenHex.length());
+        return tokenHex.substring(0, count).toUpperCase(Locale.ENGLISH);
+    }
+
+    private static String tokenPrefixHex(byte[] token, int byteCount) {
+        if (token == null) {
+            return "null";
+        }
+
+        int count = Math.min(byteCount, token.length);
+        final char[] lut = "0123456789ABCDEF".toCharArray();
+        char[] chars = new char[count * 2];
+        for (int i = 0; i < count; i++) {
+            int value = token[i] & 0xFF;
+            chars[i * 2] = lut[value >>> 4];
+            chars[i * 2 + 1] = lut[value & 0x0F];
+        }
+        return new String(chars);
     }
 }
