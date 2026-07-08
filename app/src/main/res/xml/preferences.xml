@@ -53,6 +53,12 @@
             android:summary="(实验性) 高通8Gen1及以上和联发科9300及以下芯片机型生效。"
             android:defaultValue="true" />
 
+        <CheckBoxPreference
+            android:key="checkbox_enable_xiaomi_xring_o1_optimization"
+            android:title="小米玄戒 O1 优化"
+            android:summary="仅小米玄戒 O1 机型生效，启用后使用专属解码兼容与低延迟优化；关闭则保持原逻辑。"
+            android:defaultValue="false" />
+
         <ListPreference
             android:key="list_fsr_target"
             android:title="超分目标"

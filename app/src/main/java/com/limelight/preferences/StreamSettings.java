@@ -301,6 +301,15 @@ public class StreamSettings extends Activity {
             addPreferencesFromResource(R.xml.preferences);
             PreferenceScreen screen = getPreferenceScreen();
 
+            if (!MediaCodecHelper.isXiaomiXringO1Device()) {
+                PreferenceCategory category =
+                        (PreferenceCategory) findPreference("category_basic_settings");
+                if (category != null) {
+                    category.removePreference(findPreference(
+                            PreferenceConfiguration.ENABLE_XIAOMI_XRING_O1_OPTIMIZATION_PREF_STRING));
+                }
+            }
+
             // hide on-screen controls category on non touch screen devices
             if (!getActivity().getPackageManager().hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN)) {
                 PreferenceCategory category =

@@ -100,6 +100,7 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
     private MediaFormat inputFormat;
     private MediaFormat outputFormat;
     private MediaFormat configuredFormat;
+    private MediaCodecInfo configuredDecoderInfo;
 
     private boolean needsBaselineSpsHack;
     private SeqParameterSet savedSps;
@@ -116,6 +117,7 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
     private int lastFrameNumber;
     private int refreshRate;
     private PreferenceConfiguration prefs;
+    private boolean forceImmediateRendering;
 
     private long firstPerfStatsTimestamp;
     private LinkedBlockingQueue<Integer> outputBufferQueue = new LinkedBlockingQueue<>();
@@ -232,7 +234,7 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
         // for even required levels of HEVC.
         MediaCodecInfo hevcDecoderInfo = MediaCodecHelper.findProbableSafeDecoder("video/hevc", -1);
         if (hevcDecoderInfo != null) {
-            if (!MediaCodecHelper.decoderIsWhitelistedForHevc(hevcDecoderInfo)) {
+            if (!MediaCodecHelper.decoderIsWhitelistedForHevc(hevcDecoderInfo, prefs)) {
                 LimeLog.info("Found HEVC decoder, but it's not whitelisted - "+hevcDecoderInfo.getName());
 
                 // Force HEVC enabled if the user asked for it
@@ -268,7 +270,7 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
 
         MediaCodecInfo decoderInfo = MediaCodecHelper.findProbableSafeDecoder("video/av01", -1);
         if (decoderInfo != null) {
-            if (!MediaCodecHelper.isDecoderWhitelistedForAv1(decoderInfo)) {
+            if (!MediaCodecHelper.isDecoderWhitelistedForAv1(decoderInfo, prefs)) {
                 LimeLog.info("Found AV1 decoder, but it's not whitelisted - "+decoderInfo.getName());
 
                 // Force HEVC enabled if the user asked for it
@@ -324,6 +326,10 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
         this.consecutiveCrashCount = consecutiveCrashCount;
         this.glRenderer = glRenderer;
         this.perfListener = perfListener;
+        this.forceImmediateRendering = MediaCodecHelper.shouldApplyXiaomiXringO1Optimizations(prefs);
+        if (forceImmediateRendering) {
+            LimeLog.info("Using Xiaomi Xring O1 immediate rendering path");
+        }
 
         this.activeWindowVideoStats = new VideoStats();
         this.lastWindowVideoStats = new VideoStats();
@@ -573,6 +579,9 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
 
         // Start the decoder
         videoDecoder.start();
+        if (configuredDecoderInfo != null) {
+            MediaCodecHelper.setDecoderLowLatencyRuntimeParameters(videoDecoder, configuredDecoderInfo, prefs);
+        }
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
             legacyInputBuffers = videoDecoder.getInputBuffers();
@@ -583,6 +592,7 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
         boolean configured = false;
         try {
             videoDecoder = MediaCodec.createByCodecName(selectedDecoderInfo.getName());
+            configuredDecoderInfo = selectedDecoderInfo;
             configureAndStartDecoder(format);
             LimeLog.info("Using codec " + selectedDecoderInfo.getName() + " for hardware decoding " + format.getString(MediaFormat.KEY_MIME));
             configured = true;
@@ -675,8 +685,8 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
             LimeLog.severe("Unknown format");
             return -3;
         }
-        adaptivePlayback = MediaCodecHelper.decoderSupportsAdaptivePlayback(selectedDecoderInfo, mimeType);
-        fusedIdrFrame = MediaCodecHelper.decoderSupportsFusedIdrFrame(selectedDecoderInfo, mimeType);
+        adaptivePlayback = MediaCodecHelper.decoderSupportsAdaptivePlayback(selectedDecoderInfo, mimeType, prefs);
+        fusedIdrFrame = MediaCodecHelper.decoderSupportsFusedIdrFrame(selectedDecoderInfo, mimeType, prefs);
 
         for (int tryNumber = 0;; tryNumber++) {
             LimeLog.info("Decoder configuration try: "+tryNumber);
@@ -684,7 +694,7 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
             MediaFormat mediaFormat = createBaseMediaFormat(mimeType);
             //低延迟模式
             // This will try low latency options until we find one that works (or we give up).
-            boolean newFormat = MediaCodecHelper.setDecoderLowLatencyOptions(mediaFormat, selectedDecoderInfo, tryNumber,prefs.lowLatencyExperiment);
+            boolean newFormat = MediaCodecHelper.setDecoderLowLatencyOptions(mediaFormat, selectedDecoderInfo, tryNumber, prefs);
             //todo 色彩格式
 //            MediaCodecInfo.CodecCapabilities codecCapabilities = selectedDecoderInfo.getCapabilitiesForType(mimeType);
 //            int[] colorFormats=codecCapabilities.colorFormats;
@@ -1045,7 +1055,7 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
     }
 
     private void startChoreographerThread() {
-        if (prefs.framePacing != PreferenceConfiguration.FRAME_PACING_BALANCED) {
+        if (forceImmediateRendering || prefs.framePacing != PreferenceConfiguration.FRAME_PACING_BALANCED) {
             // Not using Choreographer in this pacing mode
             return;
         }
@@ -1081,7 +1091,7 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
                             numFramesOut++;
 
                             // Render the latest frame now if frame pacing isn't in balanced mode
-                            if (prefs.framePacing != PreferenceConfiguration.FRAME_PACING_BALANCED) {
+                            if (forceImmediateRendering || prefs.framePacing != PreferenceConfiguration.FRAME_PACING_BALANCED) {
                                 // Get the last output buffer in the queue
                                 while ((outIndex = videoDecoder.dequeueOutputBuffer(info, 0)) >= 0) {
                                     videoDecoder.releaseOutputBuffer(lastIndex, false);
@@ -1981,6 +1991,7 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
             str += "Input format: "+renderer.inputFormat+DELIMITER;
             str += "Output format: "+renderer.outputFormat+DELIMITER;
             str += "Adaptive playback: "+renderer.adaptivePlayback+DELIMITER;
+            str += "Force immediate rendering: "+renderer.forceImmediateRendering+DELIMITER;
             str += "GL Renderer: "+renderer.glRenderer+DELIMITER;
             //str += "Build fingerprint: "+Build.FINGERPRINT+DELIMITER;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {

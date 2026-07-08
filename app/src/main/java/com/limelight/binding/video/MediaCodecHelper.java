@@ -21,6 +21,7 @@ import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaCodecInfo.CodecProfileLevel;
 import android.media.MediaFormat;
 import android.os.Build;
+import android.os.Bundle;
 
 import com.limelight.LimeLog;
 import com.limelight.preferences.PreferenceConfiguration;
@@ -51,6 +52,8 @@ public class MediaCodecHelper {
     private static boolean isLowEndSnapdragon = false;
     private static boolean isAdreno620 = false;
     private static boolean initialized = false;
+    private static Boolean isXiaomiXringO1Device;
+    private static boolean loggedXringO1Device;
 
     static {
         directSubmitPrefixes = new LinkedList<>();
@@ -221,6 +224,11 @@ public class MediaCodecHelper {
         knownVendorLowLatencyOptions.add("vendor.hisi-ext-low-latency-video-dec.video-scene-for-low-latency-req");
         knownVendorLowLatencyOptions.add("vendor.rtc-ext-dec-low-latency.enable");
         knownVendorLowLatencyOptions.add("vendor.low-latency.enable");
+        knownVendorLowLatencyOptions.add("vendor.qti-ext-dec-picture-order.enable");
+        knownVendorLowLatencyOptions.add("vendor.xiaomi-ext-dec-low-latency.enable");
+        knownVendorLowLatencyOptions.add("vendor.xiaomi-ext-vdec-low-latency.enable");
+        knownVendorLowLatencyOptions.add("vendor.xring-ext-dec-low-latency.enable");
+        knownVendorLowLatencyOptions.add("vendor.xring-ext-vdec-low-latency.enable");
     }
 
     static {
@@ -489,6 +497,52 @@ public class MediaCodecHelper {
         return false;
     }
 
+    public static boolean isXiaomiXringO1Device() {
+        if (isXiaomiXringO1Device != null) {
+            return isXiaomiXringO1Device;
+        }
+
+        String manufacturer = Build.MANUFACTURER == null ? "" : Build.MANUFACTURER.toLowerCase(Locale.ENGLISH);
+        String brand = Build.BRAND == null ? "" : Build.BRAND.toLowerCase(Locale.ENGLISH);
+        String model = Build.MODEL == null ? "" : Build.MODEL.toLowerCase(Locale.ENGLISH);
+        String device = Build.DEVICE == null ? "" : Build.DEVICE.toLowerCase(Locale.ENGLISH);
+        String product = Build.PRODUCT == null ? "" : Build.PRODUCT.toLowerCase(Locale.ENGLISH);
+        String socManufacturer = "";
+        String socModel = "";
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            socManufacturer = Build.SOC_MANUFACTURER == null ? "" : Build.SOC_MANUFACTURER.toLowerCase(Locale.ENGLISH);
+            socModel = Build.SOC_MODEL == null ? "" : Build.SOC_MODEL.toLowerCase(Locale.ENGLISH);
+        }
+
+        boolean isXiaomi = manufacturer.contains("xiaomi") || brand.contains("xiaomi");
+        boolean isXringO1 = socManufacturer.contains("xring") ||
+                socModel.contains("o1") ||
+                model.contains("25032rp42c") ||
+                device.contains("jinghu") ||
+                product.contains("jinghu");
+
+        isXiaomiXringO1Device = isXiaomi && isXringO1;
+        if (isXiaomiXringO1Device && !loggedXringO1Device) {
+            loggedXringO1Device = true;
+            LimeLog.info("Detected Xiaomi Xring O1 device");
+            LimeLog.info("Xring SoC info: manufacturer=" + Build.MANUFACTURER +
+                    ", brand=" + Build.BRAND +
+                    ", model=" + Build.MODEL +
+                    ", device=" + Build.DEVICE +
+                    ", product=" + Build.PRODUCT +
+                    ", socManufacturer=" + socManufacturer +
+                    ", socModel=" + socModel);
+        }
+
+        return isXiaomiXringO1Device;
+    }
+
+    public static boolean shouldApplyXiaomiXringO1Optimizations(PreferenceConfiguration prefs) {
+        return prefs != null &&
+                prefs.enableXiaomiXringO1Optimization &&
+                isXiaomiXringO1Device();
+    }
+
     private static boolean decoderSupportsMaxOperatingRate(String decoderName) {
         // Operate at maximum rate to lower latency as much as possible on
         // some Qualcomm platforms. We could also set KEY_PRIORITY to 0 (realtime)
@@ -505,6 +559,23 @@ public class MediaCodecHelper {
     }
 
     public static boolean setDecoderLowLatencyOptions(MediaFormat videoFormat, MediaCodecInfo decoderInfo, int tryNumber, boolean lowLatencyExperiment) {
+        return setDecoderLowLatencyOptions(videoFormat, decoderInfo, tryNumber, lowLatencyExperiment, false);
+    }
+
+    public static boolean setDecoderLowLatencyOptions(MediaFormat videoFormat,
+                                                      MediaCodecInfo decoderInfo,
+                                                      int tryNumber,
+                                                      PreferenceConfiguration prefs) {
+        return setDecoderLowLatencyOptions(videoFormat, decoderInfo, tryNumber,
+                prefs != null && prefs.lowLatencyExperiment,
+                shouldApplyXiaomiXringO1Optimizations(prefs));
+    }
+
+    private static boolean setDecoderLowLatencyOptions(MediaFormat videoFormat,
+                                                       MediaCodecInfo decoderInfo,
+                                                       int tryNumber,
+                                                       boolean lowLatencyExperiment,
+                                                       boolean enableXringO1Optimization) {
         // Options here should be tried in the order of most to least risky. The decoder will use
         // the first MediaFormat that doesn't fail in configure().
 
@@ -512,12 +583,15 @@ public class MediaCodecHelper {
 
         if (tryNumber < 1) {
             // Official Android 11+ low latency option (KEY_LOW_LATENCY).
+            if (enableXringO1Optimization && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                videoFormat.setInteger(MediaFormat.KEY_LOW_LATENCY, 1);
+            }
             videoFormat.setInteger("low-latency", 1);
             setNewOption = true;
 
             // If this decoder officially supports FEATURE_LowLatency, we will just use that alone
             // for try 0. Otherwise, we'll include it as best effort with other options.
-            if (!lowLatencyExperiment&&decoderSupportsAndroidRLowLatency(decoderInfo, videoFormat.getString(MediaFormat.KEY_MIME))) {
+            if (!lowLatencyExperiment && decoderSupportsAndroidRLowLatency(decoderInfo, videoFormat.getString(MediaFormat.KEY_MIME))) {
                 return true;
             }
         }
@@ -542,7 +616,13 @@ public class MediaCodecHelper {
         }
 
         if (tryNumber < 3) {
-            if (MediaCodecHelper.decoderSupportsMaxOperatingRate(decoderInfo.getName())) {
+            if (enableXringO1Optimization && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                LimeLog.info("Applying Xiaomi Xring O1 configure-time decoder priority/operating rate");
+                videoFormat.setInteger(MediaFormat.KEY_OPERATING_RATE, Short.MAX_VALUE);
+                videoFormat.setInteger(MediaFormat.KEY_PRIORITY, 0);
+                setNewOption = true;
+            }
+            else if (MediaCodecHelper.decoderSupportsMaxOperatingRate(decoderInfo.getName())) {
                 videoFormat.setInteger(MediaFormat.KEY_OPERATING_RATE, Short.MAX_VALUE);
                 setNewOption = true;
             }
@@ -562,7 +642,25 @@ public class MediaCodecHelper {
             // Try vendor-specific low latency options
             //
             // NOTE: Update knownVendorLowLatencyOptions if you modify this code!
-            if (isDecoderInList(qualcommDecoderPrefixes, decoderInfo.getName())) {
+            if (enableXringO1Optimization) {
+                if (tryNumber < 4) {
+                    videoFormat.setInteger("max-pending-frames", 1);
+                    videoFormat.setInteger("max-bframes", 0);
+                    videoFormat.setInteger("vendor.qti-ext-dec-picture-order.enable", 1);
+                    videoFormat.setInteger("vendor.qti-ext-dec-low-latency.enable", 1);
+                    videoFormat.setInteger("vendor.xiaomi-ext-dec-low-latency.enable", 1);
+                    videoFormat.setInteger("vendor.xiaomi-ext-vdec-low-latency.enable", 1);
+                    videoFormat.setInteger("vendor.xring-ext-dec-low-latency.enable", 1);
+                    videoFormat.setInteger("vendor.xring-ext-vdec-low-latency.enable", 1);
+                    videoFormat.setInteger("vendor.low-latency.enable", 1);
+                    videoFormat.setInteger("vendor.x.ext.vdec.vpp.disabled.value", 1);
+                    videoFormat.setInteger("vendor.x.ext.vdec.vpp.motion.intpl.feature-on", 0);
+                    videoFormat.setInteger("vendor.x.ext.vdec.vpp.quality.tuner.feature-on", 0);
+                    videoFormat.setInteger("vendor.x.ext.vdec.vpp.resolution.scaler.feature-on", 0);
+                    setNewOption = true;
+                }
+            }
+            else if (isDecoderInList(qualcommDecoderPrefixes, decoderInfo.getName())) {
                 // Examples of Qualcomm's vendor extensions for Snapdragon 845:
                 // https://cs.android.com/android/platform/superproject/+/master:hardware/qcom/sdm845/media/mm-video-v4l2/vidc/vdec/src/omx_vdec_extensions.hpp
                 // https://cs.android.com/android/_/android/platform/hardware/qcom/sm8150/media/+/0621ceb1c1b19564999db8293574a0e12952ff6c
@@ -577,7 +675,7 @@ public class MediaCodecHelper {
 
                     //ALONSOJR1980 - CONFIRMED WORKING: Snapdragon Elite, SD8 gen 3, SD8 gen 2
                     //latency-wise, software fencing is the most important flag for latest Snapdragons
-                    if(lowLatencyExperiment){
+                    if (lowLatencyExperiment) {
                         videoFormat.setInteger("vendor.qti-ext-output-sw-fence-enable.value", 1); //Snapdragon 8 gen 2
                         videoFormat.setInteger("vendor.qti-ext-output-fence.enable", 1); // Snapdragon 8s Gen 3 and Elite
                         videoFormat.setInteger("vendor.qti-ext-output-fence.fence_type", 1); // Snapdragon 8s Gen 3 and ELite / 0 = none, 1 = sw, 2 = hw, 3 = hybrid. Best option = 1
@@ -586,7 +684,7 @@ public class MediaCodecHelper {
                     setNewOption = true;
                 }
             }
-            else if (lowLatencyExperiment&isDecoderInList(mtkDecoderPrefixes, decoderInfo.getName())) {//todo mtk解码
+            else if (lowLatencyExperiment & isDecoderInList(mtkDecoderPrefixes, decoderInfo.getName())) {//todo mtk解码
                 if (tryNumber < 4) {
                     // Boost/DVFS: moderate profile
                     safeSet(videoFormat, "vdec-lowlatency", 1);
@@ -651,7 +749,66 @@ public class MediaCodecHelper {
         return setNewOption;
     }
 
+    public static void setDecoderLowLatencyRuntimeParameters(MediaCodec decoder,
+                                                             MediaCodecInfo decoderInfo,
+                                                             PreferenceConfiguration prefs) {
+        if (!shouldApplyXiaomiXringO1Optimizations(prefs)) {
+            return;
+        }
+
+        Bundle params = new Bundle();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            params.putInt(MediaFormat.KEY_LOW_LATENCY, 1);
+        }
+        params.putInt("low-latency", 1);
+        params.putInt("vdec-lowlatency", 1);
+        params.putInt("max-pending-frames", 1);
+        params.putInt("max-bframes", 0);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            try {
+                for (String supportedOption : decoder.getSupportedVendorParameters()) {
+                    LimeLog.info(decoderInfo.getName() + " vendor parameter: " + supportedOption);
+                    for (String knownLowLatencyOption : knownVendorLowLatencyOptions) {
+                        if (supportedOption.equalsIgnoreCase(knownLowLatencyOption)) {
+                            params.putInt(supportedOption, 1);
+                        }
+                    }
+                    if (supportedOption.equalsIgnoreCase("vendor.x.ext.vdec.vpp.disabled.value")) {
+                        params.putInt(supportedOption, 1);
+                    }
+                    else if (supportedOption.equalsIgnoreCase("vendor.x.ext.vdec.vpp.motion.intpl.feature-on") ||
+                            supportedOption.equalsIgnoreCase("vendor.x.ext.vdec.vpp.quality.tuner.feature-on") ||
+                            supportedOption.equalsIgnoreCase("vendor.x.ext.vdec.vpp.resolution.scaler.feature-on")) {
+                        params.putInt(supportedOption, 0);
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        try {
+            decoder.setParameters(params);
+            LimeLog.info("Applied Xiaomi Xring O1 runtime low latency parameters");
+        } catch (RuntimeException e) {
+            LimeLog.warning("Failed to apply Xiaomi Xring O1 runtime low latency parameters: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
     public static boolean decoderSupportsFusedIdrFrame(MediaCodecInfo decoderInfo, String mimeType) {
+        return decoderSupportsFusedIdrFrame(decoderInfo, mimeType, null);
+    }
+
+    public static boolean decoderSupportsFusedIdrFrame(MediaCodecInfo decoderInfo,
+                                                       String mimeType,
+                                                       PreferenceConfiguration prefs) {
+        if (shouldApplyXiaomiXringO1Optimizations(prefs)) {
+            LimeLog.info("Disabling fused IDR frames on Xiaomi Xring O1 decoder");
+            return false;
+        }
+
         // If adaptive playback is supported, we can submit new CSD together with a keyframe
         try {
             if (decoderInfo.getCapabilitiesForType(mimeType).
@@ -668,6 +825,17 @@ public class MediaCodecHelper {
     }
 
     public static boolean decoderSupportsAdaptivePlayback(MediaCodecInfo decoderInfo, String mimeType) {
+        return decoderSupportsAdaptivePlayback(decoderInfo, mimeType, null);
+    }
+
+    public static boolean decoderSupportsAdaptivePlayback(MediaCodecInfo decoderInfo,
+                                                          String mimeType,
+                                                          PreferenceConfiguration prefs) {
+        if (shouldApplyXiaomiXringO1Optimizations(prefs)) {
+            LimeLog.info("Disabling adaptive playback on Xiaomi Xring O1 decoder");
+            return false;
+        }
+
         if (isDecoderInList(blacklistedAdaptivePlaybackPrefixes, decoderInfo.getName())) {
             LimeLog.info("Decoder blacklisted for adaptive playback");
             return false;
@@ -760,6 +928,11 @@ public class MediaCodecHelper {
     }
 
     public static boolean decoderIsWhitelistedForHevc(MediaCodecInfo decoderInfo) {
+        return decoderIsWhitelistedForHevc(decoderInfo, null);
+    }
+
+    public static boolean decoderIsWhitelistedForHevc(MediaCodecInfo decoderInfo,
+                                                      PreferenceConfiguration prefs) {
         //
         // Software decoders are terrible and we never want to use them.
         // We want to catch decoders like:
@@ -773,6 +946,11 @@ public class MediaCodecHelper {
         else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && (!decoderInfo.isHardwareAccelerated() || decoderInfo.isSoftwareOnly())) {
             LimeLog.info("Disallowing HEVC on software decoder: " + decoderInfo.getName());
             return false;
+        }
+
+        if (shouldApplyXiaomiXringO1Optimizations(prefs)) {
+            LimeLog.info("Allowing HEVC on Xiaomi Xring O1 decoder: " + decoderInfo.getName());
+            return true;
         }
 
         // If this device is media performance class 12 or higher, we will assume any hardware
@@ -799,6 +977,11 @@ public class MediaCodecHelper {
     }
 
     public static boolean isDecoderWhitelistedForAv1(MediaCodecInfo decoderInfo) {
+        return isDecoderWhitelistedForAv1(decoderInfo, null);
+    }
+
+    public static boolean isDecoderWhitelistedForAv1(MediaCodecInfo decoderInfo,
+                                                     PreferenceConfiguration prefs) {
         // Google didn't have official support for AV1 (or more importantly, a CTS test) until
         // Android 10, so don't use any decoder before then.
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
@@ -818,6 +1001,11 @@ public class MediaCodecHelper {
         else if (!decoderInfo.isHardwareAccelerated() || decoderInfo.isSoftwareOnly()) {
             LimeLog.info("Disallowing AV1 on software decoder: " + decoderInfo.getName());
             return false;
+        }
+
+        if (shouldApplyXiaomiXringO1Optimizations(prefs)) {
+            LimeLog.info("Allowing AV1 on Xiaomi Xring O1 decoder: " + decoderInfo.getName());
+            return true;
         }
 
         // TODO: Test some AV1 decoders
