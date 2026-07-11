@@ -1,9 +1,7 @@
 package com.limelight.ui.gamemenu;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.graphics.Rect;
 import android.os.Build;
@@ -19,6 +17,7 @@ import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.limelight.R;
+import com.limelight.ui.AppDialog;
 import com.limelight.binding.input.KeyboardTranslator;
 import com.limelight.ui.BaseFragmentDialog.BaseGameMenuDialog;
 import com.limelight.ui.gamemenu.adapter.GameMenuQuickKeyboardAdapter;
@@ -31,8 +30,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static com.limelight.GameMenu.KEY_NAME;
-import static com.limelight.GameMenu.PREF_NAME;
 import static com.limelight.ui.gamemenu.GameListKeyBoardFragment.PREF_KEYBOARD_LIST_NAME;
 
 /**
@@ -41,6 +38,8 @@ import static com.limelight.ui.gamemenu.GameListKeyBoardFragment.PREF_KEYBOARD_L
  * Time: 16:07
  */
 public class GameListQuickFragment extends BaseGameMenuDialog {
+    private static final String PREF_NAME = "specialPrefs";
+    private static final String KEY_NAME = "special_key";
     @Override
     public int getLayoutRes() {
         return R.layout.dialog_game_menu_list;
@@ -171,24 +170,17 @@ public class GameListQuickFragment extends BaseGameMenuDialog {
                 if(TextUtils.isEmpty(gameMenus.get(position).getId())){
                     return false;
                 }
-                new AlertDialog.Builder(getActivity())
-                        .setTitle(gameMenus.get(position).getName())
-                        .setMessage("是否删除此键值？")
-                        .setPositiveButton("删除", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                removeKeyBoardListData(getActivity(), gameMenus.get(position));
-                                updateData();
-                            }
-                        })
-                        .setNegativeButton("取消", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                dialog.dismiss();
-                            }
-                        })
-                        .create()
-                        .show();
+                AppDialog.showConfirm(
+                        getActivity(),
+                        gameMenus.get(position).getName(),
+                        "是否删除此键值？",
+                        "删除",
+                        true,
+                        () -> {
+                            removeKeyBoardListData(getActivity(), gameMenus.get(position));
+                            updateData();
+                        },
+                        null);
                 return false;
             }
         });

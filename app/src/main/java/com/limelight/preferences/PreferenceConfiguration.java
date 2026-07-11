@@ -308,9 +308,6 @@ public class PreferenceConfiguration {
     //显示无障碍模式的键值
     public boolean enableAccessibilityShowLog;
 
-    //新款游戏菜单
-    public boolean enableGameMenuNew;
-
     //亮屏自动回连
     public int enableScreenOnAuto;
 
@@ -933,8 +930,6 @@ public class PreferenceConfiguration {
         config.enableFlipRumbleFF=prefs.getBoolean("checkbox_flip_rumble_ff",false);
 
         config.enableAccessibilityShowLog=prefs.getBoolean("checkbox_enable_accessibility_show_log",false);
-
-        config.enableGameMenuNew=prefs.getBoolean("checkbox_enable_game_menu_new",true);
 
         config.enableScreenOnAuto=prefs.getInt("enable_screen_on_auto",0);
 

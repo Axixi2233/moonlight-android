@@ -3,6 +3,7 @@ package com.limelight;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
@@ -19,15 +20,17 @@ import com.limelight.nvstream.http.PairingManager;
 import com.limelight.preferences.PreferenceConfiguration;
 import com.limelight.ui.AdapterFragment;
 import com.limelight.ui.AdapterFragmentCallbacks;
+import com.limelight.ui.AppActionsDialog;
+import com.limelight.ui.AppDialog;
 import com.limelight.ui.gamemenu.GameDisplayFragment;
 import com.limelight.utils.CacheHelper;
 import com.limelight.utils.Dialog;
 import com.limelight.utils.ServerHelper;
 import com.limelight.utils.ShortcutHelper;
-import com.limelight.utils.SpinnerDialog;
 import com.limelight.utils.UiHelper;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Service;
 import android.content.ComponentName;
 import android.content.Intent;
@@ -42,18 +45,13 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
-import android.view.ContextMenu;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
-import android.view.ContextMenu.ContextMenuInfo;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.AdapterView.AdapterContextMenuInfo;
 
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -64,20 +62,13 @@ public class AppView extends Activity implements AdapterFragmentCallbacks {
 
     private ComputerDetails computer;
     private ComputerManagerService.ApplistPoller poller;
-    private SpinnerDialog blockingLoadSpinner;
+    private AlertDialog blockingLoadDialog;
     private String lastRawApplist;
     private int lastRunningAppId;
     private boolean suspendGridUpdates;
     private boolean inForeground;
     private boolean showHiddenApps;
     private HashSet<Integer> hiddenAppIds = new HashSet<>();
-
-    private final static int START_OR_RESUME_ID = 1;
-    private final static int QUIT_ID = 2;
-    private final static int START_WITH_QUIT = 4;
-    private final static int VIEW_DETAILS_ID = 5;
-    private final static int CREATE_SHORTCUT_ID = 6;
-    private final static int HIDE_APP_ID = 7;
 
     public final static String HIDDEN_APPS_PREF_FILENAME = "HiddenApps";
 
@@ -260,10 +251,7 @@ public class AppView extends Activity implements AdapterFragmentCallbacks {
                     updateUiWithAppList(NvHTTP.getAppListByReader(new StringReader(details.rawAppList)));
                     updateUiWithServerinfo(details);
 
-                    if (blockingLoadSpinner != null) {
-                        blockingLoadSpinner.dismiss();
-                        blockingLoadSpinner = null;
-                    }
+                    dismissBlockingLoadDialog();
                 } catch (XmlPullParserException | IOException e) {
                     e.printStackTrace();
                 }
@@ -417,15 +405,35 @@ public class AppView extends Activity implements AdapterFragmentCallbacks {
     }
 
     private void loadAppsBlocking() {
-        blockingLoadSpinner = SpinnerDialog.displayDialog(this, getResources().getString(R.string.applist_refresh_title),
-                getResources().getString(R.string.applist_refresh_msg), true);
+        runOnUiThread(() -> {
+            if (isFinishing() || isDestroyed() || blockingLoadDialog != null) {
+                return;
+            }
+            blockingLoadDialog = AppDialog.showProgress(
+                    this,
+                    getResources().getString(R.string.applist_refresh_title),
+                    getResources().getString(R.string.applist_refresh_msg),
+                    this::finish);
+        });
+    }
+
+    private void dismissBlockingLoadDialog() {
+        runOnUiThread(() -> {
+            if (blockingLoadDialog != null) {
+                blockingLoadDialog.dismiss();
+                blockingLoadDialog = null;
+            }
+        });
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
 
-        SpinnerDialog.closeDialogs(this);
+        if (blockingLoadDialog != null) {
+            blockingLoadDialog.dismiss();
+            blockingLoadDialog = null;
+        }
         Dialog.closeDialogs();
 
         if (managerBinder != null) {
@@ -452,142 +460,130 @@ public class AppView extends Activity implements AdapterFragmentCallbacks {
         stopComputerUpdates();
     }
 
-    @Override
-    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
-        super.onCreateContextMenu(menu, v, menuInfo);
-
-        AdapterContextMenuInfo info = (AdapterContextMenuInfo) menuInfo;
-        AppObject selectedApp = (AppObject) appGridAdapter.getItem(info.position);
-
-        menu.setHeaderTitle(selectedApp.app.getAppName());
-
-        if (lastRunningAppId != 0) {
-            if (lastRunningAppId == selectedApp.app.getAppId()) {
-                menu.add(Menu.NONE, START_OR_RESUME_ID, 1, getResources().getString(R.string.applist_menu_resume));
-                menu.add(Menu.NONE, QUIT_ID, 2, getResources().getString(R.string.applist_menu_quit));
-            }
-            else {
-                menu.add(Menu.NONE, START_WITH_QUIT, 1, getResources().getString(R.string.applist_menu_quit_and_start));
-            }
+    private void showApplicationActions(AbsListView listView, View sourceView, int position, AppObject selectedApp) {
+        if (selectedApp == null || selectedApp.app == null) {
+            return;
         }
 
-        // Only show the hide checkbox if this is not the currently running app or it's already hidden
-        if (lastRunningAppId != selectedApp.app.getAppId() || selectedApp.isHidden) {
-            MenuItem hideAppItem = menu.add(Menu.NONE, HIDE_APP_ID, 3, getResources().getString(R.string.applist_menu_hide_app));
-            hideAppItem.setCheckable(true);
-            hideAppItem.setChecked(selectedApp.isHidden);
-        }
-
-        menu.add(Menu.NONE, VIEW_DETAILS_ID, 4, getResources().getString(R.string.applist_menu_details));
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            // Only add an option to create shortcut if box art is loaded
-            // and when we're in grid-mode (not list-mode).
-            ImageView appImageView = info.targetView.findViewById(R.id.grid_image);
-            if (appImageView != null) {
-                // We have a grid ImageView, so we must be in grid-mode
-//                com.bumptech.glide.load.resource.bitmap.GlideBitmapDrawable cannot be cast to android.graphics.drawable.BitmapDrawable
-                if(appImageView.getDrawable() instanceof BitmapDrawable){
-                    BitmapDrawable drawable = (BitmapDrawable)appImageView.getDrawable();
-                    if (drawable != null && drawable.getBitmap() != null) {
-                        // We have a bitmap loaded too
-                        menu.add(Menu.NONE, CREATE_SHORTCUT_ID, 5, getResources().getString(R.string.applist_menu_scut));
-                    }
-                } else if(appImageView.getDrawable() instanceof GlideBitmapDrawable){
-                    GlideBitmapDrawable drawable = (GlideBitmapDrawable)appImageView.getDrawable();
-                    if (drawable != null && drawable.getBitmap() != null) {
-                        // We have a bitmap loaded too
-                        menu.add(Menu.NONE, CREATE_SHORTCUT_ID, 5, getResources().getString(R.string.applist_menu_scut));
-                    }
-                }
-
+        Bitmap shortcutBitmap = extractAppBitmap(sourceView);
+        AppActionsDialog dialog = new AppActionsDialog();
+        dialog.setFragmentManager(getFragmentManager());
+        dialog.setWidth(UiHelper.dpToPx(this, 364));
+        dialog.setDimAmount(0.46f);
+        dialog.setCancelOutside(true);
+        dialog.setApp(
+                selectedApp.app,
+                lastRunningAppId,
+                selectedApp.isHidden,
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && shortcutBitmap != null);
+        dialog.setListener(new AppActionsDialog.Listener() {
+            @Override
+            public void onStart() {
+                ServerHelper.doStart(AppView.this, selectedApp.app, computer, managerBinder);
             }
+
+            @Override
+            public void onResume() {
+                ServerHelper.doStart(AppView.this, selectedApp.app, computer, managerBinder);
+            }
+
+            @Override
+            public void onQuit() {
+                showQuitApplicationConfirmation(selectedApp);
+            }
+
+            @Override
+            public void onQuitAndStart() {
+                showStartWithQuitConfirmation(selectedApp);
+            }
+
+            @Override
+            public void onToggleVisibility() {
+                toggleApplicationHidden(selectedApp);
+            }
+
+            @Override
+            public void onCreateShortcut() {
+                createApplicationShortcut(selectedApp, shortcutBitmap);
+            }
+
+            @Override
+            public void onDismiss() {
+                restoreListFocus(listView, sourceView, position);
+            }
+        });
+        dialog.show();
+    }
+
+    private void showStartWithQuitConfirmation(AppObject selectedApp) {
+        AppDialog.showConfirm(
+                this,
+                selectedApp.app.getAppName(),
+                getString(R.string.applist_quit_confirmation),
+                getString(R.string.applist_menu_quit_and_start),
+                false,
+                () -> ServerHelper.doStart(AppView.this, selectedApp.app, computer, managerBinder),
+                null);
+    }
+
+    private void showQuitApplicationConfirmation(AppObject selectedApp) {
+        AppDialog.showConfirm(
+                this,
+                selectedApp.app.getAppName(),
+                getString(R.string.applist_quit_confirmation),
+                getString(R.string.applist_menu_quit),
+                true,
+                () -> {
+                    suspendGridUpdates = true;
+                    ServerHelper.doQuit(AppView.this, computer, selectedApp.app, managerBinder, () -> {
+                        suspendGridUpdates = false;
+                        if (poller != null) {
+                            poller.pollNow();
+                        }
+                    });
+                },
+                null);
+    }
+
+    private void toggleApplicationHidden(AppObject selectedApp) {
+        if (selectedApp.isHidden) {
+            hiddenAppIds.remove(selectedApp.app.getAppId());
+        } else {
+            hiddenAppIds.add(selectedApp.app.getAppId());
+        }
+        updateHiddenApps(false);
+    }
+
+    private Bitmap extractAppBitmap(View sourceView) {
+        if (sourceView == null) {
+            return null;
+        }
+        ImageView appImageView = sourceView.findViewById(R.id.grid_image);
+        if (appImageView == null) {
+            return null;
+        }
+        if (appImageView.getDrawable() instanceof BitmapDrawable) {
+            return ((BitmapDrawable) appImageView.getDrawable()).getBitmap();
+        }
+        if (appImageView.getDrawable() instanceof GlideBitmapDrawable) {
+            return ((GlideBitmapDrawable) appImageView.getDrawable()).getBitmap();
+        }
+        return null;
+    }
+
+    private void createApplicationShortcut(AppObject selectedApp, Bitmap appBits) {
+        if (!shortcutHelper.createPinnedGameShortcut(computer, selectedApp.app, appBits)) {
+            Toast.makeText(AppView.this, R.string.unable_to_pin_shortcut, Toast.LENGTH_LONG).show();
         }
     }
 
-    @Override
-    public void onContextMenuClosed(Menu menu) {
-    }
-
-    @Override
-    public boolean onContextItemSelected(MenuItem item) {
-        AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
-        final AppObject app = (AppObject) appGridAdapter.getItem(info.position);
-        switch (item.getItemId()) {
-            case START_WITH_QUIT:
-                // Display a confirmation dialog first
-                UiHelper.displayQuitConfirmationDialog(this, new Runnable() {
-                    @Override
-                    public void run() {
-                        ServerHelper.doStart(AppView.this, app.app, computer, managerBinder);
-                    }
-                }, null);
-                return true;
-
-            case START_OR_RESUME_ID:
-                // Resume is the same as start for us
-                ServerHelper.doStart(AppView.this, app.app, computer, managerBinder);
-                return true;
-
-            case QUIT_ID:
-                // Display a confirmation dialog first
-                UiHelper.displayQuitConfirmationDialog(this, new Runnable() {
-                    @Override
-                    public void run() {
-                        suspendGridUpdates = true;
-                        ServerHelper.doQuit(AppView.this, computer,
-                                app.app, managerBinder, new Runnable() {
-                            @Override
-                            public void run() {
-                                // Trigger a poll immediately
-                                suspendGridUpdates = false;
-                                if (poller != null) {
-                                    poller.pollNow();
-                                }
-                            }
-                        });
-                    }
-                }, null);
-                return true;
-
-            case VIEW_DETAILS_ID:
-                Dialog.displayDialog(AppView.this, getResources().getString(R.string.title_details), app.app.toString(), false);
-                return true;
-
-            case HIDE_APP_ID:
-                if (item.isChecked()) {
-                    // Transitioning hidden to shown
-                    hiddenAppIds.remove(app.app.getAppId());
-                }
-                else {
-                    // Transitioning shown to hidden
-                    hiddenAppIds.add(app.app.getAppId());
-                }
-                updateHiddenApps(false);
-                return true;
-
-            case CREATE_SHORTCUT_ID:
-                ImageView appImageView = info.targetView.findViewById(R.id.grid_image);
-                Bitmap appBits = null;
-                if(appImageView.getDrawable() instanceof BitmapDrawable){
-                    BitmapDrawable drawable = (BitmapDrawable)appImageView.getDrawable();
-                    appBits=drawable.getBitmap();
-                } else if(appImageView.getDrawable() instanceof GlideBitmapDrawable){
-                    GlideBitmapDrawable drawable = (GlideBitmapDrawable)appImageView.getDrawable();
-                    appBits=drawable.getBitmap();
-                }
-                if(app==null){
-                    Toast.makeText(AppView.this, getResources().getString(R.string.unable_to_pin_shortcut), Toast.LENGTH_LONG).show();
-                    return true;
-                }
-                if (!shortcutHelper.createPinnedGameShortcut(computer, app.app, appBits)) {
-                    Toast.makeText(AppView.this, getResources().getString(R.string.unable_to_pin_shortcut), Toast.LENGTH_LONG).show();
-                }
-                return true;
-
-            default:
-                return super.onContextItemSelected(item);
+    private void restoreListFocus(AbsListView listView, View sourceView, int position) {
+        if (sourceView != null && sourceView.isAttachedToWindow()) {
+            sourceView.requestFocus();
+            return;
         }
+        listView.setSelection(position);
+        listView.post(listView::requestFocus);
     }
 
     private void updateUiWithServerinfo(final ComputerDetails details) {
@@ -720,14 +716,18 @@ public class AppView extends Activity implements AdapterFragmentCallbacks {
 
                 // Only open the context menu if something is running, otherwise start it
                 if (lastRunningAppId != 0&&!pref.passAppMenu) {
-                    openContextMenu(arg1);
+                    showApplicationActions(listView, arg1, pos, app);
                 } else {
                     ServerHelper.doStart(AppView.this, app.app, computer, managerBinder);
                 }
             }
         });
+        listView.setOnItemLongClickListener((parent, view, position, id) -> {
+            AppObject app = (AppObject) appGridAdapter.getItem(position);
+            showApplicationActions(listView, view, position, app);
+            return true;
+        });
         UiHelper.applyStatusBarPadding(listView);
-        registerForContextMenu(listView);
         listView.requestFocus();
     }
 

@@ -25,6 +25,8 @@ import com.limelight.preferences.PreferenceConfiguration;
 import com.limelight.preferences.StreamSettings;
 import com.limelight.ui.AdapterFragment;
 import com.limelight.ui.AdapterFragmentCallbacks;
+import com.limelight.ui.AppDialog;
+import com.limelight.ui.PcActionsDialog;
 import com.limelight.utils.DeviceUtils;
 import com.limelight.utils.Dialog;
 import com.limelight.utils.HelpLauncher;
@@ -35,6 +37,7 @@ import com.limelight.utils.UpdateChecker;
 
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.AlertDialog;
 import android.app.Service;
 import android.content.ComponentName;
 import android.content.Intent;
@@ -51,11 +54,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
-import android.view.ContextMenu;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
-import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnClickListener;
 import android.view.Window;
 import android.view.WindowManager;
@@ -67,7 +66,6 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.AdapterView.AdapterContextMenuInfo;
 
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -80,6 +78,7 @@ import static android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
 import static android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE;
 
 public class PcView extends Activity implements AdapterFragmentCallbacks {
+    private AlertDialog pairingDialog;
     private RelativeLayout noPcFoundLayout;
     private PcGridAdapter pcGridAdapter;
     private ShortcutHelper shortcutHelper;
@@ -129,17 +128,6 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
             initializeViews();
         }
     }
-
-    private final static int PAIR_ID = 2;
-    private final static int UNPAIR_ID = 3;
-    private final static int WOL_ID = 4;
-    private final static int DELETE_ID = 5;
-    private final static int RESUME_ID = 6;
-    private final static int QUIT_ID = 7;
-    private final static int VIEW_DETAILS_ID = 8;
-    private final static int FULL_APP_LIST_ID = 9;
-    private final static int TEST_NETWORK_ID = 10;
-    private final static int GAMESTREAM_EOL_ID = 11;
 
     private void initializeViews() {
         setContentView(R.layout.activity_pc_view_new);
@@ -386,74 +374,85 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
     protected void onStop() {
         super.onStop();
 
+        dismissPairingDialog();
         Dialog.closeDialogs();
     }
 
-    @Override
-    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
+    private void showComputerActions(AbsListView listView, View sourceView, int position, ComputerObject computer) {
+        if (computer == null || computer.details == null) {
+            return;
+        }
+
         stopComputerUpdates(false);
-
-        // Call superclass
-        super.onCreateContextMenu(menu, v, menuInfo);
-                
-        AdapterContextMenuInfo info = (AdapterContextMenuInfo) menuInfo;
-        ComputerObject computer = (ComputerObject) pcGridAdapter.getItem(info.position);
-
-        // Add a header with PC status details
-        menu.clearHeader();
-        String headerTitle = computer.details.name + " - ";
-        switch (computer.details.state)
-        {
-            case ONLINE:
-                headerTitle += getResources().getString(R.string.pcview_menu_header_online);
-                break;
-            case OFFLINE:
-                menu.setHeaderIcon(R.drawable.ic_pc_offline);
-                headerTitle += getResources().getString(R.string.pcview_menu_header_offline);
-                break;
-            case UNKNOWN:
-                headerTitle += getResources().getString(R.string.pcview_menu_header_unknown);
-                break;
-        }
-
-        menu.setHeaderTitle(headerTitle);
-
-        // Inflate the context menu
-        if (computer.details.state == ComputerDetails.State.OFFLINE ||
-            computer.details.state == ComputerDetails.State.UNKNOWN) {
-            menu.add(Menu.NONE, WOL_ID, 1, getResources().getString(R.string.pcview_menu_send_wol));
-            menu.add(Menu.NONE, GAMESTREAM_EOL_ID, 2, getResources().getString(R.string.pcview_menu_eol));
-        }
-        else if (computer.details.pairState != PairState.PAIRED) {
-            menu.add(Menu.NONE, PAIR_ID, 1, getResources().getString(R.string.pcview_menu_pair_pc));
-            if (computer.details.nvidiaServer) {
-                menu.add(Menu.NONE, GAMESTREAM_EOL_ID, 2, getResources().getString(R.string.pcview_menu_eol));
-            }
-        }
-        else {
-            if (computer.details.runningGameId != 0) {
-                menu.add(Menu.NONE, RESUME_ID, 1, getResources().getString(R.string.applist_menu_resume));
-                menu.add(Menu.NONE, QUIT_ID, 2, getResources().getString(R.string.applist_menu_quit));
+        ComputerDetails details = computer.details;
+        PcActionsDialog dialog = new PcActionsDialog();
+        dialog.setFragmentManager(getFragmentManager());
+        dialog.setWidth(UiHelper.dpToPx(this, 364));
+        dialog.setDimAmount(0.46f);
+        dialog.setCancelOutside(true);
+        dialog.setComputer(details);
+        dialog.setListener(new PcActionsDialog.Listener() {
+            @Override
+            public void onResumeStream(ComputerDetails selectedComputer) {
+                if (managerBinder == null) {
+                    Toast.makeText(PcView.this, R.string.error_manager_not_running, Toast.LENGTH_LONG).show();
+                    return;
+                }
+                ServerHelper.doStart(PcView.this,
+                        new NvApp("app", selectedComputer.runningGameId, false), selectedComputer, managerBinder);
             }
 
-            if (computer.details.nvidiaServer) {
-                menu.add(Menu.NONE, GAMESTREAM_EOL_ID, 3, getResources().getString(R.string.pcview_menu_eol));
+            @Override
+            public void onOpenAppList(ComputerDetails selectedComputer) {
+                doAppList(selectedComputer, false, true);
             }
 
-            menu.add(Menu.NONE, FULL_APP_LIST_ID, 4, getResources().getString(R.string.pcview_menu_app_list));
-        }
+            @Override
+            public void onTestNetwork() {
+                ServerHelper.doNetworkTest(PcView.this);
+            }
 
-        menu.add(Menu.NONE, TEST_NETWORK_ID, 5, getResources().getString(R.string.pcview_menu_test_network));
-        menu.add(Menu.NONE, DELETE_ID, 6, getResources().getString(R.string.pcview_menu_delete_pc));
-        menu.add(Menu.NONE, VIEW_DETAILS_ID, 7,  getResources().getString(R.string.pcview_menu_details));
+            @Override
+            public void onDeleteComputer(ComputerDetails selectedComputer) {
+                showDeleteComputerConfirmation(selectedComputer);
+            }
+
+            @Override
+            public void onDismiss() {
+                startComputerUpdates();
+                restoreListFocus(listView, sourceView, position);
+            }
+        });
+        dialog.show();
     }
 
-    @Override
-    public void onContextMenuClosed(Menu menu) {
-        // For some reason, this gets called again _after_ onPause() is called on this activity.
-        // startComputerUpdates() manages this and won't actual start polling until the activity
-        // returns to the foreground.
-        startComputerUpdates();
+    private void showDeleteComputerConfirmation(ComputerDetails details) {
+        if (ActivityManager.isUserAMonkey()) {
+            return;
+        }
+        AppDialog.showConfirm(
+                this,
+                details.name,
+                getString(R.string.delete_pc_msg),
+                getString(R.string.yes),
+                true,
+                () -> {
+                    if (managerBinder == null) {
+                        Toast.makeText(PcView.this, R.string.error_manager_not_running, Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    removeComputer(details);
+                },
+                null);
+    }
+
+    private void restoreListFocus(AbsListView listView, View sourceView, int position) {
+        if (sourceView != null && sourceView.isAttachedToWindow()) {
+            sourceView.requestFocus();
+            return;
+        }
+        listView.setSelection(position);
+        listView.post(listView::requestFocus);
     }
 
     private void doPair(final ComputerDetails computer) {
@@ -489,10 +488,16 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
                     else {
                         final String pinStr = PairingManager.generatePinString();
 
-                        // Spin the dialog off in a thread because it blocks
-                        Dialog.displayDialog(PcView.this, getResources().getString(R.string.pair_pairing_title),
-                                getResources().getString(R.string.pair_pairing_msg)+" "+pinStr+"\n\n"+
-                                getResources().getString(R.string.pair_pairing_help), false);
+                        runOnUiThread(() -> pairingDialog = AppDialog.showMessage(
+                                PcView.this,
+                                getResources().getString(R.string.pair_pairing_title),
+                                getResources().getString(R.string.pair_pairing_msg) + " " + pinStr + "\n\n" +
+                                        getResources().getString(R.string.pair_pairing_help),
+                                getResources().getString(R.string.dialog_action_close),
+                                null,
+                                getResources().getString(R.string.help),
+                                () -> HelpLauncher.launchTroubleshooting(PcView.this),
+                                false));
 
                         PairingManager pm = httpConn.getPairingManager();
 
@@ -537,13 +542,12 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
                     message = e.getMessage();
                 }
 
-                Dialog.closeDialogs();
-
                 final String toastMessage = message;
                 final boolean toastSuccess = success;
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+                        dismissPairingDialog();
                         if (toastMessage != null) {
                             Toast.makeText(PcView.this, toastMessage, Toast.LENGTH_LONG).show();
                         }
@@ -666,86 +670,6 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
         startActivity(i);
     }
 
-    @Override
-    public boolean onContextItemSelected(MenuItem item) {
-        AdapterContextMenuInfo info = (AdapterContextMenuInfo) item.getMenuInfo();
-        final ComputerObject computer = (ComputerObject) pcGridAdapter.getItem(info.position);
-        switch (item.getItemId()) {
-            case PAIR_ID:
-                doPair(computer.details);
-                return true;
-
-            case UNPAIR_ID:
-                doUnpair(computer.details);
-                return true;
-
-            case WOL_ID:
-                doWakeOnLan(computer.details);
-                return true;
-
-            case DELETE_ID:
-                if (ActivityManager.isUserAMonkey()) {
-                    LimeLog.info("Ignoring delete PC request from monkey");
-                    return true;
-                }
-                UiHelper.displayDeletePcConfirmationDialog(this, computer.details, new Runnable() {
-                    @Override
-                    public void run() {
-                        if (managerBinder == null) {
-                            Toast.makeText(PcView.this, getResources().getString(R.string.error_manager_not_running), Toast.LENGTH_LONG).show();
-                            return;
-                        }
-                        removeComputer(computer.details);
-                    }
-                }, null);
-                return true;
-
-            case FULL_APP_LIST_ID:
-                doAppList(computer.details, false, true);
-                return true;
-
-            case RESUME_ID:
-                if (managerBinder == null) {
-                    Toast.makeText(PcView.this, getResources().getString(R.string.error_manager_not_running), Toast.LENGTH_LONG).show();
-                    return true;
-                }
-
-                ServerHelper.doStart(this, new NvApp("app", computer.details.runningGameId, false), computer.details, managerBinder);
-                return true;
-
-            case QUIT_ID:
-                if (managerBinder == null) {
-                    Toast.makeText(PcView.this, getResources().getString(R.string.error_manager_not_running), Toast.LENGTH_LONG).show();
-                    return true;
-                }
-
-                // Display a confirmation dialog first
-                UiHelper.displayQuitConfirmationDialog(this, new Runnable() {
-                    @Override
-                    public void run() {
-                        ServerHelper.doQuit(PcView.this, computer.details,
-                                new NvApp("app", 0, false), managerBinder, null);
-                    }
-                }, null);
-                return true;
-
-            case VIEW_DETAILS_ID:
-                Dialog.displayDialog(PcView.this, getResources().getString(R.string.title_details), computer.details.toString(), false);
-                return true;
-
-            case TEST_NETWORK_ID:
-                ServerHelper.doNetworkTest(PcView.this);
-                return true;
-
-            case GAMESTREAM_EOL_ID:
-                HelpLauncher.launchGameStreamEolFaq(PcView.this);
-                return true;
-
-            default:
-                return super.onContextItemSelected(item);
-        }
-    }
-    
     private void removeComputer(ComputerDetails details) {
         managerBinder.removeComputer(details);
 
@@ -822,8 +746,7 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
                 ComputerObject computer = (ComputerObject) pcGridAdapter.getItem(pos);
                 if (computer.details.state == ComputerDetails.State.UNKNOWN ||
                     computer.details.state == ComputerDetails.State.OFFLINE) {
-                    // Open the context menu if a PC is offline or refreshing
-                    openContextMenu(arg1);
+                    showComputerActions(listView, arg1, pos, computer);
                 } else if (computer.details.pairState != PairState.PAIRED) {
                     // Pair an unpaired machine by default
                     doPair(computer.details);
@@ -832,8 +755,19 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
                 }
             }
         });
+        listView.setOnItemLongClickListener((parent, view, position, id) -> {
+            ComputerObject computer = (ComputerObject) pcGridAdapter.getItem(position);
+            showComputerActions(listView, view, position, computer);
+            return true;
+        });
         UiHelper.applyStatusBarPadding(listView);
-        registerForContextMenu(listView);
+    }
+
+    private void dismissPairingDialog() {
+        if (pairingDialog != null) {
+            pairingDialog.dismiss();
+            pairingDialog = null;
+        }
     }
 
     public static class ComputerObject {

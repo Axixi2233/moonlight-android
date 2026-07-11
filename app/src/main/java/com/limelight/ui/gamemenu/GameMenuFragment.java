@@ -13,7 +13,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.limelight.Game;
-import com.limelight.GameMenu;
+import com.limelight.binding.input.GameMenuOption;
 import com.limelight.R;
 import com.limelight.binding.input.GameInputDevice;
 import com.limelight.binding.input.KeyboardTranslator;
@@ -316,7 +316,7 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
 
         if(v.getId()==R.id.btn_gamepad_mouse){
             if (device != null) {
-                List<GameMenu.MenuOption> menuOptions=device.getGameMenuOptions();
+                List<GameMenuOption> menuOptions=device.getGameMenuOptions();
                 if(menuOptions!=null&& !menuOptions.isEmpty()){
                     menuOptions.get(0).runnable.run();
                 }

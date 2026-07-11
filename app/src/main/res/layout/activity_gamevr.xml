@@ -122,4 +122,6 @@
         android:preferKeepClear="true"
         android:visibility="gone" />
 
+    <include layout="@layout/view_stream_loading_overlay" />
+
 </RelativeLayout>

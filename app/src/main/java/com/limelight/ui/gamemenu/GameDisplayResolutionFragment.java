@@ -1,6 +1,5 @@
 package com.limelight.ui.gamemenu;
 
-import android.app.AlertDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Rect;
@@ -15,6 +14,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.limelight.R;
+import com.limelight.ui.AppDialog;
 import com.limelight.ui.BaseFragmentDialog.BaseGameMenuDialog;
 
 import org.apmem.tools.layouts.FlowLayout;
@@ -145,14 +145,14 @@ public class GameDisplayResolutionFragment extends BaseGameMenuDialog implements
     }
 
     private void showDeleteConfirmDialog(String res) {
-        new AlertDialog.Builder(getActivity())
-                .setTitle("确认删除")
-                .setMessage("是否删除分辨率 " + res + "？")
-                .setPositiveButton("确定", (dialog, which) -> {
-                    deleteResolution(res);
-                })
-                .setNegativeButton("取消", null)
-                .show();
+        AppDialog.showConfirm(
+                getActivity(),
+                "确认删除",
+                "是否删除分辨率 " + res + "？",
+                "删除",
+                true,
+                () -> deleteResolution(res),
+                null);
     }
 
     private void deleteResolution(String res) {

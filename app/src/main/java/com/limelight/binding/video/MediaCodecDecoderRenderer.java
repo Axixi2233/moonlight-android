@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jcodec.codecs.h264.H264Utils;
@@ -39,6 +40,10 @@ import android.view.Surface;
 import android.view.SurfaceHolder;
 
 public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements Choreographer.FrameCallback {
+
+    public interface FirstFrameListener {
+        void onFirstFrameRendered();
+    }
 
     private static final boolean USE_FRAME_RENDER_TIME = false;
     private static final boolean FRAME_RENDER_TIME_ONLY = USE_FRAME_RENDER_TIME && false;
@@ -79,6 +84,8 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
     private String glRenderer;
     private boolean foreground = true;
     private PerfOverlayListener perfListener;
+    private volatile FirstFrameListener firstFrameListener;
+    private final AtomicBoolean firstFrameReported = new AtomicBoolean(false);
 
     private static final int CR_MAX_TRIES = 10;
     private static final int CR_RECOVERY_TYPE_NONE = 0;
@@ -588,6 +595,20 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
         }
     }
 
+    public void setFirstFrameListener(FirstFrameListener listener) {
+        this.firstFrameListener = listener;
+    }
+
+    private void reportFrameRendered() {
+        if (!firstFrameReported.compareAndSet(false, true)) {
+            return;
+        }
+        FirstFrameListener listener = firstFrameListener;
+        if (listener != null) {
+            listener.onFirstFrameRendered();
+        }
+    }
+
     private boolean tryConfigureDecoder(MediaCodecInfo selectedDecoderInfo, MediaFormat format, boolean throwOnCodecError) {
         boolean configured = false;
         try {
@@ -1033,6 +1054,7 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
 
                     lastRenderedFrameTimeNanos = frameTimeNanos;
                     activeWindowVideoStats.totalFramesRendered++;
+                    reportFrameRendered();
                 } catch (IllegalStateException ignored) {
                     try {
                         // Try to avoid leaking the output buffer by releasing it without rendering
@@ -1125,6 +1147,7 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
                                 }
 
                                 activeWindowVideoStats.totalFramesRendered++;
+                                reportFrameRendered();
                             }
                             else {
                                 // For balanced frame pacing case, the Choreographer callback will handle rendering.

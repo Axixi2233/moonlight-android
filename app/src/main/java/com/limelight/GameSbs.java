@@ -75,9 +75,11 @@ import com.limelight.sbs.TextureSurfaceRenderer;
 import com.limelight.sbs.VideoTextureRenderer;
 import com.limelight.ui.GameGestures;
 import com.limelight.ui.SBSStreamView;
+import com.limelight.ui.AppDialog;
+import com.limelight.ui.StreamLoadingOverlayController;
 import com.limelight.utils.Dialog;
+import com.limelight.utils.HelpLauncher;
 import com.limelight.utils.ServerHelper;
-import com.limelight.utils.SpinnerDialog;
 import com.limelight.utils.UiHelper;
 
 import java.io.ByteArrayInputStream;
@@ -118,7 +120,7 @@ public class GameSbs extends Activity implements TextureView.SurfaceTextureListe
     private SharedPreferences tombstonePrefs;
 
     private NvConnection conn;
-    private SpinnerDialog spinner;
+    private StreamLoadingOverlayController streamLoadingController;
     private boolean displayedFailureDialog = false;
     private boolean connecting = false;
     public boolean connected = false;
@@ -219,10 +221,13 @@ public class GameSbs extends Activity implements TextureView.SurfaceTextureListe
         // Inflate the content
         setContentView(R.layout.activity_gamevr);
         sharedpreferences = getSharedPreferences("VR_PREFERENCES", Context.MODE_PRIVATE);
-
-        // Start the spinner
-        spinner = SpinnerDialog.displayDialog(this, getResources().getString(R.string.conn_establishing_title),
-                getResources().getString(R.string.conn_establishing_msg), true);
+        streamLoadingController = new StreamLoadingOverlayController(
+                this,
+                this::finish,
+                () -> {
+                    HelpLauncher.launchTroubleshooting(this);
+                    finish();
+                });
 
         // Read the stream preferences
         prefConfig = PreferenceConfiguration.readPreferences(this);
@@ -391,6 +396,7 @@ public class GameSbs extends Activity implements TextureView.SurfaceTextureListe
                 willStreamHdr,
                 glPrefs.glRenderer,
                 this);
+        decoderRenderer.setFirstFrameListener(() -> streamLoadingController.onFirstFrameRendered());
 
         // Don't stream HDR if the decoder can't support it
         if (willStreamHdr && !decoderRenderer.isHevcMain10Hdr10Supported() && !decoderRenderer.isAv1Main10Supported()) {
@@ -518,14 +524,9 @@ public class GameSbs extends Activity implements TextureView.SurfaceTextureListe
         }
 
         if (!decoderRenderer.isAvcSupported()) {
-            if (spinner != null) {
-                spinner.dismiss();
-                spinner = null;
-            }
-
             // If we can't find an AVC decoder, we can't proceed
-            Dialog.displayDialog(this, getResources().getString(R.string.conn_error_title),
-                    "This device or ROM doesn't support hardware accelerated H.264 playback.", true);
+            streamLoadingController.showFailure(
+                    "This device or ROM doesn't support hardware accelerated H.264 playback.");
             return;
         }
         // The connection will be started when the surface gets created
@@ -952,6 +953,10 @@ public class GameSbs extends Activity implements TextureView.SurfaceTextureListe
     protected void onDestroy() {
         super.onDestroy();
 
+        if (streamLoadingController != null) {
+            streamLoadingController.destroy();
+        }
+
         instance = null;
         UiHelper.notifyHdrWindowStatus(this, false);
 
@@ -992,7 +997,6 @@ public class GameSbs extends Activity implements TextureView.SurfaceTextureListe
     protected void onStop() {
         super.onStop();
 
-        SpinnerDialog.closeDialogs(this);
         Dialog.closeDialogs();
 
         if (conn != null) {
@@ -2029,14 +2033,7 @@ public class GameSbs extends Activity implements TextureView.SurfaceTextureListe
 
     @Override
     public void stageStarting(final String stage) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (spinner != null) {
-                    spinner.setMessage(getResources().getString(R.string.conn_starting) + " " + stage);
-                }
-            }
-        });
+        streamLoadingController.onStageStarting(stage);
     }
 
     @Override
@@ -2069,16 +2066,12 @@ public class GameSbs extends Activity implements TextureView.SurfaceTextureListe
 
     @Override
     public void stageFailed(final String stage, final int portFlags, final int errorCode) {
-        if (spinner != null) {
-            spinner.dismiss();
-            spinner = null;
-        }
         if (!displayedFailureDialog) {
             displayedFailureDialog = true;
             LimeLog.severe(stage + " failed: " + errorCode);
 
-            Dialog.displayDialog(this, getResources().getString(R.string.conn_error_title),
-                    getResources().getString(R.string.conn_error_msg) + " " + stage, true);
+            streamLoadingController.showFailure(
+                    getResources().getString(R.string.conn_error_msg) + " " + stage + " (error " + errorCode + ")");
         }
     }
 
@@ -2152,8 +2145,18 @@ public class GameSbs extends Activity implements TextureView.SurfaceTextureListe
                                     MoonBridge.stringifyPortFlags(portFlags, "\n");
                         }
 
-                        Dialog.displayDialog(GameSbs.this, getResources().getString(R.string.conn_terminated_title),
-                                message, true);
+                        AppDialog.showMessage(
+                                GameSbs.this,
+                                getResources().getString(R.string.conn_terminated_title),
+                                message,
+                                getResources().getString(R.string.dialog_action_close),
+                                GameSbs.this::finish,
+                                getResources().getString(R.string.help),
+                                () -> {
+                                    HelpLauncher.launchTroubleshooting(GameSbs.this);
+                                    finish();
+                                },
+                                false);
                     } else {
                         finish();
                     }
@@ -2195,18 +2198,11 @@ public class GameSbs extends Activity implements TextureView.SurfaceTextureListe
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if (spinner != null) {
-                    spinner.dismiss();
-                    spinner = null;
-                }
-
                 connected = true;
                 connecting = false;
-                // Hide the mouse cursor now after a short delay.
-                // Doing it before dismissing the spinner seems to be undone
-                // when the spinner gets displayed. On Android Q, even now
-                // is too early to capture. We will delay a second to allow
-                // the spinner to dismiss before capturing.
+                streamLoadingController.onConnectionStarted();
+                // Keep the loading overlay up until the decoder renders its
+                // first frame, then transition cleanly into the stream.
 //                Handler h = new Handler();
 //                h.postDelayed(new Runnable() {
 //                    @Override
@@ -2458,6 +2454,7 @@ public class GameSbs extends Activity implements TextureView.SurfaceTextureListe
     @Override
     public void onGlReady() {
         decoderRenderer.setRenderTarget(new Surface(renderer.getVideoTexture()));
+        streamLoadingController.showPreparing(null);
         conn.start(new AndroidAudioRenderer(GameSbs.this, controllerHandler, prefConfig.enableAudioFx,
                         prefConfig.enableAudioHaptics, prefConfig.audioHapticsStrength,
                         prefConfig.audioHapticsVoiceFilter, prefConfig.audioHapticsOutputTarget),

@@ -448,12 +448,6 @@
             android:defaultValue="true"/>
 
         <CheckBoxPreference
-            android:key="checkbox_enable_game_menu_new"
-            android:title="使用新版游戏菜单"
-            android:summary="替换之前对话框菜单，采用新UI样式。"
-            android:defaultValue="true"/>
-
-        <CheckBoxPreference
             android:key="checkbox_enable_sbs"
             android:title="Side-By-Side模式"
             android:summary="左右格式3D模式,仅供娱乐！需外接手柄使用！"

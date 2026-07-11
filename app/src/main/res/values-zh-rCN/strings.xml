@@ -10,11 +10,11 @@
     <string name="help_loading_title"> 查看帮助 </string>
     <string name="help_loading_msg"> 正在加载帮助页面…… </string>
     <!-- PC view menu entries -->
-    <string name="pcview_menu_app_list"> 浏览游戏列表 </string>
+    <string name="pcview_menu_app_list"> 应用列表 </string>
     <string name="pcview_menu_pair_pc"> 和电脑配对 </string>
     <string name="pcview_menu_unpair_pc"> 取消配对 </string>
     <string name="pcview_menu_send_wol"> 发送 Wake-On-LAN 请求 </string>
-    <string name="pcview_menu_delete_pc"> 删除电脑 </string>
+    <string name="pcview_menu_delete_pc"> 删除主机 </string>
     <string name="pcview_menu_details"> 查看详情 </string>
     <!-- Pair messages -->
     <string name="pairing"> 配对中…… </string>
@@ -190,7 +190,7 @@
 \n
 \n这可能需要几秒钟……</string>
     <string name="nettest_title_waiting">测试网络连接中</string>
-    <string name="pcview_menu_test_network">测试网络连接</string>
+    <string name="pcview_menu_test_network">测试网络</string>
     <string name="pcview_menu_header_unknown">刷新中</string>
     <string name="pcview_menu_header_offline">离线</string>
     <string name="pcview_menu_header_online">在线</string>
@@ -205,6 +205,54 @@
 \n您的显示器可能不支持必要的显示配置。如果是这样，您可以尝试设置虚拟显示器。最后，如果您的设备或主机不支持以特定分辨率或刷新率进行流式传输，那就很不幸了。</string>
     <string name="title_native_res_dialog">本地分辨率警告</string>
     <string name="applist_menu_hide_app">隐藏游戏</string>
+    <string name="applist_menu_show_app">显示游戏</string>
+    <string name="applist_menu_start">开始串流</string>
+    <string name="dialog_action_cancel">取消</string>
+    <string name="dialog_action_confirm">确定</string>
+    <string name="dialog_action_close">关闭</string>
+    <string name="host_actions_subtitle">选择要对这台主机执行的操作</string>
+    <string name="app_actions_subtitle">选择要对这个应用执行的操作</string>
+    <string name="app_actions_detail">应用 ID %1$d</string>
+    <string name="app_actions_details_title">应用信息</string>
+    <string name="app_actions_options_title">操作选项</string>
+    <string name="app_actions_hdr_supported">支持 HDR</string>
+    <string name="app_actions_hdr_unknown">未知</string>
+    <string name="app_actions_details_format">应用名称：%1$s\n图像能力：%2$s\n应用编号：%3$d</string>
+    <string name="context_actions_info">详细信息</string>
+    <string name="context_actions_options">选项</string>
+    <string name="pc_actions_details_title">主机信息</string>
+    <string name="pc_actions_options_title">操作选项</string>
+    <string name="pc_actions_unavailable">未获取</string>
+    <string name="pc_actions_state_online">在线</string>
+    <string name="pc_actions_state_offline">离线</string>
+    <string name="pc_actions_state_unknown">未知</string>
+    <string name="pc_actions_pair_paired">已配对</string>
+    <string name="pc_actions_pair_not_paired">未配对</string>
+    <string name="pc_actions_pair_unknown">未知</string>
+    <string name="pc_actions_details_format">当前状态：%1$s\n当前地址：%2$s\n主机标识：%3$s\n本地地址：%4$s\n远程地址：%5$s\nIPv6 地址：%6$s\n手动地址：%7$s\n硬件地址：%8$s\n配对状态：%9$s\n应用编号：%10$d\n安全端口：%11$d</string>
+    <string name="app_status_running">正在运行</string>
+    <string name="app_status_hidden">已隐藏</string>
+    <string name="stream_loading_step_prepare">准备</string>
+    <string name="stream_loading_step_connect">连接</string>
+    <string name="stream_loading_step_start">启动</string>
+    <string name="stream_loading_step_picture">画面</string>
+    <string name="stream_loading_cancel">取消连接</string>
+    <string name="stream_loading_back">返回</string>
+    <string name="stream_phase_preparing">正在准备串流</string>
+    <string name="stream_phase_preparing_detail">正在准备解码器和画面输出</string>
+    <string name="stream_phase_launching">正在启动主机应用</string>
+    <string name="stream_phase_launching_detail">等待主机应用准备完成</string>
+    <string name="stream_phase_connecting">正在连接主机</string>
+    <string name="stream_phase_connecting_detail">正在解析主机并协商串流会话</string>
+    <string name="stream_phase_initializing">正在初始化串流</string>
+    <string name="stream_phase_initializing_detail">正在准备视频、音频、输入和控制通道</string>
+    <string name="stream_phase_starting">正在启动串流</string>
+    <string name="stream_phase_starting_detail">正在启动视频、音频和输入传输</string>
+    <string name="stream_phase_waiting">正在等待画面</string>
+    <string name="stream_phase_waiting_detail">连接已经建立，正在等待首个视频画面</string>
+    <string name="stream_phase_connected">串流连接成功</string>
+    <string name="stream_phase_connected_detail">首个视频画面已经准备完成</string>
+    <string name="stream_phase_failed">串流启动失败</string>
     <string name="check_ports_msg">请检查您的防火墙和端口转发规则中的端口：</string>
     <string name="early_termination_error">开始串流时您的主机电脑出了点问题。
 \n

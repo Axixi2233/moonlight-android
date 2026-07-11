@@ -39,21 +39,22 @@ import com.limelight.nvstream.jni.MoonBridge;
 import com.limelight.preferences.GlPreferences;
 import com.limelight.preferences.PreferenceConfiguration;
 import com.limelight.ui.gamemenu.GameMenuFragment;
+import com.limelight.ui.AppDialog;
 import com.limelight.ui.GameGestures;
 import com.limelight.ui.StreamView;
+import com.limelight.ui.StreamLoadingOverlayController;
 import com.limelight.ui.floatingview.AXFloatingMagnetView;
 import com.limelight.ui.floatingview.AXFloatingView;
 import com.limelight.ui.floatingview.AXFloatingViewListener;
 import com.limelight.utils.Dialog;
+import com.limelight.utils.HelpLauncher;
 import com.limelight.utils.RazerUtils;
 import com.limelight.utils.ServerHelper;
 import com.limelight.utils.ShortcutHelper;
-import com.limelight.utils.SpinnerDialog;
 import com.limelight.utils.UiHelper;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.PictureInPictureParams;
 import android.app.Service;
 import android.content.ClipData;
@@ -120,7 +121,6 @@ import java.lang.reflect.Method;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -165,7 +165,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     private SharedPreferences tombstonePrefs;
 
     private NvConnection conn;
-    private SpinnerDialog spinner;
+    private StreamLoadingOverlayController streamLoadingController;
     private boolean displayedFailureDialog = false;
     private boolean connecting = false;
     public boolean connected = false;
@@ -288,11 +288,19 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         // Inflate the content
         setContentView(R.layout.activity_game);
 
-        connManager=(ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        streamLoadingController = new StreamLoadingOverlayController(
+                this,
+                () -> {
+                    if (!usbPermissionPromptVisible) {
+                        finish();
+                    }
+                },
+                () -> {
+                    HelpLauncher.launchTroubleshooting(this);
+                    finish();
+                });
 
-        // Start the spinner
-        spinner = SpinnerDialog.displayDialog(this, getResources().getString(R.string.conn_establishing_title),
-                getResources().getString(R.string.conn_establishing_msg), true);
+        connManager=(ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
 
         // Read the stream preferences
         prefConfig = PreferenceConfiguration.readPreferences(this);
@@ -583,6 +591,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 willStreamHdr,
                 glPrefs.glRenderer,
                 this);
+        decoderRenderer.setFirstFrameListener(() -> streamLoadingController.onFirstFrameRendered());
 
         // Don't stream HDR if the decoder can't support it
         if (willStreamHdr && !decoderRenderer.isHevcMain10Hdr10Supported() && !decoderRenderer.isAv1Main10Supported()) {
@@ -729,14 +738,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         }
 
         if (!decoderRenderer.isAvcSupported()) {
-            if (spinner != null) {
-                spinner.dismiss();
-                spinner = null;
-            }
-
             // If we can't find an AVC decoder, we can't proceed
-            Dialog.displayDialog(this, getResources().getString(R.string.conn_error_title),
-                    "This device or ROM doesn't support hardware accelerated H.264 playback.", true);
+            streamLoadingController.showFailure(
+                    "This device or ROM doesn't support hardware accelerated H.264 playback.");
             return;
         }
 
@@ -1396,6 +1400,10 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             fsrInputSurface = null;
         }
 
+        if (streamLoadingController != null) {
+            streamLoadingController.destroy();
+        }
+
         // Destroy the capture provider
         inputCaptureProvider.destroy();
     }
@@ -1434,7 +1442,6 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     protected void onStop() {
         super.onStop();
 
-        SpinnerDialog.closeDialogs(this);
         Dialog.closeDialogs();
 
         if (virtualController != null) {
@@ -2793,14 +2800,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     @Override
     public void stageStarting(final String stage) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (spinner != null) {
-                    spinner.setMessage(getResources().getString(R.string.conn_starting) + " " + stage);
-                }
-            }
-        });
+        streamLoadingController.onStageStarting(stage);
     }
 
     @Override
@@ -2841,11 +2841,6 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if (spinner != null) {
-                    spinner.dismiss();
-                    spinner = null;
-                }
-
                 if (!displayedFailureDialog) {
                     displayedFailureDialog = true;
                     LimeLog.severe(stage + " failed: " + errorCode);
@@ -2866,7 +2861,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                         dialogText += "\n\n" + getResources().getString(R.string.nettest_text_blocked);
                     }
 
-                    Dialog.displayDialog(Game.this, getResources().getString(R.string.conn_error_title), dialogText, true);
+                    streamLoadingController.showFailure(dialogText);
                 }
             }
         });
@@ -2944,8 +2939,18 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                                     MoonBridge.stringifyPortFlags(portFlags, "\n");
                         }
 
-                        Dialog.displayDialog(Game.this, getResources().getString(R.string.conn_terminated_title),
-                                message, true);
+                        AppDialog.showMessage(
+                                Game.this,
+                                getResources().getString(R.string.conn_terminated_title),
+                                message,
+                                getResources().getString(R.string.dialog_action_close),
+                                Game.this::finish,
+                                getResources().getString(R.string.help),
+                                () -> {
+                                    HelpLauncher.launchTroubleshooting(Game.this);
+                                    finish();
+                                },
+                                false);
                     }
                     else {
                         finish();
@@ -2990,21 +2995,14 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if (spinner != null) {
-                    spinner.dismiss();
-                    spinner = null;
-                }
-
                 connected = true;
                 connecting = false;
                 streamStartElapsedMs = SystemClock.elapsedRealtime();
                 updatePipAutoEnter();
+                streamLoadingController.onConnectionStarted();
 
-                // Hide the mouse cursor now after a short delay.
-                // Doing it before dismissing the spinner seems to be undone
-                // when the spinner gets displayed. On Android Q, even now
-                // is too early to capture. We will delay a second to allow
-                // the spinner to dismiss before capturing.
+                // Hide the mouse cursor after a short delay so pointer capture
+                // isn't disturbed while the startup overlay is transitioning out.
                 Handler h = new Handler();
                 h.postDelayed(new Runnable() {
                     @Override
@@ -3128,6 +3126,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             audioRenderer = new AndroidAudioRenderer(Game.this, controllerHandler, prefConfig.enableAudioFx,
                     prefConfig.enableAudioHaptics, prefConfig.audioHapticsStrength,
                     prefConfig.audioHapticsVoiceFilter, prefConfig.audioHapticsOutputTarget);
+            streamLoadingController.showPreparing(null);
             conn.start(audioRenderer,
                     decoderRenderer, Game.this);
         }
@@ -3599,9 +3598,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     @Override
     public void onUsbPermissionPromptStarting() {
         usbPermissionPromptVisible = true;
-        if (spinner != null) {
-            spinner.setFinishOnCancelEnabled(false);
-        }
+        streamLoadingController.setCancelEnabled(false);
         // Disable PiP auto-enter while the USB permission prompt is on-screen. This prevents
         // us from entering PiP while the user is interacting with the OS permission dialog.
         suppressPipRefCount++;
@@ -3611,9 +3608,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     @Override
     public void onUsbPermissionPromptCompleted() {
         usbPermissionPromptVisible = false;
-        if (spinner != null) {
-            spinner.setFinishOnCancelEnabled(true);
-        }
+        streamLoadingController.setCancelEnabled(true);
         suppressPipRefCount--;
         updatePipAutoEnter();
     }
@@ -3634,6 +3629,12 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     @Override
     public void onBackPressed() {
+        if (streamLoadingController != null && streamLoadingController.isVisible()) {
+            if (!usbPermissionPromptVisible) {
+                finish();
+            }
+            return;
+        }
         if(prefConfig.enableQtDialog){
             showGameMenu(null);
             return;
@@ -3643,22 +3644,6 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     //禁用鼠标
     private boolean disableMouseModel;
-
-    public void switchMouseModel(){
-        String[] strings=getResources().getStringArray(R.array.mouse_model_names_axi);
-        String[] items =Arrays.copyOf(strings,strings.length+1);
-        items[items.length-1]="切换本地鼠标(需外接物理鼠标)";
-//        {"多点触控模式","普通鼠标模式","触控板模式","禁用鼠标/触控","普通鼠标模式（左右键互换）","切换本地鼠标(需外接物理鼠标)"}
-        new AlertDialog.Builder(this).setItems(items, (dialog, which) -> {
-            dialog.dismiss();
-            //切换本地鼠标
-            if(which==7){
-                switchMouseLocalCursor();
-                return;
-            }
-            switchMouseModel(which);
-        }).setTitle("请选择鼠标模式").create().show();
-    }
 
     //本地鼠标光标切换
     public void switchMouseLocalCursor(){
@@ -3853,10 +3838,6 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     private GameMenuFragment dialogGameMenu;
     @Override
     public void showGameMenu(GameInputDevice device) {
-        if(!prefConfig.enableGameMenuNew){
-            new GameMenu(this,conn,device);
-            return;
-        }
         if(dialogGameMenu!=null){
             dialogGameMenu=null;
         }
@@ -4009,6 +3990,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         audioRenderer = new AndroidAudioRenderer(Game.this, controllerHandler, prefConfig.enableAudioFx,
                 prefConfig.enableAudioHaptics, prefConfig.audioHapticsStrength,
                 prefConfig.audioHapticsVoiceFilter, prefConfig.audioHapticsOutputTarget);
+        streamLoadingController.showPreparing(null);
         conn.start(audioRenderer,
                 decoderRenderer, Game.this);
     }

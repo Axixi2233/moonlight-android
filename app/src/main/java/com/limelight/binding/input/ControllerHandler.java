@@ -36,7 +36,6 @@ import android.view.Surface;
 import android.widget.Toast;
 
 import com.google.gson.Gson;
-import com.limelight.GameMenu;
 import com.limelight.LimeLog;
 import com.limelight.R;
 import com.limelight.binding.input.driver.AbstractController;
@@ -3560,9 +3559,9 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         };
 
         @Override
-        public List<GameMenu.MenuOption> getGameMenuOptions() {
-            List<GameMenu.MenuOption> options = new ArrayList<>();
-            options.add(new GameMenu.MenuOption(activityContext.getString(mouseEmulationActive ?
+        public List<GameMenuOption> getGameMenuOptions() {
+            List<GameMenuOption> options = new ArrayList<>();
+            options.add(new GameMenuOption(activityContext.getString(mouseEmulationActive ?
                     R.string.game_menu_toggle_mouse_off : R.string.game_menu_toggle_mouse_on),
                     true, () -> toggleMouseEmulation()));
 

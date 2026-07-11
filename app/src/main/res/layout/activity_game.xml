@@ -134,4 +134,6 @@
 
     </LinearLayout>
 
+    <include layout="@layout/view_stream_loading_overlay" />
+
 </merge>

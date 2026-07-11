@@ -75,10 +75,15 @@ public abstract class BaseGameMenuFragmentDialog extends DialogFragment {
             params.gravity = Gravity.END;
         }else{
             params.width = WindowManager.LayoutParams.MATCH_PARENT;
-            if (getViewSize() > 0) {
-                params.height = getViewSize();
-            } else {
-                params.height = WindowManager.LayoutParams.WRAP_CONTENT;
+            int height=getActivity().getResources().getDisplayMetrics().heightPixels*2/3;
+            if(height>0){
+                params.height = height;
+            }else{
+                if (getViewSize() > 0) {
+                    params.height = getViewSize();
+                } else {
+                    params.height = WindowManager.LayoutParams.WRAP_CONTENT;
+                }
             }
             params.gravity = Gravity.BOTTOM;
         }

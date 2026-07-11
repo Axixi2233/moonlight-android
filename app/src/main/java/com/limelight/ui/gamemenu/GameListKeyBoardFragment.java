@@ -1,9 +1,7 @@
 package com.limelight.ui.gamemenu;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.text.TextUtils;
 import android.view.View;
@@ -15,6 +13,7 @@ import android.widget.TextView;
 
 import com.google.gson.Gson;
 import com.limelight.R;
+import com.limelight.ui.AppDialog;
 import com.limelight.ui.BaseFragmentDialog.BaseGameMenuDialog;
 import com.limelight.ui.gamemenu.adapter.GameMenuQuickKeyboardAdapter;
 import com.limelight.ui.gamemenu.bean.GameMenuQuickBean;
@@ -95,24 +94,17 @@ public class GameListKeyBoardFragment extends BaseGameMenuDialog {
         lv_menu.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                new AlertDialog.Builder(getActivity())
-                        .setTitle(gameMenus.get(position).getName())
-                        .setMessage("是否删除此键值？")
-                        .setPositiveButton("删除", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                removeKeyBoardListData(getActivity(),gameMenus.get(position));
-                                updateData();
-                            }
-                        })
-                        .setNegativeButton("取消", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                dialog.dismiss();
-                            }
-                        })
-                        .create()
-                        .show();
+                AppDialog.showConfirm(
+                        getActivity(),
+                        gameMenus.get(position).getName(),
+                        "是否删除此键值？",
+                        "删除",
+                        true,
+                        () -> {
+                            removeKeyBoardListData(getActivity(), gameMenus.get(position));
+                            updateData();
+                        },
+                        null);
 
             }
         });

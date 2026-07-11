@@ -10,7 +10,7 @@
     <string name="help_loading_title">說明檢視器</string>
     <string name="help_loading_msg">正在載入說明頁面…</string>
     <!-- PC view menu entries -->
-    <string name="pcview_menu_app_list">檢視遊戲清單</string>
+    <string name="pcview_menu_app_list">遊戲清單</string>
     <string name="pcview_menu_pair_pc"> 和電腦配對 </string>
     <string name="pcview_menu_unpair_pc"> 取消配對 </string>
     <string name="pcview_menu_send_wol">傳送 Wake-On-LAN 要求</string>
