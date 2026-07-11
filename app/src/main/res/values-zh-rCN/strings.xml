@@ -218,6 +218,10 @@
     <string name="app_actions_hdr_supported">支持 HDR</string>
     <string name="app_actions_hdr_unknown">未知</string>
     <string name="app_actions_details_format">应用名称：%1$s\n图像能力：%2$s\n应用编号：%3$d</string>
+    <string name="virtual_controller_config_title">编辑虚拟按键</string>
+    <string name="virtual_controller_config_summary">选择调整当前虚拟按键的位置或大小。</string>
+    <string name="virtual_controller_config_move">移动位置</string>
+    <string name="virtual_controller_config_resize">调整大小</string>
     <string name="context_actions_info">详细信息</string>
     <string name="context_actions_options">选项</string>
     <string name="pc_actions_details_title">主机信息</string>

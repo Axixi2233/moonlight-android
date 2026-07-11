@@ -9,10 +9,10 @@ import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.Window;
 import android.widget.TextView;
 
 import com.limelight.R;
+import com.limelight.ui.AppDialog;
 
 public class SpinnerDialog implements Runnable,OnCancelListener {
     private final String title;
@@ -110,9 +110,10 @@ public class SpinnerDialog implements Runnable,OnCancelListener {
             titleView.setText(title);
             messageView.setText(message);
 
-            progress = new AlertDialog.Builder(activity)
-                    .setView(dialogView)
-                    .create();
+            progress = AppDialog.createCustomDialog(activity, dialogView, finish);
+            if (progress == null) {
+                return;
+            }
             progress.setOnCancelListener(this);
 
             // If we want to finish the activity when this is killed, make it cancellable
@@ -128,10 +129,11 @@ public class SpinnerDialog implements Runnable,OnCancelListener {
 
             synchronized (rundownDialogs) {
                 rundownDialogs.add(this);
-                progress.show();
-                Window window = progress.getWindow();
-                if (window != null) {
-                    window.setBackgroundDrawableResource(android.R.color.transparent);
+                if (finish) {
+                    AppDialog.showCustomDialog(activity, progress, 0.68f, 420,
+                            null, null);
+                } else {
+                    AppDialog.showPassiveCustomDialog(activity, progress, 0.68f, 420);
                 }
             }
         }

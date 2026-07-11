@@ -137,6 +137,10 @@
     <string name="app_actions_hdr_supported">HDR supported</string>
     <string name="app_actions_hdr_unknown">Unknown</string>
     <string name="app_actions_details_format">App name: %1$s\nVideo capability: %2$s\nApplication ID: %3$d</string>
+    <string name="virtual_controller_config_title">Configure control</string>
+    <string name="virtual_controller_config_summary">Choose how to adjust this virtual control.</string>
+    <string name="virtual_controller_config_move">Move</string>
+    <string name="virtual_controller_config_resize">Resize</string>
     <string name="context_actions_info">Details</string>
     <string name="context_actions_options">Options</string>
     <string name="pc_actions_details_title">Host details</string>

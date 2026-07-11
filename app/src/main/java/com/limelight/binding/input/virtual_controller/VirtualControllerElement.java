@@ -4,18 +4,21 @@
 
 package com.limelight.binding.input.virtual_controller;
 
-import android.app.AlertDialog;
+import android.app.Activity;
 import android.content.Context;
-import android.content.DialogInterface;
+import android.content.ContextWrapper;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.FrameLayout;
+import android.widget.TextView;
 
 import com.limelight.Game;
+import com.limelight.R;
 import com.limelight.preferences.PreferenceConfiguration;
+import com.limelight.ui.AppDialog;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -186,54 +189,45 @@ public abstract class VirtualControllerElement extends View {
     }
 
     protected void showConfigurationDialog() {
-        AlertDialog.Builder alertBuilder = new AlertDialog.Builder(getContext());
+        Activity activity = findActivity(getContext());
+        if (activity == null) {
+            return;
+        }
 
-        alertBuilder.setTitle("Configuration");
+        View content = inflate(activity, R.layout.dialog_virtual_controller_config, null);
+        TextView moveView = content.findViewById(R.id.btn_virtual_controller_move);
+        TextView resizeView = content.findViewById(R.id.btn_virtual_controller_resize);
+        TextView cancelView = content.findViewById(R.id.btn_virtual_controller_cancel);
 
-        CharSequence functions[] = new CharSequence[]{
-                "Move",
-                "Resize",
-            /*election
-            "Set n
-            Disable color sormal color",
-            "Set pressed color",
-            */
-                "Cancel"
-        };
-
-        alertBuilder.setItems(functions, new DialogInterface.OnClickListener() {
-
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                switch (which) {
-                    case 0: { // move
-                        actionEnableMove();
-                        break;
-                    }
-                    case 1: { // resize
-                        actionEnableResize();
-                        break;
-                    }
-                /*
-                case 2: { // set default color
-                    actionShowNormalColorChooser();
-                    break;
-                }
-                case 3: { // set pressed color
-                    actionShowPressedColorChooser();
-                    break;
-                }
-                */
-                    default: { // cancel
-                        actionCancel();
-                        break;
-                    }
-                }
-            }
+        android.app.AlertDialog dialog = AppDialog.createCustomDialog(activity, content, true);
+        if (dialog == null) {
+            return;
+        }
+        moveView.setOnClickListener(v -> {
+            dialog.dismiss();
+            actionEnableMove();
         });
-        AlertDialog alert = alertBuilder.create();
-        // show menu
-        alert.show();
+        resizeView.setOnClickListener(v -> {
+            dialog.dismiss();
+            actionEnableResize();
+        });
+        cancelView.setOnClickListener(v -> {
+            dialog.dismiss();
+            actionCancel();
+        });
+        AppDialog.showCustomDialog(activity, dialog, 0.68f, 360,
+                moveView, cancelView, moveView, resizeView, cancelView);
+    }
+
+    private static Activity findActivity(Context context) {
+        Context currentContext = context;
+        while (currentContext instanceof ContextWrapper) {
+            if (currentContext instanceof Activity) {
+                return (Activity) currentContext;
+            }
+            currentContext = ((ContextWrapper) currentContext).getBaseContext();
+        }
+        return null;
     }
 
     @Override

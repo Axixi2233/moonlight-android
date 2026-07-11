@@ -10,7 +10,6 @@ import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.Window;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -18,6 +17,7 @@ import android.widget.Toast;
 import com.google.gson.Gson;
 import com.limelight.BuildConfig;
 import com.limelight.R;
+import com.limelight.ui.AppDialog;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -155,7 +155,7 @@ public final class UpdateChecker {
             showDownloadOptions(activity, latest);
         });
 
-        showDialog(dialog);
+        showDialog(activity, dialog, cancelButton, cancelButton, skipButton, cancelButton, downloadButton);
     }
 
     private static void showDownloadOptions(Activity activity, UpdateRelease latest) {
@@ -192,6 +192,8 @@ public final class UpdateChecker {
 
         for (int i = 0; i < channelContainer.getChildCount(); i++) {
             View channelItem = channelContainer.getChildAt(i);
+            channelItem.setFocusable(true);
+            channelItem.setFocusableInTouchMode(true);
             channelItem.setOnClickListener(v -> {
                 dialog.dismiss();
                 Object taggedUrl = v.getTag();
@@ -202,7 +204,14 @@ public final class UpdateChecker {
         }
         cancelButton.setOnClickListener(v -> dialog.dismiss());
 
-        showDialog(dialog);
+        View initialFocus = channelContainer.getChildCount() > 0
+                ? channelContainer.getChildAt(0) : cancelButton;
+        View[] actions = new View[channelContainer.getChildCount() + 1];
+        for (int i = 0; i < channelContainer.getChildCount(); i++) {
+            actions[i] = channelContainer.getChildAt(i);
+        }
+        actions[actions.length - 1] = cancelButton;
+        showDialog(activity, dialog, initialFocus, cancelButton, actions);
     }
 
     private static AlertDialog buildDialog(Activity activity, View dialogView) {
@@ -210,19 +219,22 @@ public final class UpdateChecker {
             return null;
         }
 
-        AlertDialog dialog = new AlertDialog.Builder(activity)
-                .setView(dialogView)
-                .create();
-        dialog.setCanceledOnTouchOutside(true);
-        return dialog;
+        return AppDialog.createCustomDialog(activity, dialogView, true);
     }
 
-    private static void showDialog(AlertDialog dialog) {
-        dialog.show();
-        Window window = dialog.getWindow();
-        if (window != null) {
-            window.setBackgroundDrawableResource(android.R.color.transparent);
-        }
+    private static void showDialog(Activity activity,
+                                   AlertDialog dialog,
+                                   View initialFocus,
+                                   View dismissAction,
+                                   View... actionViews) {
+        AppDialog.showCustomDialog(
+                activity,
+                dialog,
+                0.68f,
+                440,
+                initialFocus,
+                dismissAction,
+                actionViews);
     }
 
     private static void addDownloadOption(List<String> labels, List<String> urls, String label, String url) {
