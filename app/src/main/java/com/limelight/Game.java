@@ -7,6 +7,7 @@ import com.limelight.binding.audio.AndroidAudioRenderer;
 import com.limelight.binding.input.ControllerHandler;
 import com.limelight.binding.input.GameInputDevice;
 import com.limelight.binding.input.KeyboardTranslator;
+import com.limelight.binding.input.haptics.OptionalPcmHapticsLoader;
 import com.limelight.binding.input.capture.InputCaptureManager;
 import com.limelight.binding.input.capture.InputCaptureProvider;
 import com.limelight.binding.input.touch.AbsoluteTouchContext;
@@ -36,6 +37,7 @@ import com.limelight.nvstream.http.NvHTTP;
 import com.limelight.nvstream.input.KeyboardPacket;
 import com.limelight.nvstream.input.MouseButtonPacket;
 import com.limelight.nvstream.jni.MoonBridge;
+import com.limelight.haptics.PcmHapticsBackend;
 import com.limelight.preferences.GlPreferences;
 import com.limelight.preferences.PreferenceConfiguration;
 import com.limelight.ui.gamemenu.GameMenuFragment;
@@ -591,7 +593,12 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 willStreamHdr,
                 glPrefs.glRenderer,
                 this);
-        decoderRenderer.setFirstFrameListener(() -> streamLoadingController.onFirstFrameRendered());
+        decoderRenderer.setFirstFrameListener(() -> {
+            streamLoadingController.onFirstFrameRendered();
+            if (controllerHandler != null) {
+                controllerHandler.notifyStreamReady();
+            }
+        });
 
         // Don't stream HDR if the decoder can't support it
         if (willStreamHdr && !decoderRenderer.isHevcMain10Hdr10Supported() && !decoderRenderer.isAv1Main10Supported()) {
@@ -695,7 +702,25 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 httpsPort, uniqueId, config,
                 PlatformBinding.getCryptoProvider(this), serverCert);
         startConnectionIfReady();
-        controllerHandler = new ControllerHandler(this, conn, this, prefConfig);
+        PcmHapticsBackend optionalPcmHapticsBackend = OptionalPcmHapticsLoader.load(this,
+                new PcmHapticsBackend.Callback() {
+                    @Override
+                    public void onUsbPermissionPromptStarting() {
+                        Game.this.onUsbPermissionPromptStarting();
+                    }
+
+                    @Override
+                    public void onUsbPermissionPromptCompleted() {
+                        Game.this.onUsbPermissionPromptCompleted();
+                    }
+
+                    @Override
+                    public void onAvailabilityChanged(boolean active) {
+                        LimeLog.info("Kishi PCM haptics " + (active ? "active" : "inactive"));
+                    }
+                });
+        controllerHandler = new ControllerHandler(this, conn, this, prefConfig,
+                optionalPcmHapticsBackend);
         keyboardTranslator = new KeyboardTranslator();
 
         InputManager inputManager = (InputManager) getSystemService(Context.INPUT_SERVICE);

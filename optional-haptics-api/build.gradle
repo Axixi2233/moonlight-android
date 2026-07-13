@@ -1,0 +1,16 @@
+apply plugin: 'com.android.library'
+
+android {
+    namespace 'com.limelight.haptics'
+    compileSdk 34
+
+    defaultConfig {
+        minSdk 21
+    }
+
+    compileOptions {
+        encoding "UTF-8"
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+}

@@ -1,1 +1,16 @@
 include ':app'
+include ':optional-haptics-api'
+
+def includeKishiHaptics = providers.gradleProperty('includeKishiHaptics')
+        .map { it.toBoolean() }
+        .getOrElse(true)
+def kishiHapticsDir = file('private/kishi-haptics')
+def hasKishiHaptics = includeKishiHaptics &&
+        new File(kishiHapticsDir, 'build.gradle').isFile()
+
+gradle.ext.hasKishiHaptics = hasKishiHaptics
+
+if (hasKishiHaptics) {
+    include ':kishi-haptics'
+    project(':kishi-haptics').projectDir = kishiHapticsDir
+}

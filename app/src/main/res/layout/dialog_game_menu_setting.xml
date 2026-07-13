@@ -320,6 +320,19 @@
                         android:text="视图键【长按】"
                         android:textSize="6dp" />
 
+                    <RadioButton
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:gravity="center"
+                        android:padding="4dp"
+                        android:id="@+id/rbt_game_setting_control_5"
+                        android:button="@null"
+                        android:text="Z键【单击】"
+                        android:textSize="6dp" />
+
                 </RadioGroup>
 
                 <TextView

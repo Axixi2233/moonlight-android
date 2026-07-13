@@ -81,7 +81,7 @@
 
             <ScrollView
                 android:layout_width="match_parent"
-                android:layout_height="260dp"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:overScrollMode="ifContentScrolls"
                 android:scrollbars="none">
@@ -89,7 +89,7 @@
                 <LinearLayout
                     android:id="@+id/performanceOverlayBigContent"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="360dp"
                     android:orientation="vertical" />
             </ScrollView>
         </LinearLayout>

@@ -40,5 +40,8 @@ build/
 **/jniLibs
 app/.externalNativeBuild/
 
+# Optional private Kishi haptics implementation
+/private/kishi-haptics/
+
 # NDK stuff
 .cxx/

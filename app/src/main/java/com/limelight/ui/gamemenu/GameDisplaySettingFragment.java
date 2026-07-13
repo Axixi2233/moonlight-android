@@ -226,6 +226,14 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
                     saveSetting("ax_quick_game_menu_key",2);
                     return;
                 }
+                //Z键单击
+                if(checkedId==R.id.rbt_game_setting_control_5){
+                    prefConfig.mouseEmulation=true;
+                    saveSetting("checkbox_mouse_emulation",true);
+                    prefConfig.mouseEmulationGameMenu=3;
+                    saveSetting("ax_quick_game_menu_key",3);
+                    return;
+                }
             }
         });
 
@@ -473,6 +481,9 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
                 break;
             case 2:
                 rg_game_setting_control.check(R.id.rbt_game_setting_control_4);
+                break;
+            case 3:
+                rg_game_setting_control.check(R.id.rbt_game_setting_control_5);
                 break;
         }
     }

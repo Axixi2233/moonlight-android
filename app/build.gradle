@@ -14,6 +14,7 @@ android {
         versionName "12.1-260522"
         versionCode = 314
         buildConfigField "int", "AXI_CODE", "8"
+        buildConfigField "boolean", "HAS_KISHI_HAPTICS", gradle.ext.hasKishiHaptics.toString()
         // Generate native debug symbols to allow Google Play to symbolicate our native crashes
         ndk.debugSymbolLevel = 'FULL'
     }
@@ -139,6 +140,10 @@ android {
 }
 
 dependencies {
+    implementation project(':optional-haptics-api')
+    if (gradle.ext.hasKishiHaptics) {
+        implementation project(':kishi-haptics')
+    }
     implementation files('libs/axi_gamepad_1.0.5.aar')
     implementation 'org.bouncycastle:bcprov-jdk18on:1.77'
     implementation 'org.bouncycastle:bcpkix-jdk18on:1.77'

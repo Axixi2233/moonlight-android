@@ -41,6 +41,8 @@ import com.limelight.binding.input.driver.AbstractController;
 import com.limelight.binding.input.driver.DualSenseController;
 import com.limelight.binding.input.driver.UsbDriverListener;
 import com.limelight.binding.input.driver.UsbDriverService;
+import com.limelight.haptics.NoOpPcmHapticsBackend;
+import com.limelight.haptics.PcmHapticsBackend;
 import com.limelight.nvstream.NvConnection;
 import com.limelight.nvstream.input.ControllerPacket;
 import com.limelight.nvstream.input.KeyboardPacket;
@@ -128,8 +130,11 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
     private final Handler mainThreadHandler;
     private final HandlerThread backgroundHandlerThread;
     private final Handler backgroundThreadHandler;
+    private final PcmHapticsBackend optionalPcmHapticsBackend;
     private boolean hasGameController;
     private boolean stopped = false;
+    private boolean streamReady;
+    private boolean optionalPcmHapticsWasActive;
 
     private final PreferenceConfiguration prefConfig;
     private short currentControllers, initialControllers;
@@ -177,6 +182,39 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         return false;
     }
 
+    private boolean isHandledByOptionalPcmHaptics(int vendorId, int productId) {
+        return optionalPcmHapticsBackend.isActive()
+                && optionalPcmHapticsBackend.handlesDevice(vendorId, productId);
+    }
+
+    private boolean submitOptionalRumble(int vendorId, int productId,
+                                         short lowFreqMotor, short highFreqMotor) {
+        if (!isHandledByOptionalPcmHaptics(vendorId, productId)) {
+            return false;
+        }
+
+        return optionalPcmHapticsBackend.submitRumble(
+                vendorId, productId, lowFreqMotor & 0xFFFF, highFreqMotor & 0xFFFF);
+    }
+
+    private void stopStandardRumbleForOptionalPcmDevices() {
+        for (int i = 0; i < inputDeviceContexts.size(); i++) {
+            InputDeviceContext deviceContext = inputDeviceContexts.valueAt(i);
+            if (optionalPcmHapticsBackend.handlesDevice(
+                    deviceContext.vendorId, deviceContext.productId)) {
+                rumbleInputDeviceContext(deviceContext, (short) 0, (short) 0);
+            }
+        }
+
+        for (int i = 0; i < usbDeviceContexts.size(); i++) {
+            UsbDeviceContext deviceContext = usbDeviceContexts.valueAt(i);
+            if (optionalPcmHapticsBackend.handlesDevice(
+                    deviceContext.device.getVendorId(), deviceContext.device.getProductId())) {
+                deviceContext.device.rumble((short) 0, (short) 0);
+            }
+        }
+    }
+
     public boolean handleStandardControllerAudioHaptics(short lowFreqMotor, short highFreqMotor) {
         if (stopped || !shouldUseControllerAudioHaptics()) {
             return false;
@@ -186,11 +224,18 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
 
         for (int i = 0; i < inputDeviceContexts.size(); i++) {
             InputDeviceContext deviceContext = inputDeviceContexts.valueAt(i);
+            if (isHandledByOptionalPcmHaptics(deviceContext.vendorId, deviceContext.productId)) {
+                continue;
+            }
             vibrated |= rumbleInputDeviceContext(deviceContext, lowFreqMotor, highFreqMotor);
         }
 
         for (int i = 0; i < usbDeviceContexts.size(); i++) {
             UsbDeviceContext deviceContext = usbDeviceContexts.valueAt(i);
+            if (isHandledByOptionalPcmHaptics(
+                    deviceContext.device.getVendorId(), deviceContext.device.getProductId())) {
+                continue;
+            }
             if (!deviceContext.device.isAdvancedAudioHapticsActive()) {
                 deviceContext.device.rumble(lowFreqMotor, highFreqMotor);
                 vibrated = true;
@@ -205,7 +250,17 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             return false;
         }
 
-        boolean submitted = false;
+        boolean optionalPcmHapticsActive = optionalPcmHapticsBackend.isActive();
+        if (optionalPcmHapticsActive && !optionalPcmHapticsWasActive) {
+            // Generic Android rumble effects last for up to 60 seconds, so explicitly stop the
+            // Kishi motor path once before PCM takes ownership.
+            stopStandardRumbleForOptionalPcmDevices();
+        }
+        optionalPcmHapticsWasActive = optionalPcmHapticsActive;
+
+        // The optional Kishi backend consumes the same 3 kHz stereo PCM that is generated for
+        // DualSense. Its gain is already baked into the samples by the audio haptics processor.
+        boolean submitted = optionalPcmHapticsBackend.submitPcm(frame, 3000, 2, 1.0f);
         for (int i = 0; i < usbDeviceContexts.size(); i++) {
             UsbDeviceContext deviceContext = usbDeviceContexts.valueAt(i);
             if (deviceContext.device.isAdvancedAudioHapticsActive()) {
@@ -222,6 +277,15 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         }
 
         boolean enableControllerAudioHaptics = shouldUseControllerAudioHaptics();
+        // The optional Kishi USB session also carries ordinary dual-motor rumble. Keep it
+        // available throughout the stream even when PCM audio haptics are disabled.
+        if (streamReady) {
+            optionalPcmHapticsBackend.start();
+        }
+        else {
+            optionalPcmHapticsBackend.stop();
+            optionalPcmHapticsWasActive = false;
+        }
         for (int i = 0; i < usbDeviceContexts.size(); i++) {
             UsbDeviceContext deviceContext = usbDeviceContexts.valueAt(i);
             AbstractController controller = deviceContext.device;
@@ -239,11 +303,27 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
 
     }
 
+    public void notifyStreamReady() {
+        if (stopped || streamReady) {
+            return;
+        }
+        streamReady = true;
+        refreshAudioHapticsState();
+    }
+
     public ControllerHandler(Activity activityContext, NvConnection conn, GameGestures gestures, PreferenceConfiguration prefConfig) {
+        this(activityContext, conn, gestures, prefConfig, NoOpPcmHapticsBackend.INSTANCE);
+    }
+
+    public ControllerHandler(Activity activityContext, NvConnection conn, GameGestures gestures,
+                             PreferenceConfiguration prefConfig,
+                             PcmHapticsBackend optionalPcmHapticsBackend) {
         this.activityContext = activityContext;
         this.conn = conn;
         this.gestures = gestures;
         this.prefConfig = prefConfig;
+        this.optionalPcmHapticsBackend = optionalPcmHapticsBackend == null
+                ? NoOpPcmHapticsBackend.INSTANCE : optionalPcmHapticsBackend;
         this.deviceVibrator = (Vibrator) activityContext.getSystemService(Context.VIBRATOR_SERVICE);
         this.deviceSensorManager = (SensorManager) activityContext.getSystemService(Context.SENSOR_SERVICE);
         this.inputManager = (InputManager) activityContext.getSystemService(Context.INPUT_SERVICE);
@@ -381,6 +461,8 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
 
         // Stop new device contexts from being created or used
         stopped = true;
+        optionalPcmHapticsBackend.stop();
+        optionalPcmHapticsWasActive = false;
 
         // Unregister our input device callbacks
         inputManager.unregisterInputDeviceListener(this);
@@ -404,6 +486,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         }
 
         sceManager.stop();
+        optionalPcmHapticsBackend.destroy();
         backgroundHandlerThread.quit();
     }
 
@@ -2364,6 +2447,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
     public void handleRumble(short controllerNumber, short lowFreqMotor, short highFreqMotor) {
         boolean foundMatchingDevice = false;
         boolean vibrated = false;
+        boolean optionalRumbleSubmitted = false;
 
         if (stopped) {
             return;
@@ -2379,7 +2463,13 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                     continue;
                 }
 
-                vibrated |= rumbleInputDeviceContext(deviceContext, lowFreqMotor, highFreqMotor);
+                if (submitOptionalRumble(deviceContext.vendorId, deviceContext.productId,
+                        lowFreqMotor, highFreqMotor)) {
+                    optionalRumbleSubmitted = vibrated = true;
+                }
+                else {
+                    vibrated |= rumbleInputDeviceContext(deviceContext, lowFreqMotor, highFreqMotor);
+                }
             }
         }
 
@@ -2389,7 +2479,18 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             if (deviceContext.controllerNumber == controllerNumber) {
                 foundMatchingDevice = vibrated = true;
                 if (!shouldSuppressControllerRumble(deviceContext.device)) {
-                    deviceContext.device.rumble(lowFreqMotor, highFreqMotor);
+                    int vendorId = deviceContext.device.getVendorId();
+                    int productId = deviceContext.device.getProductId();
+                    if (!optionalRumbleSubmitted ||
+                            !optionalPcmHapticsBackend.handlesDevice(vendorId, productId)) {
+                        if (submitOptionalRumble(vendorId, productId,
+                                lowFreqMotor, highFreqMotor)) {
+                            optionalRumbleSubmitted = true;
+                        }
+                        else {
+                            deviceContext.device.rumble(lowFreqMotor, highFreqMotor);
+                        }
+                    }
                 }
             }
         }
@@ -2805,6 +2906,17 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             }
             context.inputMap &= ~ControllerPacket.BACK_FLAG;
             break;
+        case KeyEvent.KEYCODE_BUTTON_Z:
+            if (prefConfig.mouseEmulation && prefConfig.mouseEmulationGameMenu == 3) {
+                if (prefConfig.enableQtDialog) {
+                    gestures.showGameMenu(context);
+                }
+                else {
+                    context.toggleMouseEmulation();
+                }
+                return true;
+            }
+            return false;
         case KeyEvent.KEYCODE_DPAD_LEFT:
             if (context.hatXAxisUsed) {
                 // Suppress this duplicate event if we have a hat
@@ -3019,6 +3131,11 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             context.hasSelect = true;
             context.inputMap |= ControllerPacket.BACK_FLAG;
             break;
+        case KeyEvent.KEYCODE_BUTTON_Z:
+            if (prefConfig.mouseEmulation && prefConfig.mouseEmulationGameMenu == 3) {
+                return true;
+            }
+            return false;
         case KeyEvent.KEYCODE_DPAD_LEFT:
             if (context.hatXAxisUsed) {
                 // Suppress this duplicate event if we have a hat
