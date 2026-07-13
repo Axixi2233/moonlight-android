@@ -27,16 +27,6 @@ public final class ControllerAudioHapticsController {
     private static final float STANDARD_HIGH_MOTOR_MULTIPLIER = 1.35f;
     private static final short STANDARD_STOP_THRESHOLD = 1100;
 
-    private static final float KISHI_LOWPASS_CUTOFF_HZ = 220.0f;
-    private static final float KISHI_VOICE_LOWPASS_CUTOFF_HZ = 1500.0f;
-    private static final float KISHI_NOISE_GATE = 0.0018f;
-    private static final float KISHI_RELEASE_FLOOR = 0.0008f;
-    private static final float KISHI_DRY_BLEND = 0.82f;
-    private static final float KISHI_TRANSIENT_BLEND = 0.06f;
-    private static final float KISHI_STRENGTH_MULTIPLIER = 3.35f;
-    private static final float KISHI_GAIN_MULTIPLIER = 2.9f;
-    private static final float KISHI_SUSTAIN_FLOOR = 0.15f;
-
     private final ControllerHandler controllerHandler;
     private boolean enabled;
     private int strengthPercent;
@@ -59,13 +49,6 @@ public final class ControllerAudioHapticsController {
     private float standardSmoothedLevel;
     private short lastStandardLowMotor;
     private short lastStandardHighMotor;
-
-    private int kishiResampleAccumulator;
-    private float kishiLeftLowPassState;
-    private float kishiRightLowPassState;
-    private float kishiLeftVoiceLowPassState;
-    private float kishiRightVoiceLowPassState;
-    private float kishiSmoothedLevel;
 
     public ControllerAudioHapticsController(ControllerHandler controllerHandler,
                                             boolean enabled, int strengthPercent,
@@ -102,17 +85,12 @@ public final class ControllerAudioHapticsController {
         float standardVoiceAlpha = getLowPassAlpha(STANDARD_VOICE_LOWPASS_CUTOFF_HZ);
         float standardSuppression = getStandardVoiceSuppressionStrength();
 
-        float kishiAlpha = getLowPassAlpha(KISHI_LOWPASS_CUTOFF_HZ);
-        float kishiVoiceAlpha = getLowPassAlpha(KISHI_VOICE_LOWPASS_CUTOFF_HZ);
-        float kishiSuppression = getKishiVoiceSuppressionStrength();
-
         int frames = audioData.length / channelCount;
         if (frames <= 0) {
             return;
         }
 
         ByteArrayOutputStream ds5Out = new ByteArrayOutputStream(128);
-        ByteArrayOutputStream kishiOut = new ByteArrayOutputStream(128);
         float standardBassPeak = 0.0f;
         float standardTransientPeak = 0.0f;
 
@@ -126,7 +104,6 @@ public final class ControllerAudioHapticsController {
                     standardAlpha, standardVoiceAlpha, standardSuppression);
             standardBassPeak = Math.max(standardBassPeak, standardLevels[0]);
             standardTransientPeak = Math.max(standardTransientPeak, standardLevels[1]);
-            processKishiSample(leftSample, rightSample, kishiAlpha, kishiVoiceAlpha, kishiSuppression, kishiOut);
         }
 
         short standardLowMotor = toMotorValue(standardBassPeak * STANDARD_LOW_MOTOR_MULTIPLIER);
@@ -149,11 +126,6 @@ public final class ControllerAudioHapticsController {
                     Math.min(2.75f, (strengthPercent / 100.0f) * DS5_GAIN_MULTIPLIER));
         }
 
-        byte[] kishiFrame = kishiOut.toByteArray();
-        if (kishiFrame.length > 0) {
-            controllerHandler.handleRazerKishiAudioHapticsFrame(kishiFrame,
-                    Math.min(3.0f, (strengthPercent / 100.0f) * KISHI_GAIN_MULTIPLIER));
-        }
     }
 
     public synchronized void stop() {
@@ -243,52 +215,6 @@ public final class ControllerAudioHapticsController {
         };
     }
 
-    private void processKishiSample(float leftSample, float rightSample,
-                                    float alpha, float voiceAlpha, float suppression,
-                                    ByteArrayOutputStream out) {
-        kishiLeftLowPassState += alpha * (leftSample - kishiLeftLowPassState);
-        kishiRightLowPassState += alpha * (rightSample - kishiRightLowPassState);
-        kishiLeftVoiceLowPassState += voiceAlpha * (leftSample - kishiLeftVoiceLowPassState);
-        kishiRightVoiceLowPassState += voiceAlpha * (rightSample - kishiRightVoiceLowPassState);
-
-        float leftVoiceResidual = Math.abs(kishiLeftVoiceLowPassState - kishiLeftLowPassState);
-        float rightVoiceResidual = Math.abs(kishiRightVoiceLowPassState - kishiRightLowPassState);
-        float leftTransient = (leftSample - kishiLeftLowPassState) * KISHI_TRANSIENT_BLEND;
-        float rightTransient = (rightSample - kishiRightLowPassState) * KISHI_TRANSIENT_BLEND;
-        float leftBody = (kishiLeftLowPassState * (1.0f - KISHI_DRY_BLEND)) + (leftSample * KISHI_DRY_BLEND) + leftTransient;
-        float rightBody = (kishiRightLowPassState * (1.0f - KISHI_DRY_BLEND)) + (rightSample * KISHI_DRY_BLEND) + rightTransient;
-        float leftFiltered = applyVoiceFilter(leftBody, leftVoiceResidual, suppression);
-        float rightFiltered = applyVoiceFilter(rightBody, rightVoiceResidual, suppression);
-
-        float bassPresence = 0.5f * (Math.abs(kishiLeftLowPassState) + Math.abs(kishiRightLowPassState));
-        float envelopeInput = (0.72f * bassPresence) +
-                (0.22f * (Math.abs(leftFiltered) + Math.abs(rightFiltered))) +
-                (0.12f * Math.max(Math.abs(leftTransient), Math.abs(rightTransient)));
-        float targetLevel = Math.max(0.0f, (envelopeInput - KISHI_NOISE_GATE) / (0.10f - KISHI_NOISE_GATE));
-        float attack = targetLevel > kishiSmoothedLevel ? 0.48f : 0.18f;
-        kishiSmoothedLevel += attack * (targetLevel - kishiSmoothedLevel);
-        if (bassPresence > (KISHI_NOISE_GATE * 1.2f) &&
-                kishiSmoothedLevel > KISHI_RELEASE_FLOOR && targetLevel < KISHI_SUSTAIN_FLOOR) {
-            kishiSmoothedLevel = Math.max(kishiSmoothedLevel, KISHI_SUSTAIN_FLOOR);
-        }
-
-        float levelScale = kishiSmoothedLevel >= KISHI_RELEASE_FLOOR ?
-                (float) Math.pow(Math.min(1.0f, kishiSmoothedLevel), 0.76f) : 0.0f;
-        float strengthScale = Math.min(3.5f,
-                (strengthPercent / 100.0f) * KISHI_STRENGTH_MULTIPLIER);
-
-        kishiResampleAccumulator += TARGET_SAMPLE_RATE;
-        while (kishiResampleAccumulator >= sampleRate) {
-            short leftOut = floatToShort(leftFiltered * levelScale * strengthScale);
-            short rightOut = floatToShort(rightFiltered * levelScale * strengthScale);
-            out.write(leftOut & 0xFF);
-            out.write((leftOut >> 8) & 0xFF);
-            out.write(rightOut & 0xFF);
-            out.write((rightOut >> 8) & 0xFF);
-            kishiResampleAccumulator -= sampleRate;
-        }
-    }
-
     private void resetState() {
         ds5ResampleAccumulator = 0;
         ds5LeftLowPassState = 0.0f;
@@ -305,12 +231,6 @@ public final class ControllerAudioHapticsController {
         lastStandardLowMotor = 0;
         lastStandardHighMotor = 0;
 
-        kishiResampleAccumulator = 0;
-        kishiLeftLowPassState = 0.0f;
-        kishiRightLowPassState = 0.0f;
-        kishiLeftVoiceLowPassState = 0.0f;
-        kishiRightVoiceLowPassState = 0.0f;
-        kishiSmoothedLevel = 0.0f;
     }
 
     private float extractChannelSample(short[] audioData, int base, int channelIndex) {
@@ -377,20 +297,6 @@ public final class ControllerAudioHapticsController {
                 return 0.38f;
             case AudioHapticsController.VOICE_FILTER_HIGH:
                 return 0.92f;
-            case AudioHapticsController.VOICE_FILTER_OFF:
-            default:
-                return 0.0f;
-        }
-    }
-
-    private float getKishiVoiceSuppressionStrength() {
-        switch (voiceFilterMode) {
-            case AudioHapticsController.VOICE_FILTER_LOW:
-                return 0.06f;
-            case AudioHapticsController.VOICE_FILTER_MEDIUM:
-                return 0.12f;
-            case AudioHapticsController.VOICE_FILTER_HIGH:
-                return 0.34f;
             case AudioHapticsController.VOICE_FILTER_OFF:
             default:
                 return 0.0f;

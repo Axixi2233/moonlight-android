@@ -157,24 +157,9 @@ public class UsbDriverService extends Service implements UsbDriverListener {
 
     }
 
-    private boolean shouldUseRazerKishiController(UsbDevice device) {
-        return prefConfig != null &&
-                prefConfig.enableAudioHaptics &&
-                "controller".equals(prefConfig.audioHapticsOutputTarget) &&
-                RazerKishiHapticsDevice.canUseDevice(device);
-    }
-
-    private boolean shouldClaimDeviceForCurrentMode(UsbDevice device, boolean claimAllAvailable) {
-        if (shouldUseRazerKishiController(device)) {
-            return true;
-        }
-
-        return shouldClaimDevice(device, claimAllAvailable);
-    }
-
     private void handleUsbDeviceState(UsbDevice device) {
         // Are we able to operate it?
-        if (shouldClaimDeviceForCurrentMode(device, prefConfig.bindAllUsb)) {
+        if (shouldClaimDevice(device, prefConfig.bindAllUsb)) {
             // Do we have permission yet?
             if (!usbManager.hasPermission(device)) {
                 // Let's ask for permission
@@ -208,10 +193,6 @@ public class UsbDriverService extends Service implements UsbDriverListener {
                         stateListener.onUsbPermissionPromptCompleted();
                     }
                 }
-                return;
-            }
-
-            if (shouldUseRazerKishiController(device)) {
                 return;
             }
 
@@ -362,7 +343,7 @@ public class UsbDriverService extends Service implements UsbDriverListener {
 
         // Enumerate existing devices
         for (UsbDevice dev : usbManager.getDeviceList().values()) {
-            if (shouldClaimDeviceForCurrentMode(dev, prefConfig.bindAllUsb)) {
+            if (shouldClaimDevice(dev, prefConfig.bindAllUsb)) {
                 // Start the process of claiming this device
                 handleUsbDeviceState(dev);
             }else{

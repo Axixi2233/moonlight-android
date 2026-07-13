@@ -21,7 +21,6 @@ import android.os.CombinedVibration;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
-import android.os.SystemClock;
 import android.os.VibrationAttributes;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
@@ -40,7 +39,6 @@ import com.limelight.LimeLog;
 import com.limelight.R;
 import com.limelight.binding.input.driver.AbstractController;
 import com.limelight.binding.input.driver.DualSenseController;
-import com.limelight.binding.input.driver.RazerKishiHapticsDevice;
 import com.limelight.binding.input.driver.UsbDriverListener;
 import com.limelight.binding.input.driver.UsbDriverService;
 import com.limelight.nvstream.NvConnection;
@@ -63,8 +61,6 @@ import java.util.List;
 import java.util.Map;
 
 public class ControllerHandler implements InputManager.InputDeviceListener, UsbDriverListener {
-    private static final String KISHI_LOG_TAG = "RazerKishiDebug";
-
     private static final int MAXIMUM_BUMPER_UP_DELAY_MS = 100;
 
     private static final int START_DOWN_TIME_MOUSE_MODE_MS = 750;
@@ -118,7 +114,6 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
 
     private final SparseArray<InputDeviceContext> inputDeviceContexts = new SparseArray<>();
     private final SparseArray<UsbDeviceContext> usbDeviceContexts = new SparseArray<>();
-    private final SparseArray<RazerKishiHapticsDevice> razerKishiHapticsDevices = new SparseArray<>();
 
     private final NvConnection conn;
     private final Activity activityContext;
@@ -126,7 +121,6 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
     private final InputDeviceContext defaultContext = new InputDeviceContext();
     private final GameGestures gestures;
     private final InputManager inputManager;
-    private final UsbManager usbManager;
     private final Vibrator deviceVibrator;
     private final VibratorManager deviceVibratorManager;
     private final SensorManager deviceSensorManager;
@@ -134,7 +128,6 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
     private final Handler mainThreadHandler;
     private final HandlerThread backgroundHandlerThread;
     private final Handler backgroundThreadHandler;
-    private long lastRazerKishiRefreshTimeMs;
     private boolean hasGameController;
     private boolean stopped = false;
 
@@ -152,104 +145,8 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
     }
 
     private boolean shouldSuppressInputDeviceRumble(InputDeviceContext context) {
-        if (!RazerKishiHapticsDevice.isFeatureEnabled()) {
-            return shouldUseControllerAudioHaptics() &&
-                    !prefConfig.audioHapticsKeepControllerRumble;
-        }
-
         return shouldUseControllerAudioHaptics() &&
-                !prefConfig.audioHapticsKeepControllerRumble &&
-                RazerKishiHapticsDevice.canUseDevice(context.vendorId, context.productId, context.name);
-    }
-
-    private void maybeRefreshRazerKishiHapticsState() {
-        if (!RazerKishiHapticsDevice.isFeatureEnabled()) {
-            return;
-        }
-
-        long now = SystemClock.uptimeMillis();
-        if (now - lastRazerKishiRefreshTimeMs < 1500) {
-            return;
-        }
-
-        refreshRazerKishiHapticsState();
-    }
-
-    private void refreshRazerKishiHapticsState() {
-        if (!RazerKishiHapticsDevice.isFeatureEnabled()) {
-            stopRazerKishiHapticsDevices();
-            return;
-        }
-
-        lastRazerKishiRefreshTimeMs = SystemClock.uptimeMillis();
-
-        if (usbManager == null) {
-            stopRazerKishiHapticsDevices();
-            return;
-        }
-
-        boolean enable = shouldUseControllerAudioHaptics();
-        ArrayList<Integer> activeIds = new ArrayList<>();
-
-        if (enable) {
-            for (UsbDevice usbDevice : usbManager.getDeviceList().values()) {
-                if (!RazerKishiHapticsDevice.canUseDevice(usbDevice)) {
-                    continue;
-                }
-
-                Log.d(KISHI_LOG_TAG, "refreshRazerKishiHapticsState matched device: vid=0x" +
-                        Integer.toHexString(usbDevice.getVendorId()) + " pid=0x" +
-                        Integer.toHexString(usbDevice.getProductId()) + " name=" +
-                        usbDevice.getProductName() + " permission=" + usbManager.hasPermission(usbDevice));
-
-                int deviceId = usbDevice.getDeviceId();
-                activeIds.add(deviceId);
-
-                RazerKishiHapticsDevice existing = razerKishiHapticsDevices.get(deviceId);
-                if (existing != null && existing.isStarted()) {
-                    Log.d(KISHI_LOG_TAG, "Kishi haptics already active for deviceId=" + deviceId);
-                    continue;
-                }
-
-                if (!usbManager.hasPermission(usbDevice)) {
-                    Log.w(KISHI_LOG_TAG, "Kishi device missing USB permission: deviceId=" + deviceId);
-                    continue;
-                }
-
-                android.hardware.usb.UsbDeviceConnection connection = usbManager.openDevice(usbDevice);
-                if (connection == null) {
-                    Log.e(KISHI_LOG_TAG, "openDevice failed for Kishi deviceId=" + deviceId);
-                    continue;
-                }
-
-                RazerKishiHapticsDevice hapticsDevice = new RazerKishiHapticsDevice(usbDevice, connection);
-                if (hapticsDevice.start()) {
-                    Log.i(KISHI_LOG_TAG, "Kishi haptics sidecar started for deviceId=" + deviceId);
-                    razerKishiHapticsDevices.put(deviceId, hapticsDevice);
-                }
-                else {
-                    Log.e(KISHI_LOG_TAG, "Kishi haptics sidecar failed to start for deviceId=" + deviceId);
-                    hapticsDevice.stop();
-                }
-            }
-        }
-
-        for (int i = razerKishiHapticsDevices.size() - 1; i >= 0; i--) {
-            int deviceId = razerKishiHapticsDevices.keyAt(i);
-            if (!enable || !activeIds.contains(deviceId)) {
-                Log.i(KISHI_LOG_TAG, "Removing Kishi haptics sidecar for deviceId=" + deviceId);
-                RazerKishiHapticsDevice device = razerKishiHapticsDevices.valueAt(i);
-                device.stop();
-                razerKishiHapticsDevices.removeAt(i);
-            }
-        }
-    }
-
-    private void stopRazerKishiHapticsDevices() {
-        for (int i = razerKishiHapticsDevices.size() - 1; i >= 0; i--) {
-            razerKishiHapticsDevices.valueAt(i).stop();
-            razerKishiHapticsDevices.removeAt(i);
-        }
+                !prefConfig.audioHapticsKeepControllerRumble;
     }
 
     private boolean rumbleInputDeviceContext(InputDeviceContext deviceContext,
@@ -319,35 +216,6 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         return submitted;
     }
 
-    public boolean handleRazerKishiAudioHapticsFrame(byte[] frame, float intensityGain) {
-        if (!RazerKishiHapticsDevice.isFeatureEnabled()) {
-            return false;
-        }
-
-        if (stopped || !shouldUseControllerAudioHaptics() || frame == null || frame.length == 0) {
-            Log.d(KISHI_LOG_TAG, "handleRazerKishiAudioHapticsFrame skipped: stopped=" + stopped +
-                    " useControllerAudio=" + shouldUseControllerAudioHaptics() +
-                    " frameLength=" + (frame == null ? -1 : frame.length));
-            return false;
-        }
-
-        if (razerKishiHapticsDevices.size() == 0) {
-            Log.d(KISHI_LOG_TAG, "No active Kishi sidecars, refreshing before submit");
-            maybeRefreshRazerKishiHapticsState();
-        }
-
-        boolean submitted = false;
-        for (int i = 0; i < razerKishiHapticsDevices.size(); i++) {
-            submitted |= razerKishiHapticsDevices.valueAt(i).submitFrame(frame, intensityGain);
-        }
-
-        if (!submitted) {
-            Log.w(KISHI_LOG_TAG, "Kishi audio haptics frame was not submitted to any sidecar");
-        }
-
-        return submitted;
-    }
-
     public void refreshAudioHapticsState() {
         if (stopped) {
             return;
@@ -369,7 +237,6 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             }
         }
 
-        refreshRazerKishiHapticsState();
     }
 
     public ControllerHandler(Activity activityContext, NvConnection conn, GameGestures gestures, PreferenceConfiguration prefConfig) {
@@ -377,7 +244,6 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         this.conn = conn;
         this.gestures = gestures;
         this.prefConfig = prefConfig;
-        this.usbManager = (UsbManager) activityContext.getSystemService(Context.USB_SERVICE);
         this.deviceVibrator = (Vibrator) activityContext.getSystemService(Context.VIBRATOR_SERVICE);
         this.deviceSensorManager = (SensorManager) activityContext.getSystemService(Context.SENSOR_SERVICE);
         this.inputManager = (InputManager) activityContext.getSystemService(Context.INPUT_SERVICE);
@@ -529,7 +395,6 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             deviceContext.destroy();
         }
 
-        stopRazerKishiHapticsDevices();
         deviceVibrator.cancel();
     }
 
