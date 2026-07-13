@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_update_dialog_panel"
+    android:elevation="24dp"
+    android:orientation="vertical"
+    android:paddingLeft="18dp"
+    android:paddingTop="16dp"
+    android:paddingRight="18dp"
+    android:paddingBottom="18dp">
+
+    <TextView
+        android:id="@+id/tv_app_dialog_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#FFF7F7F2"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:fillViewport="true"
+        android:maxHeight="260dp"
+        android:minHeight="60dp"
+        android:overScrollMode="ifContentScrolls">
+
+        <TextView
+            android:id="@+id/tv_app_dialog_message"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:lineSpacingExtra="3dp"
+            android:textColor="#FFC6CEDB"
+            android:textIsSelectable="true"
+            android:textSize="12sp" />
+    </ScrollView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/btn_app_dialog_secondary"
+            android:layout_width="0dp"
+            android:layout_height="42dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_app_dialog_action"
+            android:clickable="true"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:gravity="center"
+            android:nextFocusRight="@id/btn_app_dialog_primary"
+            android:textColor="#FF8792A3"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            tools:text="ddd"
+            tools:visibility="visible"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/btn_app_dialog_primary"
+            android:layout_width="0dp"
+            android:layout_height="42dp"
+            android:layout_marginStart="10dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_app_dialog_action"
+            android:clickable="true"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:gravity="center"
+            android:nextFocusLeft="@id/btn_app_dialog_secondary"
+            android:textColor="#FFF7F7F2"
+            android:textSize="13sp"
+            tools:text="ddd"
+            tools:visibility="visible"
+            android:textStyle="bold" />
+    </LinearLayout>
+</LinearLayout>

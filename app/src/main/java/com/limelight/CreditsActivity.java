@@ -127,7 +127,8 @@ public class CreditsActivity extends BaseActivity {
 
         findViewById(R.id.iv_back).setOnClickListener(v -> finish());
         findViewById(R.id.tx_sponsored).setOnClickListener(v ->
-                UpdateChecker.openUrl(CreditsActivity.this, "https://axixi2233.github.io/credits.html"));
+                AboutActivity.showSponsoredQrDialog(this));
+//                UpdateChecker.openUrl(CreditsActivity.this, "https://axixi2233.github.io/credits.html"));
 
         creditsWallView = findViewById(R.id.credits_wall);
         loadRemoteEntries();

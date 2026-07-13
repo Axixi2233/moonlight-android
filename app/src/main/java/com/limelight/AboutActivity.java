@@ -1,17 +1,21 @@
 package com.limelight;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Outline;
-import android.net.Uri;
 import android.os.Bundle;
+import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.ViewOutlineProvider;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
-
 import com.limelight.utils.UpdateChecker;
+
+import static com.limelight.utils.DeviceUtils.isTablet;
 
 public class AboutActivity extends BaseActivity implements View.OnClickListener {
 
@@ -23,9 +27,10 @@ public class AboutActivity extends BaseActivity implements View.OnClickListener 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_about);
 
-        tvVersion = findViewById(cn.axi.gamepad.an.R.id.tv_version);
-        ivLogo = findViewById(cn.axi.gamepad.an.R.id.iv_logo);
-        findViewById(cn.axi.gamepad.an.R.id.iv_back).setOnClickListener(v -> finish());
+        tvVersion = findViewById(R.id.tv_version);
+        ivLogo = findViewById(R.id.iv_logo);
+        findViewById(R.id.iv_back).setOnClickListener(v -> finish());
+        findViewById(R.id.iv_coffee).setOnClickListener(v -> showSponsoredQrDialog(this));
         tvVersion.setText("版本号：" + BuildConfig.VERSION_NAME);
 
         ivLogo.setClipToOutline(true);
@@ -41,6 +46,11 @@ public class AboutActivity extends BaseActivity implements View.OnClickListener 
     public void onClick(View v) {
         if (v.getId() == R.id.iv_get) {
             UpdateChecker.checkForUpdates(this, true);
+            return;
+        }
+
+        if (v.getId() == R.id.iv_help){
+            UpdateChecker.openUrl(this,"https://axixi2233.github.io/help.html");
             return;
         }
 
@@ -72,5 +82,41 @@ public class AboutActivity extends BaseActivity implements View.OnClickListener 
         if (v.getId() == R.id.lv_credits) {
             startActivity(new Intent(this, CreditsActivity.class));
         }
+    }
+
+    public static void showSponsoredQrDialog(Context context) {
+        View dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_sponsored_qr, null, false);
+        ImageView qrView = dialogView.findViewById(R.id.iv_sponsored_qr);
+        AlertDialog dialog = new AlertDialog.Builder(context).setView(dialogView).create();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+        dialogView.findViewById(R.id.bt_sponsored_close).setOnClickListener(v -> dialog.dismiss());
+
+        int screenHeight = context.getResources().getDisplayMetrics().heightPixels;
+        boolean isLandscape = context.getResources().getConfiguration().orientation
+                == Configuration.ORIENTATION_LANDSCAPE;
+        int qrMaxHeight = isLandscape
+                ? Math.min(dp(context,240), Math.round(screenHeight * 0.42f))
+                : Math.min(dp(context,420), Math.round(screenHeight * 0.52f));
+        qrView.setMaxHeight(qrMaxHeight);
+
+        dialog.show();
+        if (dialog.getWindow() != null) {
+            float widthRatio = isTablet() ? 0.5f : 0.66f;
+            int maxDialogWidth = isTablet() ? dp(context,460) : dp(context,380);
+            int dialogWidth = Math.min(
+                    Math.round(context.getResources().getDisplayMetrics().widthPixels * widthRatio),
+                    maxDialogWidth);
+            int dialogHeight = isLandscape
+                    ? Math.round(screenHeight * 0.88f)
+                    : ViewGroup.LayoutParams.WRAP_CONTENT;
+            dialog.getWindow().setGravity(Gravity.CENTER);
+            dialog.getWindow().setLayout(dialogWidth, dialogHeight);
+        }
+    }
+
+    public static int dp(Context context,int value) {
+        return Math.round(context.getResources().getDisplayMetrics().density * value);
     }
 }

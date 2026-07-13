@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_update_dialog_panel"
+    android:elevation="24dp"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingLeft="20dp"
+    android:paddingTop="20dp"
+    android:paddingRight="20dp"
+    android:paddingBottom="20dp">
+
+    <ProgressBar
+        android:layout_width="34dp"
+        android:layout_height="34dp"
+        android:indeterminate="true"
+        android:indeterminateTint="#8C99E6" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tv_app_progress_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+        android:textColor="#FFF7F7F2"
+        android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tv_app_progress_message"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+        android:textColor="#FFC6CEDB"
+            android:textSize="11sp" />
+    </LinearLayout>
+</LinearLayout>

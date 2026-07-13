@@ -7,4 +7,8 @@
     <color name="pc_app_item_stoke_color">#21C3C3C3</color>
     <color name="pc_app_item_bg_color">#6675698A</color>
     <color name="surface_stream_panel_soft">#B3251341</color>
+    <color name="screen_bg_top">#FF171A22</color>
+    <color name="screen_bg_bottom">#FF050609</color>
+    <color name="screen_glow_cool">#302B63</color>
+    <color name="screen_glow_warm">#6E4A97</color>
 </resources>

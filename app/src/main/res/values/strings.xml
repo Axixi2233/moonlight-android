@@ -427,5 +427,7 @@
 
     <string name="about_get_res"><u>网盘资源</u></string>
     <string name="about_update_tx"><u>检测更新</u></string>
-
+    <string name="about_help"><u>使用帮助</u></string>
+    <string name="credits_sponsored_dialog_title">赞赏</string>
+    <string name="credits_sponsored_dialog_message">如果你愿意支持项目持续更新，可以直接扫码赞赏。非常感谢你的陪伴与鼓励。</string>
 </resources>

@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="300dp"
+    android:layout_height="match_parent"
+    android:background="@color/gameMenuBgColor"
+    android:orientation="vertical"
+    android:paddingLeft="10dp"
+    android:paddingTop="10dp"
+    android:paddingRight="10dp"
+    android:paddingBottom="10dp">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:layout_marginBottom="7dp">
+
+        <ImageButton
+            android:id="@+id/ibtn_app_actions_back"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:background="@drawable/ic_game_menu_btn_side_selector"
+            android:contentDescription="@string/dialog_action_cancel"
+            android:padding="3dp"
+            android:src="@drawable/ic_axi_back" />
+
+        <TextView
+            android:id="@+id/tv_app_actions_title"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_centerInParent="true"
+            android:layout_marginLeft="38dp"
+            android:layout_marginRight="38dp"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:maxLines="1"
+            android:textColor="@android:color/white"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+    </RelativeLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:overScrollMode="ifContentScrolls"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="5dp"
+                android:layout_marginTop="8dp"
+                android:text="@string/app_actions_details_title"
+                android:textColor="@android:color/white"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_app_actions_details"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="6dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginRight="6dp"
+                android:lineSpacingExtra="3dp"
+                android:textColor="@android:color/white"
+                android:textSize="11sp"
+                android:textStyle="italic|bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="5dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="7dp"
+                android:text="@string/app_actions_options_title"
+                android:textColor="@android:color/white"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/btn_app_actions_start"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:background="@drawable/ic_game_menu_btn_selector"
+                android:drawableStart="@drawable/ic_app_joystick"
+                android:drawablePadding="6dp"
+                android:drawableEnd="@drawable/ic_axi_arrow"
+                android:gravity="left|center_vertical"
+                android:padding="10dp"
+                android:text="@string/applist_menu_start"
+                android:textSize="11sp"
+                android:visibility="visible" />
+
+            <Button
+                android:id="@+id/btn_app_actions_resume"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/ic_game_menu_btn_selector"
+                android:drawableStart="@drawable/ic_app_live"
+                android:drawablePadding="6dp"
+                android:drawableEnd="@drawable/ic_axi_arrow"
+                android:gravity="left|center_vertical"
+                android:padding="10dp"
+                android:text="@string/applist_menu_resume"
+                android:textSize="11sp"
+                android:visibility="visible" />
+
+            <Button
+                android:id="@+id/btn_app_actions_quit"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/ic_game_menu_btn_selector"
+                android:drawableStart="@drawable/ic_app_exit"
+                android:drawablePadding="6dp"
+                android:drawableEnd="@drawable/ic_axi_arrow"
+                android:gravity="left|center_vertical"
+                android:padding="10dp"
+                android:text="@string/applist_menu_quit"
+                android:textSize="11sp"
+                android:visibility="visible" />
+
+            <Button
+                android:id="@+id/btn_app_actions_quit_and_start"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/ic_game_menu_btn_selector"
+                android:drawableStart="@drawable/ic_app_reset"
+                android:drawablePadding="6dp"
+                android:drawableEnd="@drawable/ic_axi_arrow"
+                android:gravity="left|center_vertical"
+                android:padding="10dp"
+                android:text="@string/applist_menu_quit_and_start"
+                android:textSize="11sp"
+                android:visibility="visible" />
+
+            <Button
+                android:id="@+id/btn_app_actions_show"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/ic_game_menu_btn_selector"
+                android:drawableStart="@drawable/ic_app_visibility"
+                android:drawablePadding="6dp"
+                android:drawableEnd="@drawable/ic_axi_arrow"
+                android:gravity="left|center_vertical"
+                android:padding="10dp"
+                android:text="@string/applist_menu_show_app"
+                android:textSize="11sp"
+                android:visibility="visible" />
+
+            <Button
+                android:id="@+id/btn_app_actions_hide"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/ic_game_menu_btn_selector"
+                android:drawableStart="@drawable/ic_app_visibility_off"
+                android:drawablePadding="6dp"
+                android:drawableEnd="@drawable/ic_axi_arrow"
+                android:gravity="left|center_vertical"
+                android:padding="10dp"
+                android:text="@string/applist_menu_hide_app"
+                android:textSize="11sp"
+                android:visibility="visible" />
+
+            <Button
+                android:id="@+id/btn_app_actions_shortcut"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/ic_game_menu_btn_selector"
+                android:drawableStart="@drawable/ic_app_launch"
+                android:drawablePadding="6dp"
+                android:drawableEnd="@drawable/ic_axi_arrow"
+                android:gravity="left|center_vertical"
+                android:padding="10dp"
+                android:text="@string/applist_menu_scut"
+                android:textSize="11sp"
+                android:visibility="visible" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>
