@@ -58,7 +58,7 @@
 
         <LinearLayout
             android:id="@+id/performanceOverlayBig"
-            android:layout_width="228dp"
+            android:layout_width="260dp"
             android:layout_height="wrap_content"
             android:layout_marginLeft="16dp"
             android:layout_marginStart="16dp"

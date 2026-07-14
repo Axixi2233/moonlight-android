@@ -3425,6 +3425,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         addPerfRow("解码延迟", stats.decodeTimeMs > 0 ? String.format(Locale.US, "%.2f ms", stats.decodeTimeMs) : "--");
         addPerfRow("主机延迟", stats.hostProcessingLatencyMs > 0 ? String.format(Locale.US, "%.1f ms", stats.hostProcessingLatencyMs) : "--");
         addPerfRow("麦克风", micStatus == 1 ? "开启" : "关闭");
+        addPerfRow("游戏震动", buildNativeGameHapticsStatusText());
         addPerfRow("音频震动", buildAudioHapticsStatusText());
         addPerfRow("USB手柄", buildUsbControllerStatusText());
     }
@@ -3448,7 +3449,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         labelView.setSingleLine(true);
 
         TextView valueView = new TextView(this);
-        LinearLayout.LayoutParams valueParams = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        LinearLayout.LayoutParams valueParams = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.5f);
         valueView.setLayoutParams(valueParams);
         valueView.setText(applyPerfOverlayColors(nonEmpty(value, "--")));
         valueView.setTextColor(Color.WHITE);
@@ -3478,34 +3479,53 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     }
 
     private String buildUsbControllerStatusText() {
+        if (controllerHandler != null && controllerHandler.hasActiveUsbController()) {
+            String controllerType = controllerHandler.getActiveUsbControllerTypeDisplayName();
+            String protocol = controllerHandler.getActiveUsbControllerProtocolDisplayName();
+            StringBuilder status = new StringBuilder("已连接");
+            if (controllerType != null && !controllerType.isEmpty()) {
+                status.append(" / ").append(controllerType);
+            }
+            if (protocol != null && !protocol.isEmpty()) {
+                status.append(" / ").append(protocol);
+            }
+            return status.toString();
+        }
         if (!prefConfig.usbDriver) {
             return "关闭";
         }
-        if (controllerHandler != null && controllerHandler.hasActiveUsbController()) {
-            String controllerType = controllerHandler.getActiveUsbControllerTypeDisplayName();
-            if (controllerType != null && !controllerType.isEmpty()) {
-                return "已接管 / " + controllerType;
-            }
-            return "已接管";
-        }
         return connectedToUsbDriverService ? "待机" : "未启动";
+    }
+
+    private String buildNativeGameHapticsStatusText() {
+        return controllerHandler == null
+                ? "待触发"
+                : controllerHandler.getNativeGameHapticsOutputRouteDisplayName();
     }
 
     private String buildAudioHapticsStatusText() {
         if (!prefConfig.enableAudioHaptics) {
             return "关闭";
         }
-        return "开 / "
-                + getAudioHapticsOutputTargetDisplayName()
-                + " / " + getAudioHapticsVoiceFilterDisplayName()
-                + " / " + prefConfig.audioHapticsStrength + "%";
-    }
 
-    private String getAudioHapticsOutputTargetDisplayName() {
+        String outputRoute;
         if ("controller".equals(prefConfig.audioHapticsOutputTarget)) {
-            return "手柄";
+            outputRoute = controllerHandler == null
+                    ? "待触发"
+                    : controllerHandler.getAudioHapticsOutputRouteDisplayName();
+            if ("待触发".equals(outputRoute)) {
+                outputRoute += " / 手柄";
+            }
         }
-        return "手机";
+        else {
+            outputRoute = audioRenderer != null && audioRenderer.hasRecentPhoneAudioHapticsOutput()
+                    ? "普通震动 / 手机"
+                    : "待触发 / 手机";
+        }
+
+        return outputRoute
+                + " / 滤" + getAudioHapticsVoiceFilterDisplayName()
+                + " / " + prefConfig.audioHapticsStrength + "%";
     }
 
     private String getAudioHapticsVoiceFilterDisplayName() {

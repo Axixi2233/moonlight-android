@@ -263,4 +263,8 @@ public class AndroidAudioRenderer implements AudioRenderer {
         controllerAudioHapticsController.setSettings(enabled && "controller".equals(resolvedTarget),
                 strengthPercent, voiceFilterMode);
     }
+
+    public boolean hasRecentPhoneAudioHapticsOutput() {
+        return phoneAudioHapticsController.hasRecentOutput();
+    }
 }

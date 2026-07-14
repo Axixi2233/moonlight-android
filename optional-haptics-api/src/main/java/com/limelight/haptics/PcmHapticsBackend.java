@@ -16,6 +16,14 @@ public interface PcmHapticsBackend {
 
     boolean handlesDevice(int vendorId, int productId);
 
+    default String getActiveDeviceDisplayName() {
+        return "";
+    }
+
+    default String getActiveProtocolDisplayName() {
+        return "";
+    }
+
     void start();
 
     boolean submitRumble(int vendorId, int productId,

@@ -21,6 +21,7 @@ import android.os.CombinedVibration;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.os.VibrationAttributes;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
@@ -68,6 +69,8 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
     private static final int START_DOWN_TIME_MOUSE_MODE_MS = 750;
 
     private static final int MINIMUM_BUTTON_DOWN_TIME_MS = 25;
+
+    private static final long HAPTICS_ROUTE_RECENT_MS = 2500L;
 
     private static final int EMULATING_SPECIAL = 0x1;
     private static final int EMULATING_SELECT = 0x2;
@@ -135,6 +138,10 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
     private boolean stopped = false;
     private boolean streamReady;
     private boolean optionalPcmHapticsWasActive;
+    private volatile String nativeGameHapticsOutputRoute = "";
+    private volatile long nativeGameHapticsOutputTimeMs;
+    private volatile String audioHapticsOutputRoute = "";
+    private volatile long audioHapticsOutputTimeMs;
 
     private final PreferenceConfiguration prefConfig;
     private short currentControllers, initialControllers;
@@ -187,6 +194,93 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                 && optionalPcmHapticsBackend.handlesDevice(vendorId, productId);
     }
 
+    private static boolean hasRumbleAmplitude(short lowFreqMotor, short highFreqMotor) {
+        return lowFreqMotor != 0 || highFreqMotor != 0;
+    }
+
+    private static void addOutputDevice(List<String> devices, String deviceName) {
+        if (deviceName != null && !deviceName.isEmpty() && !devices.contains(deviceName)) {
+            devices.add(deviceName);
+        }
+    }
+
+    private static String buildHapticsRoute(String mode, List<String> devices) {
+        if (devices.isEmpty()) {
+            return mode;
+        }
+        return mode + " / " + String.join("+", devices);
+    }
+
+    private void markNativeGameHapticsOutput(String mode, List<String> devices) {
+        nativeGameHapticsOutputRoute = buildHapticsRoute(mode, devices);
+        nativeGameHapticsOutputTimeMs = SystemClock.uptimeMillis();
+    }
+
+    private void markAudioHapticsOutput(String mode, List<String> devices) {
+        audioHapticsOutputRoute = buildHapticsRoute(mode, devices);
+        audioHapticsOutputTimeMs = SystemClock.uptimeMillis();
+    }
+
+    private String getRecentHapticsRoute(String route, long outputTimeMs) {
+        if (route == null || route.isEmpty() || outputTimeMs <= 0L ||
+                SystemClock.uptimeMillis() - outputTimeMs > HAPTICS_ROUTE_RECENT_MS) {
+            return "待触发";
+        }
+        return route;
+    }
+
+    private String getInputControllerTypeDisplayName(InputDeviceContext context) {
+        if (context.vendorId == 0x1532) {
+            return "Kishi";
+        }
+        if (context.vendorId == 0x054c) {
+            return "DS";
+        }
+        if (context.vendorId == 0x045e) {
+            return "Xbox";
+        }
+        if (context.vendorId == 0x057e) {
+            return "NS";
+        }
+
+        String name = context.name == null ? "" : context.name.toLowerCase();
+        if (name.contains("dualsense") || name.contains("dualshock")) {
+            return "DS";
+        }
+        if (name.contains("xbox")) {
+            return "Xbox";
+        }
+        if (name.contains("kishi")) {
+            return "Kishi";
+        }
+        return "手柄";
+    }
+
+    private String getUsbControllerTypeDisplayName(AbstractController controller) {
+        byte type = controller.getType();
+        if (type == MoonBridge.LI_CTYPE_XBOX) {
+            return "Xbox";
+        }
+        if (type == MoonBridge.LI_CTYPE_PS) {
+            return "DS";
+        }
+        if (type == MoonBridge.LI_CTYPE_NINTENDO) {
+            return "NS";
+        }
+        return controller.getClass().getSimpleName();
+    }
+
+    private String getUsbControllerProtocolDisplayName(AbstractController controller) {
+        String className = controller.getClass().getSimpleName();
+        if (className.startsWith("XboxOne")) {
+            return "GIP";
+        }
+        if (className.startsWith("Xbox360")) {
+            return "XInput";
+        }
+        return "HID";
+    }
+
     private boolean submitOptionalRumble(int vendorId, int productId,
                                          short lowFreqMotor, short highFreqMotor) {
         if (!isHandledByOptionalPcmHaptics(vendorId, productId)) {
@@ -221,13 +315,19 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         }
 
         boolean vibrated = false;
+        List<String> outputDevices = new ArrayList<>();
 
         for (int i = 0; i < inputDeviceContexts.size(); i++) {
             InputDeviceContext deviceContext = inputDeviceContexts.valueAt(i);
             if (isHandledByOptionalPcmHaptics(deviceContext.vendorId, deviceContext.productId)) {
                 continue;
             }
-            vibrated |= rumbleInputDeviceContext(deviceContext, lowFreqMotor, highFreqMotor);
+            boolean deviceVibrated = rumbleInputDeviceContext(
+                    deviceContext, lowFreqMotor, highFreqMotor);
+            vibrated |= deviceVibrated;
+            if (deviceVibrated && hasRumbleAmplitude(lowFreqMotor, highFreqMotor)) {
+                addOutputDevice(outputDevices, getInputControllerTypeDisplayName(deviceContext));
+            }
         }
 
         for (int i = 0; i < usbDeviceContexts.size(); i++) {
@@ -239,9 +339,16 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             if (!deviceContext.device.isAdvancedAudioHapticsActive()) {
                 deviceContext.device.rumble(lowFreqMotor, highFreqMotor);
                 vibrated = true;
+                if (hasRumbleAmplitude(lowFreqMotor, highFreqMotor)) {
+                    addOutputDevice(outputDevices,
+                            getUsbControllerTypeDisplayName(deviceContext.device));
+                }
             }
         }
 
+        if (!outputDevices.isEmpty()) {
+            markAudioHapticsOutput("普通震动", outputDevices);
+        }
         return vibrated;
     }
 
@@ -260,14 +367,29 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
 
         // The optional Kishi backend consumes the same 3 kHz stereo PCM that is generated for
         // DualSense. Its gain is already baked into the samples by the audio haptics processor.
-        boolean submitted = optionalPcmHapticsBackend.submitPcm(frame, 3000, 2, 1.0f);
+        boolean submitted = false;
+        List<String> outputDevices = new ArrayList<>();
+        if (optionalPcmHapticsBackend.submitPcm(frame, 3000, 2, 1.0f)) {
+            submitted = true;
+            addOutputDevice(outputDevices,
+                    optionalPcmHapticsBackend.getActiveDeviceDisplayName());
+        }
         for (int i = 0; i < usbDeviceContexts.size(); i++) {
             UsbDeviceContext deviceContext = usbDeviceContexts.valueAt(i);
-            if (deviceContext.device.isAdvancedAudioHapticsActive()) {
-                submitted |= deviceContext.device.submitAdvancedAudioHapticsFrame(frame, intensityGain);
+            if (deviceContext.device.isAdvancedAudioHapticsActive() &&
+                    deviceContext.device.submitAdvancedAudioHapticsFrame(frame, intensityGain)) {
+                submitted = true;
+                addOutputDevice(outputDevices,
+                        getUsbControllerTypeDisplayName(deviceContext.device));
             }
         }
 
+        if (submitted) {
+            if (outputDevices.isEmpty()) {
+                addOutputDevice(outputDevices, "USB手柄");
+            }
+            markAudioHapticsOutput("PCM", outputDevices);
+        }
         return submitted;
     }
 
@@ -277,6 +399,10 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         }
 
         boolean enableControllerAudioHaptics = shouldUseControllerAudioHaptics();
+        if (!enableControllerAudioHaptics) {
+            audioHapticsOutputRoute = "";
+            audioHapticsOutputTimeMs = 0L;
+        }
         // The optional Kishi USB session also carries ordinary dual-motor rumble. Keep it
         // available throughout the stream even when PCM audio haptics are disabled.
         if (streamReady) {
@@ -2448,6 +2574,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         boolean foundMatchingDevice = false;
         boolean vibrated = false;
         boolean optionalRumbleSubmitted = false;
+        List<String> outputDevices = new ArrayList<>();
 
         if (stopped) {
             return;
@@ -2466,9 +2593,19 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                 if (submitOptionalRumble(deviceContext.vendorId, deviceContext.productId,
                         lowFreqMotor, highFreqMotor)) {
                     optionalRumbleSubmitted = vibrated = true;
+                    if (hasRumbleAmplitude(lowFreqMotor, highFreqMotor)) {
+                        addOutputDevice(outputDevices,
+                                optionalPcmHapticsBackend.getActiveDeviceDisplayName());
+                    }
                 }
                 else {
-                    vibrated |= rumbleInputDeviceContext(deviceContext, lowFreqMotor, highFreqMotor);
+                    boolean deviceVibrated = rumbleInputDeviceContext(
+                            deviceContext, lowFreqMotor, highFreqMotor);
+                    vibrated |= deviceVibrated;
+                    if (deviceVibrated && hasRumbleAmplitude(lowFreqMotor, highFreqMotor)) {
+                        addOutputDevice(outputDevices,
+                                getInputControllerTypeDisplayName(deviceContext));
+                    }
                 }
             }
         }
@@ -2486,9 +2623,17 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                         if (submitOptionalRumble(vendorId, productId,
                                 lowFreqMotor, highFreqMotor)) {
                             optionalRumbleSubmitted = true;
+                            if (hasRumbleAmplitude(lowFreqMotor, highFreqMotor)) {
+                                addOutputDevice(outputDevices,
+                                        optionalPcmHapticsBackend.getActiveDeviceDisplayName());
+                            }
                         }
                         else {
                             deviceContext.device.rumble(lowFreqMotor, highFreqMotor);
+                            if (hasRumbleAmplitude(lowFreqMotor, highFreqMotor)) {
+                                addOutputDevice(outputDevices,
+                                        getUsbControllerTypeDisplayName(deviceContext.device));
+                            }
                         }
                     }
                 }
@@ -2502,6 +2647,9 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             // the user has requested that behavior.
             if (!foundMatchingDevice && prefConfig.onscreenController && !prefConfig.onlyL3R3 && PreferenceConfiguration.readPreferences(activityContext).vibrateOsc) {
                 rumbleSingleVibrator(deviceVibrator, lowFreqMotor, highFreqMotor);
+                if (hasRumbleAmplitude(lowFreqMotor, highFreqMotor)) {
+                    addOutputDevice(outputDevices, "手机");
+                }
             }
             else if (foundMatchingDevice && !vibrated && prefConfig.vibrateFallbackToDevice) {
                 // We found a device to vibrate but it didn't have rumble support. The user
@@ -2516,7 +2664,14 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                         * prefConfig.vibrateFallbackToDeviceStrength) / 100), Short.MAX_VALUE*2));
 
                 rumbleSingleVibrator(deviceVibrator, lowFreqMotorAdjusted, highFreqMotorAdjusted);
+                if (hasRumbleAmplitude(lowFreqMotorAdjusted, highFreqMotorAdjusted)) {
+                    addOutputDevice(outputDevices, "手机");
+                }
             }
+        }
+
+        if (!outputDevices.isEmpty()) {
+            markNativeGameHapticsOutput("普通震动", outputDevices);
         }
     }
 
@@ -3451,10 +3606,13 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
     }
 
     public boolean hasActiveUsbController() {
-        return usbDeviceContexts.size() > 0;
+        return optionalPcmHapticsBackend.isActive() || usbDeviceContexts.size() > 0;
     }
 
     public String getActiveUsbControllerTypeDisplayName() {
+        if (optionalPcmHapticsBackend.isActive()) {
+            return optionalPcmHapticsBackend.getActiveDeviceDisplayName();
+        }
         if (usbDeviceContexts.size() <= 0) {
             return "";
         }
@@ -3464,25 +3622,36 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             return "";
         }
 
-        String controllerType;
-        byte type = context.device.getType();
-        if (type == MoonBridge.LI_CTYPE_XBOX) {
-            controllerType = "Xbox";
-        }
-        else if (type == MoonBridge.LI_CTYPE_PS) {
-            controllerType = "DS";
-        }
-        else if (type == MoonBridge.LI_CTYPE_NINTENDO) {
-            controllerType = "NS";
-        }
-        else {
-            controllerType = context.device.getClass().getSimpleName();
-        }
+        String controllerType = getUsbControllerTypeDisplayName(context.device);
 
         if (usbDeviceContexts.size() > 1) {
             return controllerType + " x" + usbDeviceContexts.size();
         }
         return controllerType;
+    }
+
+    public String getActiveUsbControllerProtocolDisplayName() {
+        if (optionalPcmHapticsBackend.isActive()) {
+            return optionalPcmHapticsBackend.getActiveProtocolDisplayName();
+        }
+        if (usbDeviceContexts.size() <= 0) {
+            return "";
+        }
+
+        UsbDeviceContext context = usbDeviceContexts.valueAt(0);
+        if (context == null || context.device == null) {
+            return "";
+        }
+        return getUsbControllerProtocolDisplayName(context.device);
+    }
+
+    public String getNativeGameHapticsOutputRouteDisplayName() {
+        return getRecentHapticsRoute(
+                nativeGameHapticsOutputRoute, nativeGameHapticsOutputTimeMs);
+    }
+
+    public String getAudioHapticsOutputRouteDisplayName() {
+        return getRecentHapticsRoute(audioHapticsOutputRoute, audioHapticsOutputTimeMs);
     }
 
     class GenericControllerContext implements GameInputDevice{

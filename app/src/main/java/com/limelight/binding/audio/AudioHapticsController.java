@@ -40,6 +40,7 @@ public final class AudioHapticsController {
     private float smoothedLevel;
     private int lastAmplitude;
     private long lastVibrationTimeMs;
+    private long lastOutputTimeMs;
 
     public AudioHapticsController(Context context, boolean enabled, int strengthPercent,
                                   String voiceFilterMode) {
@@ -57,10 +58,16 @@ public final class AudioHapticsController {
         this.smoothedLevel = 0.0f;
         this.lastAmplitude = 0;
         this.lastVibrationTimeMs = 0L;
+        this.lastOutputTimeMs = 0L;
     }
 
     public synchronized boolean isEnabled() {
         return enabled;
+    }
+
+    public synchronized boolean hasRecentOutput() {
+        return lastOutputTimeMs > 0L &&
+                SystemClock.uptimeMillis() - lastOutputTimeMs <= 2500L;
     }
 
     public synchronized void setSettings(boolean enabled, int strengthPercent, String voiceFilterMode) {
@@ -117,6 +124,7 @@ public final class AudioHapticsController {
         voiceLowPassState = 0.0f;
         lastAmplitude = 0;
         lastVibrationTimeMs = 0L;
+        lastOutputTimeMs = 0L;
         vibrator.cancel();
     }
 
@@ -231,6 +239,7 @@ public final class AudioHapticsController {
 
             lastAmplitude = amplitude;
             lastVibrationTimeMs = now;
+            lastOutputTimeMs = now;
             return;
         }
 
@@ -254,6 +263,7 @@ public final class AudioHapticsController {
                     Math.round(LEGACY_PULSE_MS * Math.max(0.35f, legacyStrengthScale)));
             vibrator.vibrate(legacyPulseMs);
             lastVibrationTimeMs = now;
+            lastOutputTimeMs = now;
             lastAmplitude = amplitude;
         }
         catch (Exception e) {
