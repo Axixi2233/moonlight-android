@@ -41,6 +41,11 @@ import com.limelight.ui.gamemenu.bean.GameMenuQuickBean;
 import com.limelight.utils.FileUriUtils;
 import com.limelight.utils.UiHelper;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -51,6 +56,9 @@ import static com.limelight.binding.input.virtual_controller.keyboard.KeyBoardCo
 import static com.limelight.binding.input.virtual_controller.keyboard.KeyBoardControllerConfigurationLoader.OSC_PREFERENCE_VALUE;
 
 public class KeyBoardController {
+
+    private static final String DEFAULT_KEYBOARD_CONFIG_ASSET = "config/config_keyboard.txt";
+    private static final String DEFAULT_GAMEPAD_CONFIG_ASSET = "config/config_gamepad.txt";
 
     public static class ControllerInputContext {
         //        public short inputMap = 0x0000;
@@ -392,7 +400,10 @@ public class KeyBoardController {
     private String tips;
 
     private void initData(){
-        String res=FileUriUtils.getKeyBoardJson(context,fileName);
+        File userConfigFile = new File(context.getFilesDir(), fileName);
+        String res = userConfigFile.isFile()
+                ? FileUriUtils.getKeyBoardJson(context, fileName)
+                : loadBundledLandscapeConfig();
         if(!TextUtils.isEmpty(res)){
             LimeLog.info("axi->"+res);
             GameMenuQuickBean[] beans=new Gson().fromJson(res,GameMenuQuickBean[].class);
@@ -414,6 +425,34 @@ public class KeyBoardController {
             GameMenuQuickBean bean=beanList.get(i);
             addView(bean,i);
         }
+    }
+
+    private String loadBundledLandscapeConfig() {
+        if (!isLandscape(context)) {
+            return "";
+        }
+
+        String assetPath = isGamePadMode
+                ? DEFAULT_GAMEPAD_CONFIG_ASSET
+                : DEFAULT_KEYBOARD_CONFIG_ASSET;
+        StringBuilder result = new StringBuilder();
+        try (InputStream inputStream = context.getAssets().open(assetPath);
+             InputStreamReader streamReader = new InputStreamReader(
+                     inputStream, StandardCharsets.UTF_8);
+             BufferedReader reader = new BufferedReader(streamReader)) {
+            char[] buffer = new char[2048];
+            int read;
+            while ((read = reader.read(buffer)) != -1) {
+                result.append(buffer, 0, read);
+            }
+            LimeLog.info("Loaded bundled landscape controller config: " + assetPath);
+        }
+        catch (Exception error) {
+            LimeLog.warning("Unable to load bundled controller config "
+                    + assetPath + ": " + error.getMessage());
+            return "";
+        }
+        return result.toString();
     }
 
     private void addView(GameMenuQuickBean bean,int i){
