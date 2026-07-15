@@ -98,6 +98,21 @@
                 android:visibility="visible" />
 
             <Button
+                android:id="@+id/btn_pc_actions_quit"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/ic_game_menu_btn_selector"
+                android:drawableStart="@drawable/ic_app_exit"
+                android:drawablePadding="6dp"
+                android:drawableEnd="@drawable/ic_axi_arrow"
+                android:gravity="left|center_vertical"
+                android:padding="10dp"
+                android:text="@string/applist_menu_quit"
+                android:textSize="11sp"
+                android:visibility="gone" />
+
+            <Button
                 android:id="@+id/btn_pc_actions_app_list"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
@@ -110,6 +125,51 @@
                 android:padding="10dp"
                 android:text="@string/pcview_menu_app_list"
                 android:textSize="11sp" />
+
+            <Button
+                android:id="@+id/btn_pc_actions_pair"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/ic_game_menu_btn_selector"
+                android:drawableStart="@drawable/ic_axi_computer"
+                android:drawablePadding="6dp"
+                android:drawableEnd="@drawable/ic_axi_arrow"
+                android:gravity="left|center_vertical"
+                android:padding="10dp"
+                android:text="@string/pcview_menu_pair_pc"
+                android:textSize="11sp"
+                android:visibility="visible" />
+
+            <Button
+                android:id="@+id/btn_pc_actions_wake"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/ic_game_menu_btn_selector"
+                android:drawableStart="@drawable/ic_axi_sleep"
+                android:drawablePadding="6dp"
+                android:drawableEnd="@drawable/ic_axi_arrow"
+                android:gravity="left|center_vertical"
+                android:padding="10dp"
+                android:text="@string/pcview_menu_send_wol"
+                android:textSize="11sp"
+                android:visibility="visible" />
+
+            <Button
+                android:id="@+id/btn_pc_actions_gamestream_eol"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/ic_game_menu_btn_selector"
+                android:drawableStart="@drawable/ic_axi_stop"
+                android:drawablePadding="6dp"
+                android:drawableEnd="@drawable/ic_axi_arrow"
+                android:gravity="left|center_vertical"
+                android:padding="10dp"
+                android:text="@string/pcview_menu_eol"
+                android:textSize="11sp"
+                android:visibility="visible" />
 
             <Button
                 android:id="@+id/btn_pc_actions_network_test"

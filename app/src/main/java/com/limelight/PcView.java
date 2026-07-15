@@ -403,8 +403,33 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
             }
 
             @Override
+            public void onQuitStream(ComputerDetails selectedComputer) {
+                if (managerBinder == null) {
+                    Toast.makeText(PcView.this, R.string.error_manager_not_running, Toast.LENGTH_LONG).show();
+                    return;
+                }
+                UiHelper.displayQuitConfirmationDialog(PcView.this, () -> ServerHelper.doQuit(
+                        PcView.this, selectedComputer, new NvApp("app", 0, false), managerBinder, null), null);
+            }
+
+            @Override
             public void onOpenAppList(ComputerDetails selectedComputer) {
                 doAppList(selectedComputer, false, true);
+            }
+
+            @Override
+            public void onPairComputer(ComputerDetails selectedComputer) {
+                doPair(selectedComputer);
+            }
+
+            @Override
+            public void onWakeComputer(ComputerDetails selectedComputer) {
+                doWakeOnLan(selectedComputer);
+            }
+
+            @Override
+            public void onShowGameStreamEol() {
+                HelpLauncher.launchGameStreamEolFaq(PcView.this);
             }
 
             @Override

@@ -14,7 +14,11 @@ import com.limelight.ui.BaseFragmentDialog.BaseGameMenuDialog;
 public final class PcActionsDialog extends BaseGameMenuDialog {
     public interface Listener {
         void onResumeStream(ComputerDetails computer);
+        void onQuitStream(ComputerDetails computer);
         void onOpenAppList(ComputerDetails computer);
+        void onPairComputer(ComputerDetails computer);
+        void onWakeComputer(ComputerDetails computer);
+        void onShowGameStreamEol();
         void onTestNetwork();
         void onDeleteComputer(ComputerDetails computer);
         void onDismiss();
@@ -47,7 +51,11 @@ public final class PcActionsDialog extends BaseGameMenuDialog {
         TextView titleView = view.findViewById(R.id.tv_pc_actions_title);
         TextView detailsView = view.findViewById(R.id.tv_pc_actions_details);
         Button resumeButton = view.findViewById(R.id.btn_pc_actions_resume);
+        Button quitButton = view.findViewById(R.id.btn_pc_actions_quit);
         Button appListButton = view.findViewById(R.id.btn_pc_actions_app_list);
+        Button pairButton = view.findViewById(R.id.btn_pc_actions_pair);
+        Button wakeButton = view.findViewById(R.id.btn_pc_actions_wake);
+        Button gameStreamEolButton = view.findViewById(R.id.btn_pc_actions_gamestream_eol);
         Button networkTestButton = view.findViewById(R.id.btn_pc_actions_network_test);
         Button deleteButton = view.findViewById(R.id.btn_pc_actions_delete);
 
@@ -69,7 +77,16 @@ public final class PcActionsDialog extends BaseGameMenuDialog {
         boolean canOpenApps = computer.state == ComputerDetails.State.ONLINE &&
                 computer.pairState == PairingManager.PairState.PAIRED;
         boolean canResume = canOpenApps && computer.runningGameId != 0;
+        boolean canPair = computer.state == ComputerDetails.State.ONLINE &&
+                computer.pairState != PairingManager.PairState.PAIRED;
+        boolean canWake = computer.state == ComputerDetails.State.OFFLINE ||
+                computer.state == ComputerDetails.State.UNKNOWN;
+        boolean showGameStreamEol = canWake || computer.nvidiaServer;
         resumeButton.setVisibility(canResume ? View.VISIBLE : View.GONE);
+        quitButton.setVisibility(canResume ? View.VISIBLE : View.GONE);
+        pairButton.setVisibility(canPair ? View.VISIBLE : View.GONE);
+        wakeButton.setVisibility(canWake ? View.VISIBLE : View.GONE);
+        gameStreamEolButton.setVisibility(showGameStreamEol ? View.VISIBLE : View.GONE);
         appListButton.setEnabled(canOpenApps);
         appListButton.setFocusable(canOpenApps);
         appListButton.setAlpha(canOpenApps ? 1f : 0.45f);
@@ -81,10 +98,34 @@ public final class PcActionsDialog extends BaseGameMenuDialog {
                 listener.onResumeStream(computer);
             }
         });
+        quitButton.setOnClickListener(v -> {
+            dismiss();
+            if (listener != null) {
+                listener.onQuitStream(computer);
+            }
+        });
         appListButton.setOnClickListener(v -> {
             dismiss();
             if (listener != null) {
                 listener.onOpenAppList(computer);
+            }
+        });
+        pairButton.setOnClickListener(v -> {
+            dismiss();
+            if (listener != null) {
+                listener.onPairComputer(computer);
+            }
+        });
+        wakeButton.setOnClickListener(v -> {
+            dismiss();
+            if (listener != null) {
+                listener.onWakeComputer(computer);
+            }
+        });
+        gameStreamEolButton.setOnClickListener(v -> {
+            dismiss();
+            if (listener != null) {
+                listener.onShowGameStreamEol();
             }
         });
         networkTestButton.setOnClickListener(v -> {
@@ -100,7 +141,8 @@ public final class PcActionsDialog extends BaseGameMenuDialog {
             }
         });
 
-        (canResume ? resumeButton : appListButton.isEnabled() ? appListButton : networkTestButton).requestFocus();
+        (canResume ? resumeButton : canPair ? pairButton : canWake ? wakeButton :
+                appListButton.isEnabled() ? appListButton : networkTestButton).requestFocus();
     }
 
     @Override

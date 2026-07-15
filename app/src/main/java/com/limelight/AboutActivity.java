@@ -1,6 +1,7 @@
 package com.limelight;
 
 import android.app.AlertDialog;
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -13,6 +14,7 @@ import android.view.ViewGroup;
 import android.view.ViewOutlineProvider;
 import android.widget.ImageView;
 import android.widget.TextView;
+import com.limelight.ui.AppDialog;
 import com.limelight.utils.UpdateChecker;
 
 import static com.limelight.utils.DeviceUtils.isTablet;
@@ -84,29 +86,31 @@ public class AboutActivity extends BaseActivity implements View.OnClickListener 
         }
     }
 
-    public static void showSponsoredQrDialog(Context context) {
-        View dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_sponsored_qr, null, false);
+    public static void showSponsoredQrDialog(Activity activity) {
+        View dialogView = LayoutInflater.from(activity).inflate(R.layout.dialog_sponsored_qr, null, false);
         ImageView qrView = dialogView.findViewById(R.id.iv_sponsored_qr);
-        AlertDialog dialog = new AlertDialog.Builder(context).setView(dialogView).create();
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        AlertDialog dialog = AppDialog.createCustomDialog(activity, dialogView, true);
+        if (dialog == null) {
+            return;
         }
-        dialogView.findViewById(R.id.bt_sponsored_close).setOnClickListener(v -> dialog.dismiss());
+        View closeButton = dialogView.findViewById(R.id.bt_sponsored_close);
+        closeButton.setOnClickListener(v -> dialog.dismiss());
 
-        int screenHeight = context.getResources().getDisplayMetrics().heightPixels;
-        boolean isLandscape = context.getResources().getConfiguration().orientation
+        int screenHeight = activity.getResources().getDisplayMetrics().heightPixels;
+        boolean isLandscape = activity.getResources().getConfiguration().orientation
                 == Configuration.ORIENTATION_LANDSCAPE;
         int qrMaxHeight = isLandscape
-                ? Math.min(dp(context,240), Math.round(screenHeight * 0.42f))
-                : Math.min(dp(context,420), Math.round(screenHeight * 0.52f));
+                ? Math.min(dp(activity,240), Math.round(screenHeight * 0.42f))
+                : Math.min(dp(activity,420), Math.round(screenHeight * 0.52f));
         qrView.setMaxHeight(qrMaxHeight);
 
-        dialog.show();
+        float widthRatio = isTablet() ? 0.5f : 0.66f;
+        int maxDialogWidth = isTablet() ? dp(activity,460) : dp(activity,380);
+        AppDialog.showCustomDialog(activity, dialog, widthRatio, isTablet() ? 460 : 380,
+                closeButton, closeButton, closeButton);
         if (dialog.getWindow() != null) {
-            float widthRatio = isTablet() ? 0.5f : 0.66f;
-            int maxDialogWidth = isTablet() ? dp(context,460) : dp(context,380);
             int dialogWidth = Math.min(
-                    Math.round(context.getResources().getDisplayMetrics().widthPixels * widthRatio),
+                    Math.round(activity.getResources().getDisplayMetrics().widthPixels * widthRatio),
                     maxDialogWidth);
             int dialogHeight = isLandscape
                     ? Math.round(screenHeight * 0.88f)
