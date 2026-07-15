@@ -37,14 +37,15 @@ import android.view.WindowInsets;
 import android.widget.EditText;
 import android.widget.Toast;
 import com.google.gson.Gson;
-import com.limelight.BuildConfig;
 import com.limelight.LimeLog;
 import com.limelight.PcView;
 import com.limelight.R;
+import com.limelight.StreamLogFilesActivity;
 import com.limelight.binding.input.virtual_controller.keyboard.KeyBoardControllerConfigurationLoader;
 import com.limelight.binding.video.MediaCodecHelper;
 import com.limelight.computers.ComputerDatabaseManager;
 import com.limelight.nvstream.http.ComputerDetails;
+import com.limelight.log.StreamLogStore;
 import com.limelight.utils.Dialog;
 import com.limelight.utils.FileUriUtils;
 import com.limelight.utils.UiHelper;
@@ -293,6 +294,24 @@ public class StreamSettings extends Activity {
             return view;
         }
 
+        @Override
+        public void onResume() {
+            super.onResume();
+            updateStreamLogSummary();
+        }
+
+        private void updateStreamLogSummary() {
+            Activity activity = getActivity();
+            Preference preference = findPreference("manage_stream_session_logs");
+            if (activity == null || preference == null) {
+                return;
+            }
+            int count = StreamLogStore.list(activity).size();
+            preference.setSummary(count == 0
+                    ? "暂无日志；开启采集后，每次串流生成一份"
+                    : "已保存 " + count + " 份日志；点击查看、导出或删除");
+        }
+
 
         @Override
         public void onCreate(Bundle savedInstanceState) {
@@ -300,6 +319,15 @@ public class StreamSettings extends Activity {
 
             addPreferencesFromResource(R.xml.preferences);
             PreferenceScreen screen = getPreferenceScreen();
+
+            Preference streamLogs = findPreference("manage_stream_session_logs");
+            if (streamLogs != null) {
+                streamLogs.setOnPreferenceClickListener(preference -> {
+                    startActivity(new Intent(getActivity(), StreamLogFilesActivity.class));
+                    return true;
+                });
+                updateStreamLogSummary();
+            }
 
             if (!MediaCodecHelper.isXiaomiXringO1Device()) {
                 PreferenceCategory category =

@@ -38,6 +38,7 @@ import com.limelight.nvstream.input.KeyboardPacket;
 import com.limelight.nvstream.input.MouseButtonPacket;
 import com.limelight.nvstream.jni.MoonBridge;
 import com.limelight.haptics.PcmHapticsBackend;
+import com.limelight.log.StreamSessionLogger;
 import com.limelight.preferences.GlPreferences;
 import com.limelight.preferences.PreferenceConfiguration;
 import com.limelight.ui.gamemenu.GameMenuFragment;
@@ -180,6 +181,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     private String appName;
     private String streamHost;
     private long streamStartElapsedMs;
+    private StreamSessionLogger streamSessionLogger;
+    private long lastSessionPerfLogElapsedMs;
+    private int lastLoggedConnectionStatus = Integer.MIN_VALUE;
     private NvApp app;
     private float desiredRefreshRate;
 
@@ -225,11 +229,13 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             binder.setStateListener(Game.this);
             binder.start();
             connectedToUsbDriverService = true;
+            logSessionInfo("USB", "USB 手柄服务已连接");
         }
 
         @Override
         public void onServiceDisconnected(ComponentName componentName) {
             connectedToUsbDriverService = false;
+            logSessionWarn("USB", "USB 手柄服务意外断开");
         }
     };
 
@@ -306,6 +312,10 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
         // Read the stream preferences
         prefConfig = PreferenceConfiguration.readPreferences(this);
+        appName = getIntent().getStringExtra(EXTRA_APP_NAME);
+        pcName = getIntent().getStringExtra(EXTRA_PC_NAME);
+        streamSessionLogger = StreamSessionLogger.create(this, prefConfig, pcName, appName);
+        logSessionInfo("LIFECYCLE", "串流页面已创建");
         tombstonePrefs = Game.this.getSharedPreferences("DecoderTombstone", 0);
 
         // Enter landscape unless we're on a square screen
@@ -489,9 +499,6 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             e.printStackTrace();
         }
 
-        appName = Game.this.getIntent().getStringExtra(EXTRA_APP_NAME);
-        pcName = Game.this.getIntent().getStringExtra(EXTRA_PC_NAME);
-
         String host = Game.this.getIntent().getStringExtra(EXTRA_HOST);
         streamHost = host;
         int port = Game.this.getIntent().getIntExtra(EXTRA_PORT, NvHTTP.DEFAULT_HTTP_PORT);
@@ -586,6 +593,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                         // We must use commit because the app will crash when we return from this function
                         tombstonePrefs.edit().putInt("CrashCount", tombstonePrefs.getInt("CrashCount", 0) + 1).commit();
                         reportedCrash = true;
+                        logSessionError("DECODER", "MediaCodec 解码器异常", e);
                     }
                 },
                 tombstonePrefs.getInt("CrashCount", 0),
@@ -594,6 +602,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 glPrefs.glRenderer,
                 this);
         decoderRenderer.setFirstFrameListener(() -> {
+            logSessionInfo("VIDEO", "首帧已显示");
             streamLoadingController.onFirstFrameRendered();
             if (controllerHandler != null) {
                 controllerHandler.notifyStreamReady();
@@ -717,6 +726,20 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                     @Override
                     public void onAvailabilityChanged(boolean active) {
                         LimeLog.info("Kishi PCM haptics " + (active ? "active" : "inactive"));
+                        logSessionInfo("HAPTICS", "Kishi 原生触觉通道" + (active ? "已启用" : "已停用"));
+                    }
+
+                    @Override
+                    public void onSessionLogEvent(String level, String category, String message) {
+                        if ("ERROR".equalsIgnoreCase(level)) {
+                            logSessionError(category, message, null);
+                        }
+                        else if ("WARN".equalsIgnoreCase(level)) {
+                            logSessionWarn(category, message);
+                        }
+                        else {
+                            logSessionInfo(category, message);
+                        }
                     }
                 });
         controllerHandler = new ControllerHandler(this, conn, this, prefConfig,
@@ -1391,7 +1414,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
+        logSessionInfo("LIFECYCLE", "串流页面正在销毁");
 
         instance = null;
         UiHelper.notifyHdrWindowStatus(this, false);
@@ -1431,6 +1454,12 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
         // Destroy the capture provider
         inputCaptureProvider.destroy();
+
+        if (streamSessionLogger != null) {
+            streamSessionLogger.close(reportedCrash ? "解码器异常后结束" : "串流页面已关闭");
+            streamSessionLogger = null;
+        }
+        super.onDestroy();
     }
 
     @Override
@@ -1466,6 +1495,8 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     @Override
     protected void onStop() {
         super.onStop();
+
+        logSessionInfo("LIFECYCLE", "串流页面进入后台/停止");
 
         Dialog.closeDialogs();
 
@@ -2825,15 +2856,18 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     @Override
     public void stageStarting(final String stage) {
+        logSessionInfo("CONNECT", "开始阶段: " + stage);
         streamLoadingController.onStageStarting(stage);
     }
 
     @Override
     public void stageComplete(String stage) {
+        logSessionInfo("CONNECT", "完成阶段: " + stage);
     }
 
     private void stopConnection() {
         if (connecting || connected) {
+            logSessionInfo("CONNECT", "请求停止串流连接");
             connecting = connected = false;
             UiHelper.notifyHdrWindowStatus(this, false);
             updatePipAutoEnter();
@@ -2859,6 +2893,8 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     @Override
     public void stageFailed(final String stage, final int portFlags, final int errorCode) {
+        logSessionWarn("CONNECT", "连接阶段失败: " + stage + ", error=" + errorCode
+                + (portFlags != 0 ? ", ports=" + portFlags : ""));
         // Perform a connection test if the failure could be due to a blocked port
         // This does network I/O, so don't do it on the main thread.
         final int portTestResult = MoonBridge.testClientConnectivity(ServerHelper.CONNECTION_TEST_SERVER, 443, portFlags);
@@ -2894,6 +2930,12 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     @Override
     public void connectionTerminated(final int errorCode) {
+        if (errorCode == MoonBridge.ML_ERROR_GRACEFUL_TERMINATION) {
+            logSessionInfo("CONNECT", "连接正常结束, code=" + errorCode);
+        }
+        else {
+            logSessionWarn("CONNECT", "连接异常中断, code=" + errorCode);
+        }
         // Perform a connection test if the failure could be due to a blocked port
         // This does network I/O, so don't do it on the main thread.
         final int portFlags = MoonBridge.getPortFlagsFromTerminationErrorCode(errorCode);
@@ -2987,6 +3029,12 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     @Override
     public void connectionStatusUpdate(final int connectionStatus) {
+        if (connectionStatus != lastLoggedConnectionStatus) {
+            lastLoggedConnectionStatus = connectionStatus;
+            logSessionInfo("NETWORK", connectionStatus == MoonBridge.CONN_STATUS_POOR
+                    ? "连接质量变差" : connectionStatus == MoonBridge.CONN_STATUS_OKAY
+                    ? "连接质量恢复" : "连接状态=" + connectionStatus);
+        }
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -3017,6 +3065,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     @Override
     public void connectionStarted() {
+        logSessionInfo("CONNECT", "串流连接已建立");
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -3143,6 +3192,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         }
         if (!attemptedConnection) {
             attemptedConnection = true;
+            logSessionInfo("CONNECT", "渲染表面就绪，开始连接；渲染路径=Surface");
 
             // Update GameManager state to indicate we're "loading" while connecting
             UiHelper.notifyStreamConnecting(Game.this);
@@ -3159,6 +3209,8 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
+        logSessionInfo("VIDEO", fsrEnabled && fsrView != null && holder == fsrView.getHolder()
+                ? "FSR 显示表面已创建" : "视频表面已创建");
         float desiredFrameRate;
 
         if (fsrEnabled) {
@@ -3203,6 +3255,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
+        logSessionInfo("VIDEO", "视频表面已销毁");
         if (fsrEnabled) {
             if (fsrView == null || holder != fsrView.getHolder()) {
                 return;
@@ -3338,6 +3391,22 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     @Override
     public void onPerfUpdate(final PerfOverlayStats stats) {
+        long now = SystemClock.elapsedRealtime();
+        if (stats != null && now - lastSessionPerfLogElapsedMs >= 10000) {
+            lastSessionPerfLogElapsedMs = now;
+            logSessionInfo("PERF", String.format(Locale.US,
+                    "%dx%d %s, FPS %.1f/%.1f, 网络 %.0f Kbps, 视频 %.0f Kbps, 音频 %.0f Kbps, "
+                            + "延迟 %d±%d ms, 丢包 %.2f%%, 解码 %.2f ms, 主机 %.2f ms",
+                    stats.width, stats.height, nonEmpty(stats.codecName, "--"),
+                    stats.renderedFps, stats.receivedFps, stats.networkRateKbps,
+                    stats.videoRateKbps, stats.audioRateKbps, stats.networkLatencyMs,
+                    stats.networkLatencyVarianceMs, stats.packetLossPercent,
+                    stats.decodeTimeMs, stats.hostProcessingLatencyMs));
+            logSessionInfo("STATE", "渲染=" + buildRenderPipelineText()
+                    + "；USB手柄=" + buildUsbControllerStatusText()
+                    + "；游戏震动=" + buildNativeGameHapticsStatusText()
+                    + "；音频震动=" + buildAudioHapticsStatusText());
+        }
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -3642,6 +3711,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     @Override
     public void onUsbPermissionPromptStarting() {
+        logSessionInfo("USB", "正在请求 USB 手柄授权");
         usbPermissionPromptVisible = true;
         streamLoadingController.setCancelEnabled(false);
         // Disable PiP auto-enter while the USB permission prompt is on-screen. This prevents
@@ -3652,6 +3722,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     @Override
     public void onUsbPermissionPromptCompleted() {
+        logSessionInfo("USB", "USB 手柄授权流程已结束");
         usbPermissionPromptVisible = false;
         streamLoadingController.setCancelEnabled(true);
         suppressPipRefCount--;
@@ -4030,6 +4101,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         }
 
         attemptedConnection = true;
+        logSessionInfo("CONNECT", "渲染表面就绪，开始连接；渲染路径=" + (fsrEnabled ? "FSR/GLES" : "Surface"));
         UiHelper.notifyStreamConnecting(Game.this);
         decoderRenderer.setRenderTarget(fsrInputSurface);
         audioRenderer = new AndroidAudioRenderer(Game.this, controllerHandler, prefConfig.enableAudioFx,
@@ -4038,6 +4110,24 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         streamLoadingController.showPreparing(null);
         conn.start(audioRenderer,
                 decoderRenderer, Game.this);
+    }
+
+    private void logSessionInfo(String category, String message) {
+        if (streamSessionLogger != null) {
+            streamSessionLogger.info(category, message);
+        }
+    }
+
+    private void logSessionWarn(String category, String message) {
+        if (streamSessionLogger != null) {
+            streamSessionLogger.warn(category, message);
+        }
+    }
+
+    private void logSessionError(String category, String message, Throwable throwable) {
+        if (streamSessionLogger != null) {
+            streamSessionLogger.error(category, message, throwable);
+        }
     }
 
     private boolean isRecordAudioPermissionGranted() {

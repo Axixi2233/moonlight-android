@@ -136,6 +136,10 @@
             <meta-data android:name="WindowManagerPreference:FreeformWindowOrientation" android:value="landscape" />
         </activity>
         <activity
+            android:name=".StreamLogFilesActivity"
+            android:launchMode="singleTask"
+            android:theme="@style/AxiGamePlayTheme.GamePad" />
+        <activity
             android:name=".preferences.AddComputerManually"
             android:resizeableActivity="true"
             android:windowSoftInputMode="stateVisible"

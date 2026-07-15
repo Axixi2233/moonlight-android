@@ -50,6 +50,7 @@ public class PreferenceConfiguration {
     public static final String ENABLE_HDR_HIGH_BRIGHTNESS_PREF_STRING = "checkbox_enable_hdr_high_brightness";
     private static final String ENABLE_PIP_PREF_STRING = "checkbox_enable_pip";
     private static final String ENABLE_PERF_OVERLAY_STRING = "checkbox_enable_perf_overlay";
+    public static final String ENABLE_STREAM_SESSION_LOGGING_STRING = "checkbox_enable_stream_session_logging";
     private static final String BIND_ALL_USB_STRING = "checkbox_usb_bind_all";
     private static final String MOUSE_EMULATION_STRING = "checkbox_mouse_emulation";
     private static final String ANALOG_SCROLLING_PREF_STRING = "analog_scrolling";
@@ -172,6 +173,7 @@ public class PreferenceConfiguration {
     public boolean enableHdrHighBrightness;
     public boolean enablePip;
     public boolean enablePerfOverlay;
+    public boolean enableStreamSessionLogging;
     //简化版性能信息
     public boolean enablePerfOverlayLite;
 
@@ -844,6 +846,7 @@ public class PreferenceConfiguration {
                 DEFAULT_ENABLE_HDR_HIGH_BRIGHTNESS);
         config.enablePip = prefs.getBoolean(ENABLE_PIP_PREF_STRING, DEFAULT_ENABLE_PIP);
         config.enablePerfOverlay = prefs.getBoolean(ENABLE_PERF_OVERLAY_STRING, DEFAULT_ENABLE_PERF_OVERLAY);
+        config.enableStreamSessionLogging = prefs.getBoolean(ENABLE_STREAM_SESSION_LOGGING_STRING, false);
         config.enablePerfOverlayLite=prefs.getBoolean("checkbox_enable_perf_overlay_lite",DEFAULT_ENABLE_PERF_OVERLAY);
         config.enablePerfOverlayLiteExt=prefs.getBoolean("checkbox_enable_perf_overlay_lite_ext",true);
         config.bindAllUsb = prefs.getBoolean(BIND_ALL_USB_STRING, DEFAULT_BIND_ALL_USB);

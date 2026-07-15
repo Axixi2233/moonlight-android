@@ -10,6 +10,9 @@ public interface PcmHapticsBackend {
 
         default void onAvailabilityChanged(boolean active) {
         }
+
+        default void onSessionLogEvent(String level, String category, String message) {
+        }
     }
 
     boolean isActive();

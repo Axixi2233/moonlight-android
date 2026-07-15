@@ -366,10 +366,11 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         optionalPcmHapticsWasActive = optionalPcmHapticsActive;
 
         // The optional Kishi backend consumes the same 3 kHz stereo PCM that is generated for
-        // DualSense. Its gain is already baked into the samples by the audio haptics processor.
+        // DualSense. The strength envelope is baked into the samples, but intensityGain is the
+        // final device-output gain and must match the gain supplied to the DS5 path below.
         boolean submitted = false;
         List<String> outputDevices = new ArrayList<>();
-        if (optionalPcmHapticsBackend.submitPcm(frame, 3000, 2, 1.0f)) {
+        if (optionalPcmHapticsBackend.submitPcm(frame, 3000, 2, intensityGain)) {
             submitted = true;
             addOutputDevice(outputDevices,
                     optionalPcmHapticsBackend.getActiveDeviceDisplayName());

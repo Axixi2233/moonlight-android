@@ -735,6 +735,23 @@
 
     </PreferenceCategory>
 
+    <PreferenceCategory
+        android:key="category_stream_logs"
+        android:title="串流日志">
+
+        <CheckBoxPreference
+            android:key="checkbox_enable_stream_session_logging"
+            android:title="串流日志采集"
+            android:summary="每次串流生成一份新日志，用于记录连接、画面、网络、手柄和异常中断；默认关闭"
+            android:defaultValue="false" />
+
+        <Preference
+            android:key="manage_stream_session_logs"
+            android:title="日志列表"
+            android:summary="查看、导出或删除已保存的串流日志" />
+
+    </PreferenceCategory>
+
 
     <!--PreferenceCategory android:title="@string/category_help"
         android:key="category_help">
