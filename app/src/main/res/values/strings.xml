@@ -430,4 +430,10 @@
     <string name="about_help"><u>使用帮助</u></string>
     <string name="credits_sponsored_dialog_title">赞赏</string>
     <string name="credits_sponsored_dialog_message">如果你愿意支持项目持续更新，可以直接扫码赞赏。非常感谢你的陪伴与鼓励。</string>
+    <string name="game_menu_enable_virtual_mouse">虚拟鼠标</string>
+    <string name="game_menu_disable_virtual_mouse">虚拟鼠标</string>
+    <string name="virtual_mouse_accessibility_hidden">虚拟鼠标已隐藏</string>
+    <string name="virtual_mouse_accessibility_compact">虚拟鼠标，点击展开，拖动可移动</string>
+    <string name="virtual_mouse_accessibility_expanded">虚拟鼠标已展开，包含左右键、滚轮和指针移动区</string>
+    <string name="virtual_mouse_accessibility_scroll">虚拟鼠标方向滚动</string>
 </resources>

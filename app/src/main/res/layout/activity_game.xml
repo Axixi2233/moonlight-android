@@ -136,4 +136,11 @@
 
     <include layout="@layout/view_stream_loading_overlay" />
 
+    <!-- Drawn above stream UI, but empty regions explicitly pass touch through. -->
+    <com.limelight.ui.virtualmouse.VirtualMouseOverlay
+        android:id="@+id/virtualMouseOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:focusable="false" />
 </merge>

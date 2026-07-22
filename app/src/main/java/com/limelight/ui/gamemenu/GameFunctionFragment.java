@@ -50,6 +50,7 @@ public class GameFunctionFragment extends BaseGameMenuDialog implements View.OnC
         v.findViewById(R.id.btn_computer).setOnClickListener(this);
         v.findViewById(R.id.btn_win_center).setOnClickListener(this);
         v.findViewById(R.id.btn_win_p).setOnClickListener(this);
+        v.findViewById(R.id.btn_hdr).setOnClickListener(this);
 
         v.findViewById(R.id.btn_display_1).setOnClickListener(this);
         v.findViewById(R.id.btn_display_2).setOnClickListener(this);
@@ -127,6 +128,10 @@ public class GameFunctionFragment extends BaseGameMenuDialog implements View.OnC
         }
         if(v.getId()==R.id.btn_display_4){
             click.click("显示器4",14);
+            return;
+        }
+        if(v.getId()==R.id.btn_hdr){
+            click.click("HDR开关",15);
             return;
         }
 

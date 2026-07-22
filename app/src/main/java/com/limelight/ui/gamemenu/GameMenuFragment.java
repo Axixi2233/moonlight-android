@@ -2,6 +2,7 @@ package com.limelight.ui.gamemenu;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Handler;
@@ -57,6 +58,8 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
 
     private Button btn_screen_move;
 
+    private Button btn_virtual_mouse;
+
     private TextView tx_title_battery;
 
     private Button btn_mic;
@@ -73,11 +76,18 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
         btn_v_keyboard=v.findViewById(R.id.btn_v_keyboard);
         btn_gamepad_mouse=v.findViewById(R.id.btn_gamepad_mouse);
         btn_screen_move=v.findViewById(R.id.btn_screen_move);
+        btn_virtual_mouse=v.findViewById(R.id.btn_virtual_mouse);
         if(game!=null){
             btn_performance.setBackgroundResource(game.prefConfig.enablePerfOverlay?R.drawable.ic_game_menu_btn_green_selector:R.drawable.ic_game_menu_btn_selector);
             btn_game_pad.setBackgroundResource(game.prefConfig.onscreenController?R.drawable.ic_game_menu_btn_green_selector:R.drawable.ic_game_menu_btn_selector);
             btn_v_keyboard.setBackgroundResource(game.prefConfig.enableKeyboard?R.drawable.ic_game_menu_btn_green_selector:R.drawable.ic_game_menu_btn_selector);
             btn_screen_move.setBackgroundResource(game.getScreenMoveZoom()?R.drawable.ic_game_menu_btn_green_selector:R.drawable.ic_game_menu_btn_selector);
+            btn_virtual_mouse.setBackgroundResource(game.isVirtualMouseEnabled()
+                    ? R.drawable.ic_game_menu_btn_green_selector
+                    : R.drawable.ic_game_menu_btn_selector);
+            btn_virtual_mouse.setText(game.isVirtualMouseEnabled()
+                    ? R.string.game_menu_disable_virtual_mouse
+                    : R.string.game_menu_enable_virtual_mouse);
 
         }
         btn_gamepad_mouse.setVisibility(device!=null?View.VISIBLE:View.INVISIBLE);
@@ -98,7 +108,6 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
         v.findViewById(R.id.btn_desktop).setOnClickListener(this);
         v.findViewById(R.id.btn_window).setOnClickListener(this);
         v.findViewById(R.id.bt_touch_sensitivity).setOnClickListener(this);
-        v.findViewById(R.id.btn_hdr).setOnClickListener(this);
         btn_mic=v.findViewById(R.id.btn_mic);
         btn_mic.setOnClickListener(this);
         v.findViewById(R.id.btn_display_1).setOnClickListener(this);
@@ -107,6 +116,7 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
         v.findViewById(R.id.bt_device).setOnClickListener(this);
         v.findViewById(R.id.bt_other_setting).setOnClickListener(this);
         v.findViewById(R.id.btn_soft_function).setOnClickListener(this);
+        btn_virtual_mouse.setOnClickListener(this);
 
         v.findViewById(R.id.btn_performance).setOnLongClickListener(new View.OnLongClickListener() {
             @Override
@@ -139,6 +149,14 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
 
     @Override
     public void onClick(View v) {
+        if (v.getId() == R.id.btn_virtual_mouse) {
+            if (game != null) {
+                game.toggleVirtualMouse();
+            }
+            dismiss();
+            return;
+        }
+
         //操作 或 显示器
         if(v.getId()==R.id.btn_soft_function || v.getId()==R.id.btn_display_1){
             GameFunctionFragment fragment=new GameFunctionFragment();
@@ -201,6 +219,9 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
                             break;
                         case 14://显示器4
                             sendKeys(new short[]{KeyboardTranslator.VK_LCONTROL,KeyboardTranslator.VK_LMENU, KeyboardTranslator.VK_LSHIFT, KeyboardTranslator.VK_F4});
+                            break;
+                        case 15://HDR开关
+                            sendKeys(new short[]{KeyboardTranslator.VK_LWIN, KeyboardTranslator.VK_LMENU, KeyboardTranslator.VK_B});
                             break;
                     }
                 }
@@ -290,13 +311,6 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
         if(v.getId()==R.id.btn_window){
             if(conn!=null){
                 sendKeys(new short[]{KeyboardTranslator.VK_LWIN, KeyboardTranslator.VK_TAB});
-            }
-            return;
-        }
-
-        if(v.getId()==R.id.btn_hdr){
-            if(conn!=null){
-                sendKeys(new short[]{KeyboardTranslator.VK_LWIN, KeyboardTranslator.VK_LMENU, KeyboardTranslator.VK_B});
             }
             return;
         }
@@ -544,6 +558,14 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
 
     public void setDevice(GameInputDevice device) {
         this.device = device;
+    }
+
+    @Override
+    public void onDismiss(DialogInterface dialog) {
+        super.onDismiss(dialog);
+        if (game != null) {
+            game.setVirtualMouseInputSuppressed(false);
+        }
     }
 
 

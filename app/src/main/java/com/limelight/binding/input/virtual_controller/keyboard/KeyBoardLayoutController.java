@@ -351,6 +351,10 @@ public class KeyBoardLayoutController {
         keyboardView.setVisibility(View.VISIBLE);
     }
 
+    public boolean isVisible() {
+        return keyboardView.getVisibility() == View.VISIBLE;
+    }
+
     public void switchShowHide() {
         if (keyboardView.getVisibility() == View.VISIBLE) {
             hide();

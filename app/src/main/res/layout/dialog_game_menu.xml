@@ -320,11 +320,11 @@
                 android:layout_marginRight="5dp"
                 android:background="@drawable/ic_game_menu_btn_selector"
                 android:drawablePadding="4dp"
-                android:drawableTop="@drawable/ic_axi_hdr"
+                android:drawableTop="@drawable/ic_axi_mouse"
                 android:gravity="center"
                 android:padding="4dp"
-                android:id="@+id/btn_hdr"
-                android:text="HDR开关"
+                android:id="@+id/btn_virtual_mouse"
+                android:text="@string/game_menu_enable_virtual_mouse"
                 android:textSize="10dp" />
             <Button
                 android:layout_width="match_parent"
