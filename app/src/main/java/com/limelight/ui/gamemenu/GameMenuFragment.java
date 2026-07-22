@@ -565,6 +565,7 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
         super.onDismiss(dialog);
         if (game != null) {
             game.setVirtualMouseInputSuppressed(false);
+            game.setVideoZoomInputSuppressed(false);
         }
     }
 

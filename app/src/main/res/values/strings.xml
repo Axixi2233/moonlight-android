@@ -436,4 +436,7 @@
     <string name="virtual_mouse_accessibility_compact">虚拟鼠标，点击展开，拖动可移动</string>
     <string name="virtual_mouse_accessibility_expanded">虚拟鼠标已展开，包含左右键、滚轮和指针移动区</string>
     <string name="virtual_mouse_accessibility_scroll">虚拟鼠标方向滚动</string>
+    <string name="video_zoom_enabled_hint">画面缩放已开启：拖动平移，双指缩放，双击复位，轻点左键</string>
+    <string name="video_zoom_disabled">画面缩放已关闭</string>
+    <string name="video_zoom_accessibility">画面缩放手势区域</string>
 </resources>

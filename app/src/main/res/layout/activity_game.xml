@@ -23,6 +23,15 @@
         <requestFocus />
     </com.limelight.ui.StreamView>
 
+    <!-- Enabled only for the session-local video zoom/view mode. -->
+    <com.limelight.ui.video.VideoZoomGestureOverlay
+        android:id="@+id/videoZoomGestureOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:focusable="false"
+        android:visibility="gone" />
+
 <!--    <com.limelight.ui.ApertureViewGroup-->
 <!--        android:layout_width="match_parent"-->
 <!--        android:layout_height="match_parent"-->

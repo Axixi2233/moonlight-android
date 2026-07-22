@@ -49,6 +49,8 @@ import com.limelight.ui.StreamLoadingOverlayController;
 import com.limelight.ui.virtualmouse.RemoteMouseSink;
 import com.limelight.ui.virtualmouse.VirtualMouseController;
 import com.limelight.ui.virtualmouse.VirtualMouseOverlay;
+import com.limelight.ui.video.VideoZoomController;
+import com.limelight.ui.video.VideoZoomGestureOverlay;
 import com.limelight.ui.floatingview.AXFloatingMagnetView;
 import com.limelight.ui.floatingview.AXFloatingView;
 import com.limelight.ui.floatingview.AXFloatingViewListener;
@@ -76,6 +78,7 @@ import android.content.res.Configuration;
 import android.graphics.Outline;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
+import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Color;
@@ -201,10 +204,10 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     private VideoProcessingGLSurfaceView fsrView;
     private FsrVideoProcessor fsrVideoProcessor;
     private VirtualMouseOverlay virtualMouseOverlay;
-    private float virtualMouseVideoOffsetX;
-    private float virtualMouseVideoOffsetY;
-    private final int[] virtualMouseRootLocation = new int[2];
-    private final int[] virtualMouseVideoLocation = new int[2];
+    private VideoZoomController videoZoomController;
+    private VideoZoomGestureOverlay videoZoomGestureOverlay;
+    private final PointF videoZoomTapPoint = new PointF();
+    private final RectF videoZoomBaseRect = new RectF();
     private long lastAbsTouchUpTime = 0;
     private long lastAbsTouchDownTime = 0;
     private float lastAbsTouchUpX, lastAbsTouchUpY;
@@ -442,6 +445,10 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
         rootView=streamView.getParent();
 
+        videoZoomGestureOverlay = findViewById(R.id.videoZoomGestureOverlay);
+        videoZoomController = new VideoZoomController((View) rootView, streamView, fsrView);
+        videoZoomGestureOverlay.bind(videoZoomController, this::handleVideoZoomTap);
+
         virtualMouseOverlay = findViewById(R.id.virtualMouseOverlay);
         virtualMouseOverlay.bind(createVirtualMouseController(), new VirtualMouseOverlay.PresentationHost() {
             @Override
@@ -473,6 +480,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                     InputDevice.SOURCE_CLASS_POSITION | // Touchpads
                     InputDevice.SOURCE_CLASS_TRACKBALL // Mice (pointer capture)
             );
+            videoZoomGestureOverlay.requestUnbufferedDispatch(InputDevice.SOURCE_TOUCHSCREEN);
             virtualMouseOverlay.requestUnbufferedDispatch(InputDevice.SOURCE_CLASS_POINTER);
         }
 
@@ -889,10 +897,12 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         if(keyBoardLayoutController==null){
             initkeyBoardLayoutController();
             setVirtualMouseInputSuppressed(true);
+            setVideoZoomInputSuppressed(true);
             return;
         }
         keyBoardLayoutController.switchShowHide();
         setVirtualMouseInputSuppressed(keyBoardLayoutController.isVisible());
+        setVideoZoomInputSuppressed(keyBoardLayoutController.isVisible());
     }
 
     //显示隐藏虚拟手柄控制器
@@ -958,6 +968,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     public void onConfigurationChanged(Configuration newConfig) {
         if (virtualMouseOverlay != null) {
             virtualMouseOverlay.cancelActiveInteractions();
+        }
+        if (videoZoomGestureOverlay != null) {
+            videoZoomGestureOverlay.resetTransform();
         }
         super.onConfigurationChanged(newConfig);
 
@@ -1043,6 +1056,10 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                     virtualMouseOverlay.refreshAfterHostSizeChanged();
                 }
             });
+        }
+        if (videoZoomGestureOverlay != null) {
+            setVideoZoomInputSuppressed(isHidingOverlays);
+            videoZoomGestureOverlay.post(videoZoomGestureOverlay::refreshAfterHostSizeChanged);
         }
     }
 
@@ -1162,6 +1179,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         inputCaptureProvider.onWindowFocusChanged(hasFocus);
         if (virtualMouseOverlay != null) {
             setVirtualMouseInputSuppressed(!hasFocus);
+        }
+        if (videoZoomGestureOverlay != null) {
+            setVideoZoomInputSuppressed(!hasFocus);
         }
     }
 
@@ -1461,6 +1481,14 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             virtualMouseOverlay.destroy();
             virtualMouseOverlay = null;
         }
+        if (videoZoomGestureOverlay != null) {
+            videoZoomGestureOverlay.destroy();
+            videoZoomGestureOverlay = null;
+        }
+        if (videoZoomController != null) {
+            videoZoomController.destroy();
+            videoZoomController = null;
+        }
 
         instance = null;
         UiHelper.notifyHdrWindowStatus(this, false);
@@ -1515,6 +1543,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         if (virtualMouseOverlay != null) {
             setVirtualMouseInputSuppressed(false);
         }
+        if (videoZoomGestureOverlay != null) {
+            setVideoZoomInputSuppressed(false);
+        }
 
         if (fsrView != null && fsrViewLifecyclePaused) {
             fsrView.onResume();
@@ -1526,6 +1557,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     protected void onPause() {
         if (virtualMouseOverlay != null) {
             virtualMouseOverlay.setInputSuppressed(true);
+        }
+        if (videoZoomGestureOverlay != null) {
+            videoZoomGestureOverlay.setInputSuppressed(true);
         }
 
         if (fsrView != null && !(usbPermissionPromptVisible && !isFinishing())) {
@@ -1552,6 +1586,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
         if (virtualMouseOverlay != null) {
             virtualMouseOverlay.setInputSuppressed(true);
+        }
+        if (videoZoomGestureOverlay != null) {
+            videoZoomGestureOverlay.setInputSuppressed(true);
         }
 
         logSessionInfo("LIFECYCLE", "串流页面进入后台/停止");
@@ -2128,20 +2165,8 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         // For the containing background view, we must subtract the origin
         // of the StreamView to get video-relative coordinates.
         if (view != streamView) {
-            //缩放画面
-            if(streamView.getScaleX()>1.0f){
-                int[] loc1 = new int[2];
-                int[] loc2 = new int[2];
-                view.getLocationInWindow(loc1);
-                streamView.getLocationInWindow(loc2);
-                int dx=loc2[0] - loc1[0];
-                int dy=loc2[1] - loc1[1];
-                normalizedX = (normalizedX - dx) / streamView.getScaleX();
-                normalizedY = (normalizedY - dy) / streamView.getScaleY();
-            }else{
-                normalizedX -= streamView.getX();
-                normalizedY -= streamView.getY();
-            }
+            normalizedX -= streamView.getX();
+            normalizedY -= streamView.getY();
         }
 
         normalizedX = Math.max(normalizedX, 0.0f);
@@ -3988,23 +4013,25 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         }
     }
 
-    //画面平移缩放
+    // 会话内画面查看模式：手势缩放/平移，轻点发送鼠标左键。
     public void screenMoveZoom(){
-        if(!streamView.isEnableZoomAndPan()){
-            disableMouseModel=true;
-            setVirtualMouseInputSuppressed(true);
-            streamView.setEnableZoomAndPan(true);
-            Toast.makeText(this,"开启画面平移&缩放！",Toast.LENGTH_SHORT).show();
+        if (videoZoomGestureOverlay == null) {
             return;
         }
-        disableMouseModel=false;
-        streamView.setEnableZoomAndPan(false);
+
+        boolean enabled = !videoZoomGestureOverlay.isModeEnabled();
+        videoZoomGestureOverlay.setModeEnabled(enabled);
+        setVideoZoomInputSuppressed(false);
         setVirtualMouseInputSuppressed(false);
-        Toast.makeText(this,"关闭画面平移&缩放！",Toast.LENGTH_SHORT).show();
+        if (enabled) {
+            refreshVideoZoomOverlayZOrder();
+        }
+        Toast.makeText(this, enabled ? R.string.video_zoom_enabled_hint
+                : R.string.video_zoom_disabled, Toast.LENGTH_SHORT).show();
     }
 
     public boolean getScreenMoveZoom(){
-        return streamView.isEnableZoomAndPan();
+        return videoZoomGestureOverlay != null && videoZoomGestureOverlay.isModeEnabled();
     }
 
     public boolean isVirtualMouseEnabled() {
@@ -4029,10 +4056,73 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 && keyBoardLayoutController.isVisible();
         virtualMouseOverlay.setInputSuppressed(suppressed
                 || disableMouseModel
+                || getScreenMoveZoom()
                 || isHidingOverlays
                 || gameMenuShowing
                 || fullKeyboardShowing
                 || !hasWindowFocus());
+    }
+
+    public void setVideoZoomInputSuppressed(boolean suppressed) {
+        if (videoZoomGestureOverlay == null) {
+            return;
+        }
+
+        boolean gameMenuShowing = dialogGameMenu != null
+                && dialogGameMenu.getDialog() != null
+                && dialogGameMenu.getDialog().isShowing();
+        boolean fullKeyboardShowing = keyBoardLayoutController != null
+                && keyBoardLayoutController.isVisible();
+        videoZoomGestureOverlay.setInputSuppressed(suppressed
+                || isHidingOverlays
+                || gameMenuShowing
+                || fullKeyboardShowing
+                || !hasWindowFocus());
+        if (videoZoomGestureOverlay.isModeEnabled()
+                && videoZoomGestureOverlay.getVisibility() == View.VISIBLE) {
+            refreshVideoZoomOverlayZOrder();
+        }
+    }
+
+    private void handleVideoZoomTap(float x, float y) {
+        if (conn == null || videoZoomController == null
+                || !videoZoomController.mapPointToNormalizedVideo(x, y, videoZoomTapPoint)) {
+            return;
+        }
+
+        videoZoomController.getBaseVideoRect(videoZoomBaseRect);
+        int referenceWidth = Math.max(1, Math.min(Short.MAX_VALUE,
+                Math.round(videoZoomBaseRect.width())));
+        int referenceHeight = Math.max(1, Math.min(Short.MAX_VALUE,
+                Math.round(videoZoomBaseRect.height())));
+        int positionX = Math.max(0, Math.min(referenceWidth - 1,
+                Math.round(videoZoomTapPoint.x * (referenceWidth - 1))));
+        int positionY = Math.max(0, Math.min(referenceHeight - 1,
+                Math.round(videoZoomTapPoint.y * (referenceHeight - 1))));
+        conn.sendMousePosition((short) positionX, (short) positionY,
+                (short) referenceWidth, (short) referenceHeight);
+        conn.sendMouseButtonDown(MouseButtonPacket.BUTTON_LEFT);
+        conn.sendMouseButtonUp(MouseButtonPacket.BUTTON_LEFT);
+    }
+
+    private void refreshVideoZoomOverlayZOrder() {
+        if (videoZoomGestureOverlay == null) {
+            return;
+        }
+        videoZoomGestureOverlay.bringToFront();
+        if (performanceOverlayView != null) {
+            performanceOverlayView.bringToFront();
+        }
+        if (notificationOverlayView != null) {
+            notificationOverlayView.bringToFront();
+        }
+        View loadingOverlay = findViewById(R.id.stream_loading_overlay);
+        if (loadingOverlay != null) {
+            loadingOverlay.bringToFront();
+        }
+        if (virtualMouseOverlay != null) {
+            virtualMouseOverlay.bringToFront();
+        }
     }
 
     private VirtualMouseController createVirtualMouseController() {
@@ -4103,41 +4193,23 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     }
 
     private void getVirtualMouseBaseVideoRect(RectF outRect) {
-        View videoView = fsrView != null ? fsrView : streamView;
-        if (videoView == null || rootView == null || videoView.getWidth() <= 0
-                || videoView.getHeight() <= 0) {
+        if (videoZoomController != null) {
+            videoZoomController.getBaseVideoRect(outRect);
+            return;
+        }
+        if (streamView == null || streamView.getWidth() <= 0 || streamView.getHeight() <= 0) {
             outRect.set(0f, 0f,
                     virtualMouseOverlay != null ? virtualMouseOverlay.getWidth() : 1f,
                     virtualMouseOverlay != null ? virtualMouseOverlay.getHeight() : 1f);
             return;
         }
-
-        ViewGroup root = (ViewGroup) rootView;
-        root.getLocationInWindow(virtualMouseRootLocation);
-        videoView.getLocationInWindow(virtualMouseVideoLocation);
-        float left = virtualMouseVideoLocation[0] - virtualMouseRootLocation[0]
-                - virtualMouseVideoOffsetX;
-        float top = virtualMouseVideoLocation[1] - virtualMouseRootLocation[1]
-                - virtualMouseVideoOffsetY;
-        outRect.set(left, top, left + videoView.getWidth(), top + videoView.getHeight());
+        outRect.set(streamView.getLeft(), streamView.getTop(),
+                streamView.getRight(), streamView.getBottom());
     }
 
     private void applyVirtualMouseVideoOffset(float offsetXPx, float offsetYPx) {
-        float deltaX = offsetXPx - virtualMouseVideoOffsetX;
-        float deltaY = offsetYPx - virtualMouseVideoOffsetY;
-        if (Math.abs(deltaX) < 0.5f && Math.abs(deltaY) < 0.5f) {
-            return;
-        }
-
-        virtualMouseVideoOffsetX = offsetXPx;
-        virtualMouseVideoOffsetY = offsetYPx;
-        if (streamView != null) {
-            streamView.setTranslationX(streamView.getTranslationX() + deltaX);
-            streamView.setTranslationY(streamView.getTranslationY() + deltaY);
-        }
-        if (fsrView != null) {
-            fsrView.setTranslationX(fsrView.getTranslationX() + deltaX);
-            fsrView.setTranslationY(fsrView.getTranslationY() + deltaY);
+        if (videoZoomController != null) {
+            videoZoomController.setExternalOffset(offsetXPx, offsetYPx);
         }
     }
 
@@ -4149,6 +4221,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     @Override
     public void showGameMenu(GameInputDevice device) {
         setVirtualMouseInputSuppressed(true);
+        setVideoZoomInputSuppressed(true);
         if(dialogGameMenu!=null){
             dialogGameMenu=null;
         }

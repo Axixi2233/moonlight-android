@@ -23,7 +23,7 @@ import okhttp3.Response;
 
 public class CreditsActivity extends BaseActivity {
 
-    private static final String SPONSORED_CONFIG_URL = "https://axixi2233.github.io/res/config/sponsored.json";
+    private static final String SPONSORED_CONFIG_URL = "https://www.axixi.top/res/config/sponsored.json";
 
     private static final OkHttpClient CLIENT = new OkHttpClient();
     private static final Gson GSON = new Gson();

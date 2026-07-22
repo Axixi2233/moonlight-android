@@ -33,7 +33,7 @@ import okhttp3.Response;
 
 public final class UpdateChecker {
 
-    private static final String UPDATE_CONFIG_URL = "https://axixi2233.github.io/res/config/anappversion.json";
+    private static final String UPDATE_CONFIG_URL = "https://www.axixi.top/res/config/anappversion.json";
     private static final String FALLBACK_UPDATE_URL = "https://pan.quark.cn/s/9a334d831290";
     private static final String PREF_SKIPPED_UPDATE_CODE = "pref_skipped_update_code";
 

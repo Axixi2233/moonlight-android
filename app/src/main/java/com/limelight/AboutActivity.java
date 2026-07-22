@@ -52,7 +52,7 @@ public class AboutActivity extends BaseActivity implements View.OnClickListener 
         }
 
         if (v.getId() == R.id.iv_help){
-            UpdateChecker.openUrl(this,"https://axixi2233.github.io/help.html");
+            UpdateChecker.openUrl(this,"https://www.axixi.top/help.html");
             return;
         }
 
@@ -77,7 +77,7 @@ public class AboutActivity extends BaseActivity implements View.OnClickListener 
         }
 
         if (v.getId() == R.id.iv_github) {
-            UpdateChecker.openUrl(this,"https://axixi2233.github.io/");
+            UpdateChecker.openUrl(this,"https://www.axixi.top/");
             return;
         }
 
