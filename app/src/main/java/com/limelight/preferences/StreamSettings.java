@@ -148,6 +148,13 @@ public class StreamSettings extends Activity {
     public static class SettingsFragment extends PreferenceFragment {
         private int nativeResolutionStartIndex = Integer.MAX_VALUE;
         private boolean nativeFramerateShown = false;
+        private ListPreference stereo3dModePreference;
+        private Preference stereo3dDepthPreference;
+        private Preference stereo3dConvergencePreference;
+        private Preference stereo3dSwapEyesPreference;
+        private ListPreference fsrTargetPreference;
+        private Preference fsrSharpnessPreference;
+        private Preference fsrHdrOutputPreference;
 
         private void setValue(String preferenceKey, String value) {
             ListPreference pref = (ListPreference) findPreference(preferenceKey);
@@ -167,26 +174,76 @@ public class StreamSettings extends Activity {
             pref.setEntryValues(newValues);
         }
 
-        private void updateVideoRenderPreferenceState(String renderMode, String fsrTarget) {
-            ListPreference fsrTargetPref =
-                    (ListPreference) findPreference(PreferenceConfiguration.FSR_TARGET_PREF_STRING);
-            Preference fsrSharpnessPref = findPreference("list_fsr_sharpness");
-            Preference fsrHdrOutputPref = findPreference("list_fsr_hdr_output");
-            if (fsrTargetPref == null || fsrSharpnessPref == null || fsrHdrOutputPref == null) {
+        private void setBasicPreferenceVisible(Preference preference, boolean visible) {
+            if (preference == null) {
+                return;
+            }
+
+            // This screen uses the legacy platform Preference API, which has no
+            // visibility property. Detach and reattach the existing object; its
+            // inflation order is retained, so it returns to the same position.
+            PreferenceCategory category =
+                    (PreferenceCategory) findPreference("category_basic_settings");
+            if (category == null) {
+                return;
+            }
+
+            boolean attached = false;
+            for (int i = 0; i < category.getPreferenceCount(); i++) {
+                if (category.getPreference(i) == preference) {
+                    attached = true;
+                    break;
+                }
+            }
+
+            if (visible && !attached) {
+                category.addPreference(preference);
+            }
+            else if (!visible && attached) {
+                category.removePreference(preference);
+            }
+        }
+
+        private void updateVideoRenderPreferenceState(String renderMode,
+                                                      String stereo3dMode,
+                                                      String fsrTarget) {
+            if (stereo3dModePreference == null || stereo3dDepthPreference == null
+                    || stereo3dConvergencePreference == null || stereo3dSwapEyesPreference == null
+                    || fsrTargetPreference == null || fsrSharpnessPreference == null
+                    || fsrHdrOutputPreference == null) {
                 return;
             }
 
             boolean glesRendering = PreferenceConfiguration.VIDEO_RENDER_MODE_GLES
                     .equalsIgnoreCase(renderMode);
+            if (!glesRendering
+                    && !PreferenceConfiguration.STEREO_3D_MODE_OFF.equalsIgnoreCase(stereo3dMode)) {
+                stereo3dMode = PreferenceConfiguration.STEREO_3D_MODE_OFF;
+                stereo3dModePreference.setValue(stereo3dMode);
+            }
             if (!glesRendering && !"off".equalsIgnoreCase(fsrTarget)) {
                 fsrTarget = "off";
-                fsrTargetPref.setValue(fsrTarget);
+                fsrTargetPreference.setValue(fsrTarget);
             }
 
+            boolean stereo3dEnabled = glesRendering
+                    && PreferenceConfiguration.STEREO_3D_MODE_SBS.equalsIgnoreCase(stereo3dMode);
+            setBasicPreferenceVisible(stereo3dModePreference, glesRendering);
+            setBasicPreferenceVisible(stereo3dDepthPreference, stereo3dEnabled);
+            setBasicPreferenceVisible(stereo3dConvergencePreference, stereo3dEnabled);
+            setBasicPreferenceVisible(stereo3dSwapEyesPreference, stereo3dEnabled);
+            stereo3dModePreference.setEnabled(glesRendering);
+            stereo3dDepthPreference.setEnabled(stereo3dEnabled);
+            stereo3dConvergencePreference.setEnabled(stereo3dEnabled);
+            stereo3dSwapEyesPreference.setEnabled(stereo3dEnabled);
+
             boolean fsrEnabled = glesRendering && !"off".equalsIgnoreCase(fsrTarget);
-            fsrTargetPref.setEnabled(glesRendering);
-            fsrSharpnessPref.setEnabled(fsrEnabled);
-            fsrHdrOutputPref.setEnabled(fsrEnabled);
+            setBasicPreferenceVisible(fsrTargetPreference, glesRendering);
+            setBasicPreferenceVisible(fsrSharpnessPreference, fsrEnabled);
+            setBasicPreferenceVisible(fsrHdrOutputPreference, fsrEnabled);
+            fsrTargetPreference.setEnabled(glesRendering);
+            fsrSharpnessPreference.setEnabled(fsrEnabled);
+            fsrHdrOutputPreference.setEnabled(fsrEnabled);
         }
 
         private void addNativeResolutionEntry(int nativeWidth, int nativeHeight, boolean insetsRemoved, boolean portrait) {
@@ -344,23 +401,44 @@ public class StreamSettings extends Activity {
 
             ListPreference videoRenderModePref = (ListPreference) findPreference(
                     PreferenceConfiguration.VIDEO_RENDER_MODE_PREF_STRING);
-            ListPreference fsrTargetPref = (ListPreference) findPreference(
+            stereo3dModePreference = (ListPreference) findPreference(
+                    PreferenceConfiguration.STEREO_3D_MODE_PREF_STRING);
+            stereo3dDepthPreference =
+                    findPreference(PreferenceConfiguration.STEREO_3D_DEPTH_PREF_STRING);
+            stereo3dConvergencePreference =
+                    findPreference(PreferenceConfiguration.STEREO_3D_CONVERGENCE_PREF_STRING);
+            stereo3dSwapEyesPreference =
+                    findPreference(PreferenceConfiguration.STEREO_3D_SWAP_EYES_PREF_STRING);
+            fsrTargetPreference = (ListPreference) findPreference(
                     PreferenceConfiguration.FSR_TARGET_PREF_STRING);
-            if (videoRenderModePref != null && fsrTargetPref != null) {
-                updateVideoRenderPreferenceState(videoRenderModePref.getValue(), fsrTargetPref.getValue());
+            fsrSharpnessPreference = findPreference("list_fsr_sharpness");
+            fsrHdrOutputPreference = findPreference("list_fsr_hdr_output");
+            if (videoRenderModePref != null
+                    && stereo3dModePreference != null
+                    && fsrTargetPreference != null) {
+                updateVideoRenderPreferenceState(videoRenderModePref.getValue(),
+                        stereo3dModePreference.getValue(), fsrTargetPreference.getValue());
                 videoRenderModePref.setOnPreferenceChangeListener((preference, newValue) -> {
                     String renderMode = String.valueOf(newValue);
-                    String fsrTarget = fsrTargetPref.getValue();
+                    String stereo3dMode = stereo3dModePreference.getValue();
+                    String fsrTarget = fsrTargetPreference.getValue();
                     if (!PreferenceConfiguration.VIDEO_RENDER_MODE_GLES.equalsIgnoreCase(renderMode)) {
+                        stereo3dMode = PreferenceConfiguration.STEREO_3D_MODE_OFF;
+                        stereo3dModePreference.setValue(stereo3dMode);
                         fsrTarget = "off";
-                        fsrTargetPref.setValue(fsrTarget);
+                        fsrTargetPreference.setValue(fsrTarget);
                     }
-                    updateVideoRenderPreferenceState(renderMode, fsrTarget);
+                    updateVideoRenderPreferenceState(renderMode, stereo3dMode, fsrTarget);
                     return true;
                 });
-                fsrTargetPref.setOnPreferenceChangeListener((preference, newValue) -> {
+                stereo3dModePreference.setOnPreferenceChangeListener((preference, newValue) -> {
                     updateVideoRenderPreferenceState(videoRenderModePref.getValue(),
-                            String.valueOf(newValue));
+                            String.valueOf(newValue), fsrTargetPreference.getValue());
+                    return true;
+                });
+                fsrTargetPreference.setOnPreferenceChangeListener((preference, newValue) -> {
+                    updateVideoRenderPreferenceState(videoRenderModePref.getValue(),
+                            stereo3dModePreference.getValue(), String.valueOf(newValue));
                     return true;
                 });
             }

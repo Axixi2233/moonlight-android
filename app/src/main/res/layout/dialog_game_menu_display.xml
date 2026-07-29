@@ -605,6 +605,250 @@
             </RadioGroup>
 
             <LinearLayout
+                android:id="@+id/v_game_display_stereo_3d_header"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="5dp"
+                android:layout_marginTop="10dp"
+                android:layout_marginRight="5dp"
+                android:layout_marginBottom="5dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="3D输出"
+                    android:textColor="@android:color/white"
+                    android:textSize="12dp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="5dp"
+                    android:ellipsize="end"
+                    android:singleLine="true"
+                    android:text="为AR眼镜输出3840×1080左右格式。"
+                    android:textColor="#FFC107"
+                    android:textSize="6dp"
+                    android:textStyle="italic|bold" />
+            </LinearLayout>
+
+            <RadioGroup
+                android:id="@+id/rg_game_display_stereo_3d"
+                android:layout_width="match_parent"
+                android:layout_height="27dp"
+                android:layout_marginLeft="5dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginRight="5dp"
+                android:layout_marginBottom="5dp"
+                android:orientation="horizontal">
+
+                <RadioButton
+                    android:id="@+id/rbt_game_display_stereo_3d_off"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:button="@null"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:text="关闭"
+                    android:textSize="10dp" />
+
+                <RadioButton
+                    android:id="@+id/rbt_game_display_stereo_3d_sbs"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:button="@null"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:text="左右格式"
+                    android:textSize="10dp" />
+            </RadioGroup>
+
+            <LinearLayout
+                android:id="@+id/v_game_display_stereo_3d_details"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="5dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginRight="5dp"
+                    android:text="景深强度"
+                    android:textColor="@android:color/white"
+                    android:textSize="8dp"
+                    android:textStyle="italic|bold" />
+
+                <RadioGroup
+                    android:id="@+id/rg_game_display_stereo_3d_depth"
+                    android:layout_width="match_parent"
+                    android:layout_height="27dp"
+                    android:layout_marginLeft="5dp"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginRight="5dp"
+                    android:layout_marginBottom="5dp"
+                    android:orientation="horizontal">
+
+                    <RadioButton
+                        android:id="@+id/rbt_game_display_stereo_3d_depth_soft"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:padding="4dp"
+                        android:text="弱"
+                        android:textSize="10dp" />
+
+                    <RadioButton
+                        android:id="@+id/rbt_game_display_stereo_3d_depth_standard"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:padding="4dp"
+                        android:text="标准"
+                        android:textSize="10dp" />
+
+                    <RadioButton
+                        android:id="@+id/rbt_game_display_stereo_3d_depth_strong"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:padding="4dp"
+                        android:text="强"
+                        android:textSize="10dp" />
+                </RadioGroup>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="5dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginRight="5dp"
+                    android:text="汇聚位置"
+                    android:textColor="@android:color/white"
+                    android:textSize="8dp"
+                    android:textStyle="italic|bold" />
+
+                <RadioGroup
+                    android:id="@+id/rg_game_display_stereo_3d_convergence"
+                    android:layout_width="match_parent"
+                    android:layout_height="27dp"
+                    android:layout_marginLeft="5dp"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginRight="5dp"
+                    android:layout_marginBottom="5dp"
+                    android:orientation="horizontal">
+
+                    <RadioButton
+                        android:id="@+id/rbt_game_display_stereo_3d_convergence_near"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:padding="4dp"
+                        android:text="近"
+                        android:textSize="10dp" />
+
+                    <RadioButton
+                        android:id="@+id/rbt_game_display_stereo_3d_convergence_standard"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:padding="4dp"
+                        android:text="标准"
+                        android:textSize="10dp" />
+
+                    <RadioButton
+                        android:id="@+id/rbt_game_display_stereo_3d_convergence_far"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:padding="4dp"
+                        android:text="远"
+                        android:textSize="10dp" />
+                </RadioGroup>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="5dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginRight="5dp"
+                    android:text="左右眼"
+                    android:textColor="@android:color/white"
+                    android:textSize="8dp"
+                    android:textStyle="italic|bold" />
+
+                <RadioGroup
+                    android:id="@+id/rg_game_display_stereo_3d_swap_eyes"
+                    android:layout_width="match_parent"
+                    android:layout_height="27dp"
+                    android:layout_marginLeft="5dp"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginRight="5dp"
+                    android:layout_marginBottom="5dp"
+                    android:orientation="horizontal">
+
+                    <RadioButton
+                        android:id="@+id/rbt_game_display_stereo_3d_swap_eyes_off"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:padding="4dp"
+                        android:text="正常"
+                        android:textSize="10dp" />
+
+                    <RadioButton
+                        android:id="@+id/rbt_game_display_stereo_3d_swap_eyes_on"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:padding="4dp"
+                        android:text="交换"
+                        android:textSize="10dp" />
+                </RadioGroup>
+            </LinearLayout>
+
+            <LinearLayout
                 android:id="@+id/v_game_display_fsr_header"
                 android:layout_marginTop="10dp"
                 android:layout_marginLeft="5dp"

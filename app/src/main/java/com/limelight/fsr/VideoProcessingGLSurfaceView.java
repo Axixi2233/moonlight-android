@@ -43,6 +43,7 @@ public class VideoProcessingGLSurfaceView extends GLSurfaceView {
     private int fixedSurfaceWidth;
     private int fixedSurfaceHeight;
     private double desiredAspectRatio;
+    private volatile int maxRenderFps;
 
     public VideoProcessingGLSurfaceView(Context context,
                                         boolean requireSecureContext,
@@ -104,6 +105,10 @@ public class VideoProcessingGLSurfaceView extends GLSurfaceView {
     public void setDesiredAspectRatio(double aspectRatio) {
         desiredAspectRatio = aspectRatio;
         requestLayout();
+    }
+
+    public void setMaxRenderFps(int fps) {
+        maxRenderFps = Math.max(0, fps);
     }
 
     @Override
@@ -174,7 +179,18 @@ public class VideoProcessingGLSurfaceView extends GLSurfaceView {
     private final class VideoRenderer implements Renderer {
         private final AtomicBoolean frameAvailable = new AtomicBoolean(false);
         private final AtomicBoolean pendingBufferSizeUpdate = new AtomicBoolean(false);
+        private final AtomicBoolean renderRequestScheduled = new AtomicBoolean(false);
         private final float[] transformMatrix = new float[16];
+        private final Runnable scheduledFrameRender = new Runnable() {
+            @Override
+            public void run() {
+                renderRequestScheduled.set(false);
+                synchronized (VideoRenderer.this) {
+                    lastRenderRequestNs = System.nanoTime();
+                }
+                requestRender();
+            }
+        };
 
         private SurfaceTexture inputSurfaceTexture;
         private int textureId;
@@ -184,6 +200,8 @@ public class VideoProcessingGLSurfaceView extends GLSurfaceView {
         private int frameHeight = -1;
         private int surfaceWidth = -1;
         private int surfaceHeight = -1;
+        private long lastRenderRequestNs;
+        private boolean firstDecodedFrameLogged;
 
         void setFrameSize(int width, int height) {
             frameWidth = width;
@@ -204,7 +222,7 @@ public class VideoProcessingGLSurfaceView extends GLSurfaceView {
                 @Override
                 public void onFrameAvailable(SurfaceTexture surfaceTexture) {
                     frameAvailable.set(true);
-                    requestRender();
+                    requestRenderForDecodedFrame();
                 }
             });
 
@@ -237,20 +255,64 @@ public class VideoProcessingGLSurfaceView extends GLSurfaceView {
 
             maybeUpdateInputSurfaceDefaultSize();
 
+            boolean decodedFrameUpdated = false;
             if (frameAvailable.compareAndSet(true, false)) {
                 SurfaceTexture surfaceTexture = inputSurfaceTexture;
                 if (surfaceTexture != null) {
                     surfaceTexture.updateTexImage();
                     frameTimestampUs = surfaceTexture.getTimestamp() / 1000L;
                     surfaceTexture.getTransformMatrix(transformMatrix);
+                    decodedFrameUpdated = true;
                 }
             }
 
+            long drawStartNs = decodedFrameUpdated && !firstDecodedFrameLogged
+                    ? System.nanoTime()
+                    : 0L;
             videoProcessor.draw(textureId, frameTimestampUs, frameWidth, frameHeight, transformMatrix);
+            if (drawStartNs != 0L) {
+                firstDecodedFrameLogged = true;
+                Log.i(TAG, "First decoded GLES frame submitted in "
+                        + ((System.nanoTime() - drawStartNs) / 1_000_000.0) + " ms"
+                        + ", output=" + Math.max(surfaceWidth, getWidth())
+                        + "x" + Math.max(surfaceHeight, getHeight()));
+            }
         }
 
         void release() {
             destroyInputSurfaceTexture(true);
+        }
+
+        private void requestRenderForDecodedFrame() {
+            int cappedFps = maxRenderFps;
+            if (cappedFps <= 0) {
+                requestRender();
+                return;
+            }
+
+            long nowNs = System.nanoTime();
+            long minimumFrameIntervalNs = 1_000_000_000L / cappedFps;
+            long delayNs;
+            synchronized (this) {
+                delayNs = lastRenderRequestNs == 0
+                        ? 0
+                        : minimumFrameIntervalNs - (nowNs - lastRenderRequestNs);
+                if (delayNs <= 0) {
+                    lastRenderRequestNs = nowNs;
+                }
+            }
+
+            if (delayNs <= 0) {
+                if (renderRequestScheduled.get()) {
+                    return;
+                }
+                requestRender();
+                return;
+            }
+            if (renderRequestScheduled.compareAndSet(false, true)) {
+                long delayMs = Math.max(1L, (delayNs + 999_999L) / 1_000_000L);
+                mainHandler.postDelayed(scheduledFrameRender, delayMs);
+            }
         }
 
         private void maybeUpdateInputSurfaceDefaultSize() {
@@ -294,6 +356,12 @@ public class VideoProcessingGLSurfaceView extends GLSurfaceView {
             frameAvailable.set(false);
             initialized = false;
             frameTimestampUs = 0;
+            mainHandler.removeCallbacks(scheduledFrameRender);
+            renderRequestScheduled.set(false);
+            synchronized (this) {
+                lastRenderRequestNs = 0;
+            }
+            firstDecodedFrameLogged = false;
             for (int i = 0; i < transformMatrix.length; i++) {
                 transformMatrix[i] = 0.0f;
             }

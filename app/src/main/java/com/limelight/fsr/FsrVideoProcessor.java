@@ -32,11 +32,15 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
     private final FloatBuffer fullscreenTexCoords = GlUtil.getFullscreenTexCoords();
     private final int[] framebuffers = new int[1];
     private final int[] textures = new int[1];
+    private final int[] stereoSceneFramebuffers = new int[1];
+    private final int[] stereoSceneTextures = new int[1];
 
     private GlProgram easuProgram;
     private GlProgram rcasProgram;
     private GlProgram mobileProgram;
     private GlProgram passthroughProgram;
+    private GlProgram stereoExternalProgram;
+    private GlProgram stereoTextureProgram;
 
     private int pipelineMode = PIPELINE_NONE;
     private String activeShaderDir = "none";
@@ -45,13 +49,21 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
     private boolean mobileHasHdrToneMap;
     private boolean twoPassFailureLogged;
     private boolean fsrEnabled;
+    private boolean stereo3dEnabled;
+    private boolean stereo3dSwapEyes;
     private boolean hdrToneMappingEnabled;
     private boolean usingPqWindow;
 
     private float rcasSharpness = 0.1f;
     private float mobileSharpness = 1.5f;
+    private float stereo3dDepthStrength = 0.018f;
+    private float stereo3dConvergence = 0.50f;
+    private int surfaceWidth = -1;
+    private int surfaceHeight = -1;
     private int outputWidth = -1;
     private int outputHeight = -1;
+    private int stereoSceneWidth = 1920;
+    private int stereoSceneHeight = 1080;
     private float[] outputSize = new float[] {1f, 1f};
 
     public FsrVideoProcessor(Context context) {
@@ -62,7 +74,18 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
     public void initialize(int glMajorVersion, int glMinorVersion, String extensions) {
         resetPrograms();
         deleteFramebuffer();
+        deleteStereoSceneFramebuffer();
         detectHdrWindowState();
+
+        if (stereo3dEnabled) {
+            try {
+                ensureStereoExternalProgram();
+                Log.i(TAG, "SBS renderer ready: logicalOutput=3840x1080"
+                        + ", scene=" + stereoSceneWidth + "x" + stereoSceneHeight);
+            } catch (IOException | GlUtil.GlException e) {
+                Log.e(TAG, "Failed to initialize SBS OES renderer", e);
+            }
+        }
 
         if (!fsrEnabled) {
             Log.i(TAG, "FSR disabled; using GLES passthrough pipeline");
@@ -115,17 +138,33 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
         if (width <= 0 || height <= 0) {
             return;
         }
-        if (outputWidth == width && outputHeight == height) {
+        if (surfaceWidth == width && surfaceHeight == height) {
             return;
         }
-        outputWidth = width;
-        outputHeight = height;
-        outputSize = new float[] {width, height};
+        surfaceWidth = width;
+        surfaceHeight = height;
+        if (stereo3dEnabled) {
+            Log.i(TAG, "SBS display surface=" + width + "x" + height
+                    + ", logicalOutput=3840x1080"
+                    + ", eyeViewport=" + (width / 2) + "x" + height);
+        }
+        updateOutputSize();
+    }
+
+    private void updateOutputSize() {
+        int desiredOutputWidth = stereo3dEnabled ? stereoSceneWidth : surfaceWidth;
+        int desiredOutputHeight = stereo3dEnabled ? stereoSceneHeight : surfaceHeight;
+        if (desiredOutputWidth <= 0 || desiredOutputHeight <= 0
+                || (outputWidth == desiredOutputWidth && outputHeight == desiredOutputHeight)) {
+            return;
+        }
+        outputWidth = desiredOutputWidth;
+        outputHeight = desiredOutputHeight;
+        outputSize = new float[] {outputWidth, outputHeight};
+        deleteFramebuffer();
+        deleteStereoSceneFramebuffer();
         if (pipelineMode == PIPELINE_TWO_PASS) {
-            deleteFramebuffer();
             createFramebuffer();
-        } else {
-            deleteFramebuffer();
         }
     }
 
@@ -135,11 +174,15 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
                      int frameWidth,
                      int frameHeight,
                      float[] transformMatrix) {
-        int viewportWidth = Math.max(outputWidth, 1);
-        int viewportHeight = Math.max(outputHeight, 1);
+        int viewportWidth = Math.max(surfaceWidth, 1);
+        int viewportHeight = Math.max(surfaceHeight, 1);
         GLES20.glViewport(0, 0, viewportWidth, viewportHeight);
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 
+        if (stereo3dEnabled) {
+            drawStereoFrame(frameTexture, frameWidth, frameHeight, transformMatrix);
+            return;
+        }
         if (!fsrEnabled) {
             drawPassthrough(frameTexture, transformMatrix);
             return;
@@ -159,10 +202,41 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
     public void release() {
         resetPrograms();
         deleteFramebuffer();
+        deleteStereoSceneFramebuffer();
     }
 
     public void setFsrEnabled(boolean enabled) {
         fsrEnabled = enabled;
+    }
+
+    public void setStereo3dEnabled(boolean enabled) {
+        if (stereo3dEnabled == enabled) {
+            return;
+        }
+        stereo3dEnabled = enabled;
+        updateOutputSize();
+    }
+
+    public void setStereo3dDepthStrength(float strength) {
+        stereo3dDepthStrength = Math.max(0.0f, Math.min(0.03f, strength));
+    }
+
+    public void setStereo3dConvergence(float convergence) {
+        stereo3dConvergence = Math.max(0.25f, Math.min(0.75f, convergence));
+    }
+
+    public void setStereo3dSwapEyes(boolean swapEyes) {
+        stereo3dSwapEyes = swapEyes;
+    }
+
+    public void setStereoSceneSize(int width, int height) {
+        if (width <= 0 || height <= 0
+                || (stereoSceneWidth == width && stereoSceneHeight == height)) {
+            return;
+        }
+        stereoSceneWidth = width;
+        stereoSceneHeight = height;
+        updateOutputSize();
     }
 
     public void setHdrToneMappingEnabled(boolean enabled) {
@@ -233,6 +307,48 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
         }
     }
 
+    private void drawStereoFrame(int frameTexture,
+                                 int frameWidth,
+                                 int frameHeight,
+                                 float[] transformMatrix) {
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+        GLES20.glViewport(0, 0, Math.max(surfaceWidth, 1), Math.max(surfaceHeight, 1));
+
+        if (!fsrEnabled || pipelineMode == PIPELINE_NONE) {
+            drawStereoExternal(frameTexture, frameWidth, frameHeight, transformMatrix);
+            return;
+        }
+
+        ensureStereoSceneFramebuffer();
+        if (stereoSceneFramebuffers[0] == 0 || stereoSceneTextures[0] == 0) {
+            Log.w(TAG, "SBS scene framebuffer unavailable; bypassing FSR for this frame");
+            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+            drawStereoExternal(frameTexture, frameWidth, frameHeight, transformMatrix);
+            return;
+        }
+
+        if (pipelineMode == PIPELINE_TWO_PASS) {
+            drawTwoPass(frameTexture, frameWidth, frameHeight, transformMatrix);
+            if (pipelineMode != PIPELINE_TWO_PASS) {
+                // The failure path rendered the frame again using the newly selected fallback.
+                return;
+            }
+        }
+        else if (pipelineMode == PIPELINE_MOBILE_SINGLE_PASS) {
+            drawMobileSinglePass(frameTexture, frameWidth, frameHeight, transformMatrix);
+        }
+        else {
+            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+            drawStereoExternal(frameTexture, frameWidth, frameHeight, transformMatrix);
+            return;
+        }
+
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+        GLES20.glViewport(0, 0, Math.max(surfaceWidth, 1), Math.max(surfaceHeight, 1));
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+        drawStereoTexture(stereoSceneTextures[0], outputWidth, outputHeight);
+    }
+
     private void drawTwoPass(int frameTexture,
                              int frameWidth,
                              int frameHeight,
@@ -271,7 +387,8 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
             return;
         }
 
-        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER,
+                stereo3dEnabled ? stereoSceneFramebuffers[0] : 0);
         GLES20.glViewport(0, 0, Math.max(outputWidth, 1), Math.max(outputHeight, 1));
         try {
             rcasProgram.setSamplerTexIdUniform("inputTexture", textures[0], 0, GLES20.GL_TEXTURE_2D);
@@ -302,6 +419,9 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
             drawPassthrough(frameTexture, transformMatrix);
             return;
         }
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER,
+                stereo3dEnabled ? stereoSceneFramebuffers[0] : 0);
+        GLES20.glViewport(0, 0, Math.max(outputWidth, 1), Math.max(outputHeight, 1));
         try {
             bindExternalInput(mobileProgram, frameTexture, frameWidth, frameHeight, transformMatrix, mobileHasHdrToneMap);
             mobileProgram.setFloatsUniform("outputTextureSize", outputSize);
@@ -335,6 +455,55 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
         checkGlError("passthrough draw");
     }
 
+    private void drawStereoExternal(int frameTexture,
+                                    int frameWidth,
+                                    int frameHeight,
+                                    float[] transformMatrix) {
+        try {
+            GlProgram program = ensureStereoExternalProgram();
+            program.setSamplerTexIdUniform("inputTexture", frameTexture, 0,
+                    GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
+            program.setMatrix4Uniform("uTexTransform", transformMatrix);
+            bindStereoUniforms(program, frameWidth, frameHeight);
+            program.bindAttributesAndUniforms();
+        } catch (IOException | GlUtil.GlException e) {
+            Log.e(TAG, "Failed to bind SBS OES shader; using GLES passthrough", e);
+            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+            GLES20.glViewport(0, 0, Math.max(surfaceWidth, 1), Math.max(surfaceHeight, 1));
+            drawPassthrough(frameTexture, transformMatrix);
+            return;
+        }
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+        checkGlError("SBS OES draw");
+    }
+
+    private void drawStereoTexture(int textureId, int textureWidth, int textureHeight) {
+        try {
+            GlProgram program = ensureStereoTextureProgram();
+            program.setSamplerTexIdUniform("inputTexture", textureId, 0, GLES20.GL_TEXTURE_2D);
+            bindStereoUniforms(program, textureWidth, textureHeight);
+            program.bindAttributesAndUniforms();
+        } catch (IOException | GlUtil.GlException e) {
+            Log.e(TAG, "Failed to bind SBS 2D texture shader", e);
+            return;
+        }
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+        checkGlError("SBS texture draw");
+    }
+
+    private void bindStereoUniforms(GlProgram program, int sourceWidth, int sourceHeight) {
+        float safeWidth = Math.max(sourceWidth, 1);
+        float safeHeight = Math.max(sourceHeight, 1);
+        float eyeAspect = surfaceWidth > 0 && surfaceHeight > 0
+                ? (surfaceWidth * 0.5f) / surfaceHeight
+                : (16.0f / 9.0f);
+        program.setFloatUniform("uSourceAspect", safeWidth / safeHeight);
+        program.setFloatUniform("uEyeAspect", eyeAspect);
+        program.setFloatUniform("uDepthStrength", stereo3dDepthStrength);
+        program.setFloatUniform("uConvergence", stereo3dConvergence);
+        program.setFloatUniform("uSwapEyes", stereo3dSwapEyes ? 1.0f : 0.0f);
+    }
+
     private void bindExternalInput(GlProgram program,
                                    int frameTexture,
                                    int frameWidth,
@@ -362,6 +531,26 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
             );
         }
         return passthroughProgram;
+    }
+
+    private GlProgram ensureStereoExternalProgram() throws IOException {
+        if (stereoExternalProgram == null) {
+            stereoExternalProgram = buildProgram(
+                    "stereo/stereo_vertex.glsl",
+                    "stereo/stereo_oes_fragment.glsl"
+            );
+        }
+        return stereoExternalProgram;
+    }
+
+    private GlProgram ensureStereoTextureProgram() throws IOException {
+        if (stereoTextureProgram == null) {
+            stereoTextureProgram = buildProgram(
+                    "stereo/stereo_vertex.glsl",
+                    "stereo/stereo_2d_fragment.glsl"
+            );
+        }
+        return stereoTextureProgram;
     }
 
     private GlProgram buildProgram(String vertexShaderAsset, String fragmentShaderAsset) throws IOException {
@@ -412,6 +601,53 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
     }
 
+    private void ensureStereoSceneFramebuffer() {
+        if (!stereo3dEnabled || outputWidth <= 0 || outputHeight <= 0
+                || (stereoSceneFramebuffers[0] != 0 && stereoSceneTextures[0] != 0)) {
+            return;
+        }
+
+        GLES20.glGenFramebuffers(1, stereoSceneFramebuffers, 0);
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, stereoSceneFramebuffers[0]);
+
+        GLES20.glGenTextures(1, stereoSceneTextures, 0);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, stereoSceneTextures[0]);
+        GLES20.glTexImage2D(
+                GLES20.GL_TEXTURE_2D,
+                0,
+                GLES20.GL_RGBA,
+                outputWidth,
+                outputHeight,
+                0,
+                GLES20.GL_RGBA,
+                GLES20.GL_UNSIGNED_BYTE,
+                null
+        );
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,
+                GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,
+                GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,
+                GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D,
+                GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glFramebufferTexture2D(
+                GLES20.GL_FRAMEBUFFER,
+                GLES20.GL_COLOR_ATTACHMENT0,
+                GLES20.GL_TEXTURE_2D,
+                stereoSceneTextures[0],
+                0
+        );
+
+        int status = GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER);
+        if (status != GLES20.GL_FRAMEBUFFER_COMPLETE) {
+            Log.e(TAG, "SBS scene framebuffer incomplete: " + status);
+            deleteStereoSceneFramebuffer();
+        }
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+    }
+
     private void deleteFramebuffer() {
         if (framebuffers[0] != 0) {
             GLES20.glDeleteFramebuffers(1, framebuffers, 0);
@@ -420,6 +656,17 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
         if (textures[0] != 0) {
             GLES20.glDeleteTextures(1, textures, 0);
             textures[0] = 0;
+        }
+    }
+
+    private void deleteStereoSceneFramebuffer() {
+        if (stereoSceneFramebuffers[0] != 0) {
+            GLES20.glDeleteFramebuffers(1, stereoSceneFramebuffers, 0);
+            stereoSceneFramebuffers[0] = 0;
+        }
+        if (stereoSceneTextures[0] != 0) {
+            GLES20.glDeleteTextures(1, stereoSceneTextures, 0);
+            stereoSceneTextures[0] = 0;
         }
     }
 
@@ -458,6 +705,10 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
         mobileProgram = null;
         safeDeleteProgram(passthroughProgram);
         passthroughProgram = null;
+        safeDeleteProgram(stereoExternalProgram);
+        stereoExternalProgram = null;
+        safeDeleteProgram(stereoTextureProgram);
+        stereoTextureProgram = null;
         pipelineMode = PIPELINE_NONE;
         activeShaderDir = "none";
         needInputSize = true;

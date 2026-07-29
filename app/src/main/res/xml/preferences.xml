@@ -68,6 +68,36 @@
             android:defaultValue="system" />
 
         <ListPreference
+            android:key="list_stereo_3d_mode"
+            android:title="3D输出"
+            android:entries="@array/stereo_3d_mode_names"
+            android:entryValues="@array/stereo_3d_mode_values"
+            android:summary="将2D串流实时转换为3840×1080左右格式；仅支持GLES渲染。"
+            android:defaultValue="off" />
+
+        <ListPreference
+            android:key="list_stereo_3d_depth"
+            android:title="3D景深"
+            android:entries="@array/stereo_3d_depth_names"
+            android:entryValues="@array/stereo_3d_depth_values"
+            android:summary="控制左右眼最大视差，建议从标准开始。"
+            android:defaultValue="standard" />
+
+        <ListPreference
+            android:key="list_stereo_3d_convergence"
+            android:title="3D汇聚"
+            android:entries="@array/stereo_3d_convergence_names"
+            android:entryValues="@array/stereo_3d_convergence_values"
+            android:summary="调整画面位于屏幕前后的基准位置。"
+            android:defaultValue="standard" />
+
+        <CheckBoxPreference
+            android:key="checkbox_stereo_3d_swap_eyes"
+            android:title="交换左右眼"
+            android:summary="当远近关系相反或眼镜眼序不一致时开启。"
+            android:defaultValue="false" />
+
+        <ListPreference
             android:key="list_fsr_target"
             android:title="超分目标"
             android:entries="@array/fsr_target_names"
@@ -454,12 +484,6 @@
             android:summary="开启后，串流界面点击手机物理返回键 展示相关选项！
             \n软键盘、性能信息、触控模式切换、发送特殊按键"
             android:defaultValue="true"/>
-
-        <CheckBoxPreference
-            android:key="checkbox_enable_sbs"
-            android:title="Side-By-Side模式"
-            android:summary="左右格式3D模式,仅供娱乐！需外接手柄使用！"
-            android:defaultValue="false"/>
 
         <EditTextPreference
             android:key="edit_diy_w_h"

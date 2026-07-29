@@ -38,6 +38,12 @@ public class PreferenceConfiguration {
     public static final String VIDEO_RENDER_MODE_PREF_STRING = "list_video_render_mode";
     public static final String VIDEO_RENDER_MODE_SYSTEM = "system";
     public static final String VIDEO_RENDER_MODE_GLES = "gles";
+    public static final String STEREO_3D_MODE_PREF_STRING = "list_stereo_3d_mode";
+    public static final String STEREO_3D_MODE_OFF = "off";
+    public static final String STEREO_3D_MODE_SBS = "sbs";
+    public static final String STEREO_3D_DEPTH_PREF_STRING = "list_stereo_3d_depth";
+    public static final String STEREO_3D_CONVERGENCE_PREF_STRING = "list_stereo_3d_convergence";
+    public static final String STEREO_3D_SWAP_EYES_PREF_STRING = "checkbox_stereo_3d_swap_eyes";
     public static final String FSR_TARGET_PREF_STRING = "list_fsr_target";
     private static final String STRETCH_PREF_STRING = "checkbox_stretch_video";
     private static final String SOPS_PREF_STRING = "checkbox_enable_sops";
@@ -90,7 +96,7 @@ public class PreferenceConfiguration {
     private static final String CHECKBOX_ENABLE_QUIT_DIALOG = "checkbox_enable_quit_dialog";
 
     //VR模式
-    private static final String CHECKBOX_ENABLE_SBS = "checkbox_enable_sbs";
+    private static final String LEGACY_ENABLE_SBS_PREF_STRING = "checkbox_enable_sbs";
     //竖屏模式
     public static final String CHECKBOX_ENABLE_PORTRAIT = "checkbox_enable_portrait";
     //屏幕特殊按键
@@ -169,6 +175,10 @@ public class PreferenceConfiguration {
     public int bitrate;
     public FormatOption videoFormat;
     public VideoRenderMode videoRenderMode;
+    public String stereo3dMode;
+    public String stereo3dDepth;
+    public String stereo3dConvergence;
+    public boolean stereo3dSwapEyes;
     public int deadzonePercentage;
     public int oscOpacity;
     public int oscKeyboardOpacity;
@@ -263,8 +273,6 @@ public class PreferenceConfiguration {
     //启动自定义配置文件
     public boolean enableCustomKeyboardFile;
 
-    //VR模式
-    public boolean enableSbs;
     public boolean bindAllUsb;
     public boolean mouseEmulation;
     public int mouseEmulationGameMenu;
@@ -737,9 +745,37 @@ public class PreferenceConfiguration {
                     .putString(VIDEO_RENDER_MODE_PREF_STRING, videoRenderMode)
                     .apply();
         }
+        String stereo3dMode = prefs.getString(STEREO_3D_MODE_PREF_STRING, null);
+        if (stereo3dMode == null) {
+            stereo3dMode = prefs.getBoolean(LEGACY_ENABLE_SBS_PREF_STRING, false)
+                    ? STEREO_3D_MODE_SBS
+                    : STEREO_3D_MODE_OFF;
+            SharedPreferences.Editor migrationEditor = prefs.edit()
+                    .putString(STEREO_3D_MODE_PREF_STRING, stereo3dMode)
+                    .remove(LEGACY_ENABLE_SBS_PREF_STRING);
+            if (STEREO_3D_MODE_SBS.equalsIgnoreCase(stereo3dMode)) {
+                videoRenderMode = VIDEO_RENDER_MODE_GLES;
+                migrationEditor.putString(VIDEO_RENDER_MODE_PREF_STRING, videoRenderMode);
+            }
+            migrationEditor.apply();
+        }
+        if (STEREO_3D_MODE_SBS.equalsIgnoreCase(stereo3dMode)
+                && !VIDEO_RENDER_MODE_GLES.equalsIgnoreCase(videoRenderMode)) {
+            videoRenderMode = VIDEO_RENDER_MODE_GLES;
+            prefs.edit()
+                    .putString(VIDEO_RENDER_MODE_PREF_STRING, videoRenderMode)
+                    .apply();
+        }
+
         config.videoRenderMode = VIDEO_RENDER_MODE_GLES.equalsIgnoreCase(videoRenderMode)
                 ? VideoRenderMode.GLES
                 : VideoRenderMode.SYSTEM;
+        config.stereo3dMode = STEREO_3D_MODE_SBS.equalsIgnoreCase(stereo3dMode)
+                ? STEREO_3D_MODE_SBS
+                : STEREO_3D_MODE_OFF;
+        config.stereo3dDepth = prefs.getString(STEREO_3D_DEPTH_PREF_STRING, "standard");
+        config.stereo3dConvergence = prefs.getString(STEREO_3D_CONVERGENCE_PREF_STRING, "standard");
+        config.stereo3dSwapEyes = prefs.getBoolean(STEREO_3D_SWAP_EYES_PREF_STRING, false);
 
         String str = prefs.getString(LEGACY_RES_FPS_PREF_STRING, null);
         if (str != null) {
@@ -885,7 +921,6 @@ public class PreferenceConfiguration {
         config.enableLatencyToast = prefs.getBoolean(LATENCY_TOAST_PREF_STRING, DEFAULT_LATENCY_TOAST);
         //软键盘
         config.enableQtDialog = prefs.getBoolean(CHECKBOX_ENABLE_QUIT_DIALOG,false);
-        config.enableSbs = prefs.getBoolean(CHECKBOX_ENABLE_SBS,false);
         config.enablePortrait = prefs.getBoolean(CHECKBOX_ENABLE_PORTRAIT,false);
 
         config.enableKeyboard = prefs.getBoolean(CHECKBOX_ENABLE_KEYBOARD,false);

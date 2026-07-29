@@ -41,6 +41,37 @@
         <item>gles</item>
     </string-array>
 
+    <string-array name="stereo_3d_mode_names">
+        <item>关闭</item>
+        <item>左右格式</item>
+    </string-array>
+    <string-array name="stereo_3d_mode_values" translatable="false">
+        <item>off</item>
+        <item>sbs</item>
+    </string-array>
+
+    <string-array name="stereo_3d_depth_names">
+        <item>弱</item>
+        <item>标准</item>
+        <item>强</item>
+    </string-array>
+    <string-array name="stereo_3d_depth_values" translatable="false">
+        <item>soft</item>
+        <item>standard</item>
+        <item>strong</item>
+    </string-array>
+
+    <string-array name="stereo_3d_convergence_names">
+        <item>近</item>
+        <item>标准</item>
+        <item>远</item>
+    </string-array>
+    <string-array name="stereo_3d_convergence_values" translatable="false">
+        <item>near</item>
+        <item>standard</item>
+        <item>far</item>
+    </string-array>
+
     <string-array name="fsr_target_names">
         <item>关闭</item>
         <item>2K</item>

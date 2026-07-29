@@ -270,6 +270,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     private TextView performanceRumble;
     private boolean glesRenderingEnabled;
     private boolean fsrEnabled;
+    private boolean stereo3dEnabled;
     private boolean fsrInputSurfaceReady;
     private boolean fsrDisplaySurfaceCreated;
     private Surface fsrInputSurface;
@@ -352,6 +353,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         streamView.setOnKeyListener(this);
         streamView.setInputCallbacks(this);
 
+        stereo3dEnabled = isStereo3dEnabled();
         glesRenderingEnabled = isGlesRenderingEnabled();
         fsrEnabled = isFsrEnabled();
         configureGlesWindowColorMode();
@@ -392,6 +394,16 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             fsrVideoProcessor = new FsrVideoProcessor(this);
             fsrVideoProcessor.setSharpness(getFsrSharpness());
             fsrVideoProcessor.setFsrEnabled(fsrEnabled);
+            fsrVideoProcessor.setStereo3dEnabled(stereo3dEnabled);
+            fsrVideoProcessor.setStereo3dDepthStrength(getStereo3dDepthStrength());
+            fsrVideoProcessor.setStereo3dConvergence(getStereo3dConvergence());
+            fsrVideoProcessor.setStereo3dSwapEyes(prefConfig.stereo3dSwapEyes);
+            if (stereo3dEnabled) {
+                int[] stereoSceneSize = fsrEnabled
+                        ? getFsrOutputSize()
+                        : new int[] {1920, 1080};
+                fsrVideoProcessor.setStereoSceneSize(stereoSceneSize[0], stereoSceneSize[1]);
+            }
             fsrView = new VideoProcessingGLSurfaceView(this, false, isGlesNativeHdrOutputEnabled(), fsrVideoProcessor,
                     new VideoProcessingGLSurfaceView.SurfaceListener() {
                         @Override
@@ -434,7 +446,14 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             streamView.setZOrderMediaOverlay(true);
             fsrView.getHolder().addCallback(this);
             fsrView.setFrameInputSize(prefConfig.width, prefConfig.height);
-            if (fsrEnabled) {
+            if (stereo3dEnabled) {
+                // Keep full-SBS as the logical layout, but let the actual display window own
+                // the buffer size. A 3840x1080 AR display will still produce a native surface,
+                // while handset previews no longer allocate an oversized off-screen buffer.
+                fsrView.setFixedSurfacePixelSize(0, 0);
+                fsrView.setMaxRenderFps(60);
+            }
+            else if (fsrEnabled) {
                 int[] fsrOutputSize = getFsrOutputSize();
                 fsrView.setFixedSurfacePixelSize(fsrOutputSize[0], fsrOutputSize[1]);
             }
@@ -595,6 +614,12 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                     Toast.makeText(this, "HDR requires Android 7.0 or later", Toast.LENGTH_LONG).show();
                 }
             }
+        }
+
+        if (stereo3dEnabled && willStreamHdr) {
+            willStreamHdr = false;
+            Toast.makeText(this, "3D输出首版使用SDR串流，已临时关闭HDR", Toast.LENGTH_LONG).show();
+            logSessionWarn("VIDEO", "SBS 3D 首版禁用 HDR 串流");
         }
 
         // Check if the user has enabled performance stats overlay
@@ -1402,6 +1427,11 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 fsrView.setDesiredAspectRatio((double)prefConfig.width / (double)prefConfig.height);
             }
             LimeLog.info("surfaceChanged-->"+(double)prefConfig.width / (double)prefConfig.height);
+        }
+
+        if (stereo3dEnabled && fsrView != null) {
+            // Full-SBS output is two 16:9 eye images placed side by side.
+            fsrView.setDesiredAspectRatio(3840.0 / 1080.0);
         }
 
         // Set the desired refresh rate that will get passed into setFrameRate() later
@@ -3315,7 +3345,10 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         // FPS value if there's no suitable matching refresh rate. In that case, Android could try to
         // select a lower refresh rate that avoids uneven pull-down (ex: 30 Hz for a 60 FPS stream on
         // a display that maxes out at 50 Hz).
-        if (mayReduceRefreshRate() || desiredRefreshRate < prefConfig.fps) {
+        if (stereo3dEnabled) {
+            desiredFrameRate = Math.min(prefConfig.fps, 60.0f);
+        }
+        else if (mayReduceRefreshRate() || desiredRefreshRate < prefConfig.fps) {
             desiredFrameRate = prefConfig.fps;
         }
         else {
@@ -3528,6 +3561,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         if (fsrEnabled) {
             builder.append(buildFsrPerfLabel()).append("  ");
         }
+        if (stereo3dEnabled) {
+            builder.append("SBS 3D  ");
+        }
         builder.append("延迟/解码：");
         builder.append(stats.networkLatencyMs).append(" ms / ");
         builder.append(stats.decodeTimeMs > 0 ? String.format(Locale.US, "%.2f ms", stats.decodeTimeMs) : "--");
@@ -3560,7 +3596,8 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
         addPerfRow("分辨率", stats.width > 0 && stats.height > 0
                 ? stats.width + "x" + stats.height + (stats.hdr ? " HDR" : "")
-                : prefConfig.width + "x" + prefConfig.height + (prefConfig.enableHdr ? " HDR" : ""));
+                : prefConfig.width + "x" + prefConfig.height
+                + (prefConfig.enableHdr && !stereo3dEnabled ? " HDR" : ""));
         addPerfRow("编码", nonEmpty(stats.codecName, "--"));
         addPerfRow("目标码率", formatMbps(stats.targetBitrateKbps > 0 ? stats.targetBitrateKbps : prefConfig.bitrate));
         addPerfRow("目标帧率", (stats.targetFps > 0 ? stats.targetFps : prefConfig.fps) + " FPS");
@@ -3570,6 +3607,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         addPerfRow("累计视频流量", formatBytes(stats.videoBytes));
         addPerfRow("累计音频流量", formatBytes(stats.audioBytes));
         addPerfRow("渲染方式", glesRenderingEnabled ? "GLES渲染" : "系统渲染");
+        addPerfRow("3D输出", stereo3dEnabled
+                ? "SBS 3840x1080 / 景深" + getStereo3dDepthDisplayName()
+                : "关闭");
         addPerfRow("超分状态", buildUpscaleStatusText());
         addPerfRow("实际渲染链", buildRenderPipelineText());
         addPerfRow("连接地址", nonEmpty(streamHost, "--"));
@@ -3631,10 +3671,12 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         if (!glesRenderingEnabled) {
             return "系统直出";
         }
+        String stereoSuffix = stereo3dEnabled ? " → SBS 3D" : "";
         if (!fsrEnabled) {
-            return "GLES直通";
+            return "GLES直通" + stereoSuffix;
         }
-        return isFsrNativeHdrOutputEnabled() ? "GLES FSR HDR" : "GLES FSR SDR";
+        return (isFsrNativeHdrOutputEnabled() ? "GLES FSR HDR" : "GLES FSR SDR")
+                + stereoSuffix;
     }
 
     private String buildUsbControllerStatusText() {
@@ -4258,9 +4300,17 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             Display secondaryDisplay = displayManager.getDisplay(secondaryDisplayId);
             presentation = new SecondaryDisplayPresentation(this, secondaryDisplay);
             presentation.show();
-            if(rootView!= null) {
-                ((ViewGroup)rootView).removeView(streamView); // <- fix
-                presentation.addView(streamView);
+            if (stereo3dEnabled) {
+                boolean exactModeSelected = presentation.selectPreferredDisplayMode(
+                        3840, 1080, Math.min(prefConfig.fps, 60.0f));
+                logSessionInfo("DISPLAY", exactModeSelected
+                        ? "外接显示器已请求 3840x1080 SBS 模式"
+                        : "外接显示器未暴露 3840x1080 模式，SBS 将适配实际显示尺寸");
+            }
+            View renderView = glesRenderingEnabled ? fsrView : streamView;
+            if (renderView != null && renderView.getParent() instanceof ViewGroup) {
+                ((ViewGroup) renderView.getParent()).removeView(renderView);
+                presentation.addView(renderView);
             }
 
         }
@@ -4285,14 +4335,47 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     }
 
     private boolean isGlesRenderingEnabled() {
-        if (prefConfig.enableExDisplay) {
-            return false;
-        }
-        return prefConfig.videoRenderMode == PreferenceConfiguration.VideoRenderMode.GLES;
+        return stereo3dEnabled
+                || prefConfig.videoRenderMode == PreferenceConfiguration.VideoRenderMode.GLES;
+    }
+
+    private boolean isStereo3dEnabled() {
+        return PreferenceConfiguration.STEREO_3D_MODE_SBS
+                .equalsIgnoreCase(prefConfig.stereo3dMode);
     }
 
     private boolean isFsrEnabled() {
         return glesRenderingEnabled && !"off".equalsIgnoreCase(getFsrTarget());
+    }
+
+    private float getStereo3dDepthStrength() {
+        if ("soft".equalsIgnoreCase(prefConfig.stereo3dDepth)) {
+            return 0.003f;
+        }
+        if ("strong".equalsIgnoreCase(prefConfig.stereo3dDepth)) {
+            return 0.009f;
+        }
+        return 0.006f;
+    }
+
+    private float getStereo3dConvergence() {
+        if ("near".equalsIgnoreCase(prefConfig.stereo3dConvergence)) {
+            return 0.44f;
+        }
+        if ("far".equalsIgnoreCase(prefConfig.stereo3dConvergence)) {
+            return 0.56f;
+        }
+        return 0.50f;
+    }
+
+    private String getStereo3dDepthDisplayName() {
+        if ("soft".equalsIgnoreCase(prefConfig.stereo3dDepth)) {
+            return "弱";
+        }
+        if ("strong".equalsIgnoreCase(prefConfig.stereo3dDepth)) {
+            return "强";
+        }
+        return "标准";
     }
 
     private float getFsrSharpness() {
@@ -4363,7 +4446,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     }
 
     private boolean isGlesNativeHdrOutputEnabled() {
-        return prefConfig.enableHdr && (!fsrEnabled || isFsrNativeHdrOutputEnabled());
+        return !stereo3dEnabled
+                && prefConfig.enableHdr
+                && (!fsrEnabled || isFsrNativeHdrOutputEnabled());
     }
 
     private void configureGlesWindowColorMode() {
@@ -4387,7 +4472,8 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
         attemptedConnection = true;
         logSessionInfo("CONNECT", "渲染表面就绪，开始连接；渲染路径="
-                + (fsrEnabled ? "FSR/GLES" : "GLES直通"));
+                + (fsrEnabled ? "FSR/GLES" : "GLES直通")
+                + (stereo3dEnabled ? "/SBS3D 3840x1080" : ""));
         UiHelper.notifyStreamConnecting(Game.this);
         decoderRenderer.setRenderTarget(fsrInputSurface);
         audioRenderer = new AndroidAudioRenderer(Game.this, controllerHandler, prefConfig.enableAudioFx,

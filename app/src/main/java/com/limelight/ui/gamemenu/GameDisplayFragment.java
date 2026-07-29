@@ -72,6 +72,18 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
 
     private RadioGroup rg_game_display_render_mode;
 
+    private View v_game_display_stereo_3d_header;
+
+    private RadioGroup rg_game_display_stereo_3d;
+
+    private View v_game_display_stereo_3d_details;
+
+    private RadioGroup rg_game_display_stereo_3d_depth;
+
+    private RadioGroup rg_game_display_stereo_3d_convergence;
+
+    private RadioGroup rg_game_display_stereo_3d_swap_eyes;
+
     private View v_game_display_fsr_header;
 
     private RadioGroup rg_game_display_fsr;
@@ -95,6 +107,14 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
     private boolean exDiaplay;
 
     private String renderModePending = PreferenceConfiguration.VIDEO_RENDER_MODE_SYSTEM;
+
+    private String stereo3dModePending = PreferenceConfiguration.STEREO_3D_MODE_OFF;
+
+    private String stereo3dDepthPending = "standard";
+
+    private String stereo3dConvergencePending = "standard";
+
+    private boolean stereo3dSwapEyesPending;
 
     private String fsrTargetPending = "off";
 
@@ -133,6 +153,12 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
         v_game_display_hdr_high_brightness=v.findViewById(R.id.v_game_display_hdr_high_brightness);
         rg_game_display_hdr_high_brightness=v.findViewById(R.id.rg_game_display_hdr_high_brightness);
         rg_game_display_render_mode=v.findViewById(R.id.rg_game_display_render_mode);
+        v_game_display_stereo_3d_header=v.findViewById(R.id.v_game_display_stereo_3d_header);
+        rg_game_display_stereo_3d=v.findViewById(R.id.rg_game_display_stereo_3d);
+        v_game_display_stereo_3d_details=v.findViewById(R.id.v_game_display_stereo_3d_details);
+        rg_game_display_stereo_3d_depth=v.findViewById(R.id.rg_game_display_stereo_3d_depth);
+        rg_game_display_stereo_3d_convergence=v.findViewById(R.id.rg_game_display_stereo_3d_convergence);
+        rg_game_display_stereo_3d_swap_eyes=v.findViewById(R.id.rg_game_display_stereo_3d_swap_eyes);
         v_game_display_fsr_header=v.findViewById(R.id.v_game_display_fsr_header);
         rg_game_display_fsr=v.findViewById(R.id.rg_game_display_fsr);
         v_game_display_fsr_details=v.findViewById(R.id.v_game_display_fsr_details);
@@ -158,6 +184,15 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
         }
         fsrTargetPending = PreferenceManager.getDefaultSharedPreferences(getActivity())
                 .getString("list_fsr_target", "off");
+        stereo3dModePending = PreferenceManager.getDefaultSharedPreferences(getActivity())
+                .getString(PreferenceConfiguration.STEREO_3D_MODE_PREF_STRING,
+                        PreferenceConfiguration.STEREO_3D_MODE_OFF);
+        stereo3dDepthPending = PreferenceManager.getDefaultSharedPreferences(getActivity())
+                .getString(PreferenceConfiguration.STEREO_3D_DEPTH_PREF_STRING, "standard");
+        stereo3dConvergencePending = PreferenceManager.getDefaultSharedPreferences(getActivity())
+                .getString(PreferenceConfiguration.STEREO_3D_CONVERGENCE_PREF_STRING, "standard");
+        stereo3dSwapEyesPending = PreferenceManager.getDefaultSharedPreferences(getActivity())
+                .getBoolean(PreferenceConfiguration.STEREO_3D_SWAP_EYES_PREF_STRING, false);
         fsrSharpnessPending = PreferenceManager.getDefaultSharedPreferences(getActivity())
                 .getString("list_fsr_sharpness", "standard");
         fsrHdrOutputPending = PreferenceManager.getDefaultSharedPreferences(getActivity())
@@ -173,6 +208,10 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
         initVideoFormat();
         initEnfoce();
         initRenderMode();
+        initStereo3d();
+        initStereo3dDepth();
+        initStereo3dConvergence();
+        initStereo3dSwapEyes();
         initFsr();
         initFsrSharpness();
         initFsrHdrOutput();
@@ -328,11 +367,48 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
             }
             else {
                 renderModePending = PreferenceConfiguration.VIDEO_RENDER_MODE_SYSTEM;
+                stereo3dModePending = PreferenceConfiguration.STEREO_3D_MODE_OFF;
+                rg_game_display_stereo_3d.check(R.id.rbt_game_display_stereo_3d_off);
                 fsrTargetPending = "off";
                 rg_game_display_fsr.check(R.id.rbt_game_display_fsr_1);
             }
+            updateStereo3dDetailState();
             updateFsrDetailState();
         });
+
+        rg_game_display_stereo_3d.setOnCheckedChangeListener((group, checkedId) -> {
+            stereo3dModePending = checkedId == R.id.rbt_game_display_stereo_3d_sbs
+                    ? PreferenceConfiguration.STEREO_3D_MODE_SBS
+                    : PreferenceConfiguration.STEREO_3D_MODE_OFF;
+            updateStereo3dDetailState();
+        });
+
+        rg_game_display_stereo_3d_depth.setOnCheckedChangeListener((group, checkedId) -> {
+            if (checkedId == R.id.rbt_game_display_stereo_3d_depth_soft) {
+                stereo3dDepthPending = "soft";
+            }
+            else if (checkedId == R.id.rbt_game_display_stereo_3d_depth_strong) {
+                stereo3dDepthPending = "strong";
+            }
+            else {
+                stereo3dDepthPending = "standard";
+            }
+        });
+
+        rg_game_display_stereo_3d_convergence.setOnCheckedChangeListener((group, checkedId) -> {
+            if (checkedId == R.id.rbt_game_display_stereo_3d_convergence_near) {
+                stereo3dConvergencePending = "near";
+            }
+            else if (checkedId == R.id.rbt_game_display_stereo_3d_convergence_far) {
+                stereo3dConvergencePending = "far";
+            }
+            else {
+                stereo3dConvergencePending = "standard";
+            }
+        });
+
+        rg_game_display_stereo_3d_swap_eyes.setOnCheckedChangeListener((group, checkedId) ->
+                stereo3dSwapEyesPending = checkedId == R.id.rbt_game_display_stereo_3d_swap_eyes_on);
 
         rg_game_display_fsr.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
@@ -513,6 +589,47 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
                         : R.id.rbt_game_display_render_mode_system);
     }
 
+    private void initStereo3d() {
+        rg_game_display_stereo_3d.check(
+                PreferenceConfiguration.STEREO_3D_MODE_SBS.equalsIgnoreCase(stereo3dModePending)
+                        ? R.id.rbt_game_display_stereo_3d_sbs
+                        : R.id.rbt_game_display_stereo_3d_off);
+        updateStereo3dDetailState();
+    }
+
+    private void initStereo3dDepth() {
+        if ("soft".equalsIgnoreCase(stereo3dDepthPending)) {
+            rg_game_display_stereo_3d_depth.check(R.id.rbt_game_display_stereo_3d_depth_soft);
+        }
+        else if ("strong".equalsIgnoreCase(stereo3dDepthPending)) {
+            rg_game_display_stereo_3d_depth.check(R.id.rbt_game_display_stereo_3d_depth_strong);
+        }
+        else {
+            rg_game_display_stereo_3d_depth.check(R.id.rbt_game_display_stereo_3d_depth_standard);
+        }
+    }
+
+    private void initStereo3dConvergence() {
+        if ("near".equalsIgnoreCase(stereo3dConvergencePending)) {
+            rg_game_display_stereo_3d_convergence.check(
+                    R.id.rbt_game_display_stereo_3d_convergence_near);
+        }
+        else if ("far".equalsIgnoreCase(stereo3dConvergencePending)) {
+            rg_game_display_stereo_3d_convergence.check(
+                    R.id.rbt_game_display_stereo_3d_convergence_far);
+        }
+        else {
+            rg_game_display_stereo_3d_convergence.check(
+                    R.id.rbt_game_display_stereo_3d_convergence_standard);
+        }
+    }
+
+    private void initStereo3dSwapEyes() {
+        rg_game_display_stereo_3d_swap_eyes.check(stereo3dSwapEyesPending
+                ? R.id.rbt_game_display_stereo_3d_swap_eyes_on
+                : R.id.rbt_game_display_stereo_3d_swap_eyes_off);
+    }
+
     private void initFsrSharpness() {
         if ("soft".equalsIgnoreCase(fsrSharpnessPending)) {
             rg_game_display_fsr_sharpness.check(R.id.rbt_game_display_fsr_sharpness_1);
@@ -543,6 +660,18 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
         boolean fsrEnabledPending = glesRendering && !"off".equalsIgnoreCase(fsrTargetPending);
         int visibility = fsrEnabledPending ? View.VISIBLE : View.GONE;
         v_game_display_fsr_details.setVisibility(visibility);
+    }
+
+    private void updateStereo3dDetailState() {
+        boolean glesRendering = PreferenceConfiguration.VIDEO_RENDER_MODE_GLES
+                .equalsIgnoreCase(renderModePending);
+        int sectionVisibility = glesRendering ? View.VISIBLE : View.GONE;
+        v_game_display_stereo_3d_header.setVisibility(sectionVisibility);
+        rg_game_display_stereo_3d.setVisibility(sectionVisibility);
+        boolean stereo3dEnabledPending = glesRendering
+                && PreferenceConfiguration.STEREO_3D_MODE_SBS.equalsIgnoreCase(stereo3dModePending);
+        v_game_display_stereo_3d_details.setVisibility(
+                stereo3dEnabledPending ? View.VISIBLE : View.GONE);
     }
 
     public void setShowLock(boolean showLock) {
@@ -647,6 +776,12 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
                     .putBoolean("checkbox_enable_exdisplay",exDiaplay)
                     .putBoolean(PreferenceConfiguration.CHECKBOX_ENABLE_PORTRAIT,direction)
                     .putString(PreferenceConfiguration.VIDEO_RENDER_MODE_PREF_STRING, renderModePending)
+                    .putString(PreferenceConfiguration.STEREO_3D_MODE_PREF_STRING, stereo3dModePending)
+                    .putString(PreferenceConfiguration.STEREO_3D_DEPTH_PREF_STRING, stereo3dDepthPending)
+                    .putString(PreferenceConfiguration.STEREO_3D_CONVERGENCE_PREF_STRING,
+                            stereo3dConvergencePending)
+                    .putBoolean(PreferenceConfiguration.STEREO_3D_SWAP_EYES_PREF_STRING,
+                            stereo3dSwapEyesPending)
                     .putString(PreferenceConfiguration.FSR_TARGET_PREF_STRING, fsrTargetPending)
                     .putString("list_fsr_sharpness", fsrSharpnessPending)
                     .putString("list_fsr_hdr_output", fsrHdrOutputPending)
@@ -662,6 +797,10 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
                         .equalsIgnoreCase(renderModePending)
                         ? PreferenceConfiguration.VideoRenderMode.GLES
                         : PreferenceConfiguration.VideoRenderMode.SYSTEM;
+                prefConfig.stereo3dMode = stereo3dModePending;
+                prefConfig.stereo3dDepth = stereo3dDepthPending;
+                prefConfig.stereo3dConvergence = stereo3dConvergencePending;
+                prefConfig.stereo3dSwapEyes = stereo3dSwapEyesPending;
             }
             dismiss();
             onClick.click();
