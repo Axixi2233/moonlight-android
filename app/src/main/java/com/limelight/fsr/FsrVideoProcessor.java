@@ -6,6 +6,9 @@ import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.util.Log;
 
+import com.limelight.stereo3d.NoOpStereo3dBackend;
+import com.limelight.stereo3d.Stereo3dBackend;
+
 import java.io.IOException;
 import java.nio.FloatBuffer;
 
@@ -26,8 +29,15 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
     private static final String SHADER_DIR_20 = "fsr/2.0/";
     private static final String SHADER_DIR_30 = "fsr/3.0/";
     private static final String SHADER_DIR_31 = "fsr/3.1/";
+    private static final float[] IDENTITY_TEXTURE_TRANSFORM = new float[] {
+            1f, 0f, 0f, 0f,
+            0f, 1f, 0f, 0f,
+            0f, 0f, 1f, 0f,
+            0f, 0f, 0f, 1f
+    };
 
     private final Context context;
+    private final Stereo3dBackend optionalStereo3dBackend;
     private final FloatBuffer fullscreenVertices = GlUtil.getFullscreenVertices();
     private final FloatBuffer fullscreenTexCoords = GlUtil.getFullscreenTexCoords();
     private final int[] framebuffers = new int[1];
@@ -51,6 +61,9 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
     private boolean fsrEnabled;
     private boolean stereo3dEnabled;
     private boolean stereo3dSwapEyes;
+    private boolean optionalStereo3dReady;
+    private volatile boolean optionalStereo3dRendering;
+    private boolean optionalStereo3dFailureLogged;
     private boolean hdrToneMappingEnabled;
     private boolean usingPqWindow;
 
@@ -68,16 +81,19 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
 
     public FsrVideoProcessor(Context context) {
         this.context = context.getApplicationContext();
+        optionalStereo3dBackend = OptionalStereo3dLoader.load(this.context);
     }
 
     @Override
     public void initialize(int glMajorVersion, int glMinorVersion, String extensions) {
+        releaseOptionalStereo3d();
         resetPrograms();
         deleteFramebuffer();
         deleteStereoSceneFramebuffer();
         detectHdrWindowState();
 
         if (stereo3dEnabled) {
+            initializeOptionalStereo3d(glMajorVersion, glMinorVersion, extensions);
             try {
                 ensureStereoExternalProgram();
                 Log.i(TAG, "SBS renderer ready: logicalOutput=3840x1080"
@@ -143,6 +159,13 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
         }
         surfaceWidth = width;
         surfaceHeight = height;
+        if (optionalStereo3dReady) {
+            try {
+                optionalStereo3dBackend.setSurfaceSize(width, height);
+            } catch (RuntimeException | LinkageError error) {
+                disableOptionalStereo3d("surface-size", error);
+            }
+        }
         if (stereo3dEnabled) {
             Log.i(TAG, "SBS display surface=" + width + "x" + height
                     + ", logicalOutput=3840x1080"
@@ -180,9 +203,11 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 
         if (stereo3dEnabled) {
-            drawStereoFrame(frameTexture, frameWidth, frameHeight, transformMatrix);
+            drawStereoFrame(frameTexture, frameTimestampUs, frameWidth, frameHeight,
+                    transformMatrix);
             return;
         }
+        optionalStereo3dRendering = false;
         if (!fsrEnabled) {
             drawPassthrough(frameTexture, transformMatrix);
             return;
@@ -200,6 +225,7 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
 
     @Override
     public void release() {
+        releaseOptionalStereo3d();
         resetPrograms();
         deleteFramebuffer();
         deleteStereoSceneFramebuffer();
@@ -214,7 +240,14 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
             return;
         }
         stereo3dEnabled = enabled;
+        if (!enabled) {
+            optionalStereo3dRendering = false;
+        }
         updateOutputSize();
+    }
+
+    public boolean isOptionalStereo3dRendering() {
+        return optionalStereo3dRendering;
     }
 
     public void setStereo3dDepthStrength(float strength) {
@@ -308,13 +341,21 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
     }
 
     private void drawStereoFrame(int frameTexture,
+                                 long frameTimestampUs,
                                  int frameWidth,
                                  int frameHeight,
                                  float[] transformMatrix) {
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
         GLES20.glViewport(0, 0, Math.max(surfaceWidth, 1), Math.max(surfaceHeight, 1));
 
+        submitOptionalDepthSource(frameTexture, frameTimestampUs, frameWidth, frameHeight,
+                transformMatrix);
+
         if (!fsrEnabled || pipelineMode == PIPELINE_NONE) {
+            if (tryDrawOptionalStereo(frameTexture, GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+                    frameWidth, frameHeight, transformMatrix)) {
+                return;
+            }
             drawStereoExternal(frameTexture, frameWidth, frameHeight, transformMatrix);
             return;
         }
@@ -346,7 +387,126 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
         GLES20.glViewport(0, 0, Math.max(surfaceWidth, 1), Math.max(surfaceHeight, 1));
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+        if (tryDrawOptionalStereo(stereoSceneTextures[0], GLES20.GL_TEXTURE_2D,
+                outputWidth, outputHeight, IDENTITY_TEXTURE_TRANSFORM)) {
+            return;
+        }
         drawStereoTexture(stereoSceneTextures[0], outputWidth, outputHeight);
+    }
+
+    private void initializeOptionalStereo3d(int glMajorVersion, int glMinorVersion,
+                                            String extensions) {
+        optionalStereo3dFailureLogged = false;
+        if (optionalStereo3dBackend == NoOpStereo3dBackend.INSTANCE) {
+            optionalStereo3dReady = false;
+            return;
+        }
+
+        try {
+            optionalStereo3dReady = optionalStereo3dBackend.initialize(
+                    glMajorVersion, glMinorVersion, extensions);
+            if (optionalStereo3dReady) {
+                if (surfaceWidth > 0 && surfaceHeight > 0) {
+                    optionalStereo3dBackend.setSurfaceSize(surfaceWidth, surfaceHeight);
+                }
+                Log.i(TAG, "Optional AI stereo renderer ready: "
+                        + optionalStereo3dBackend.getDisplayName());
+            }
+            else {
+                Log.i(TAG, "Optional AI stereo renderer unavailable; using built-in 3D renderer");
+            }
+        } catch (RuntimeException | LinkageError error) {
+            disableOptionalStereo3d("initialize", error);
+        }
+    }
+
+    private void submitOptionalDepthSource(int frameTexture,
+                                           long frameTimestampUs,
+                                           int frameWidth,
+                                           int frameHeight,
+                                           float[] transformMatrix) {
+        if (!optionalStereo3dReady) {
+            return;
+        }
+
+        try {
+            optionalStereo3dBackend.submitDepthSource(
+                    frameTexture,
+                    GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+                    frameTimestampUs,
+                    frameWidth,
+                    frameHeight,
+                    transformMatrix);
+        } catch (RuntimeException | LinkageError error) {
+            disableOptionalStereo3d("depth-source", error);
+        }
+    }
+
+    private boolean tryDrawOptionalStereo(int textureId,
+                                          int textureTarget,
+                                          int sourceWidth,
+                                          int sourceHeight,
+                                          float[] textureTransform) {
+        if (!optionalStereo3dReady) {
+            optionalStereo3dRendering = false;
+            return false;
+        }
+
+        try {
+            boolean rendered = optionalStereo3dBackend.renderStereo(
+                    textureId,
+                    textureTarget,
+                    sourceWidth,
+                    sourceHeight,
+                    textureTransform,
+                    Math.max(surfaceWidth, 1),
+                    Math.max(surfaceHeight, 1),
+                    stereo3dDepthStrength,
+                    stereo3dConvergence,
+                    stereo3dSwapEyes);
+            optionalStereo3dRendering = rendered;
+            if (!rendered) {
+                restoreStereoOutputTarget();
+            }
+            return rendered;
+        } catch (RuntimeException | LinkageError error) {
+            disableOptionalStereo3d("render", error);
+            restoreStereoOutputTarget();
+            return false;
+        }
+    }
+
+    private void restoreStereoOutputTarget() {
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+        GLES20.glViewport(0, 0, Math.max(surfaceWidth, 1), Math.max(surfaceHeight, 1));
+    }
+
+    private void disableOptionalStereo3d(String stage, Throwable error) {
+        optionalStereo3dReady = false;
+        optionalStereo3dRendering = false;
+        if (!optionalStereo3dFailureLogged) {
+            optionalStereo3dFailureLogged = true;
+            Log.e(TAG, "Optional AI stereo failed during " + stage
+                    + "; using built-in 3D renderer", error);
+        }
+        try {
+            optionalStereo3dBackend.release();
+        } catch (RuntimeException | LinkageError releaseError) {
+            Log.w(TAG, "Optional AI stereo release failed", releaseError);
+        }
+    }
+
+    private void releaseOptionalStereo3d() {
+        optionalStereo3dReady = false;
+        optionalStereo3dRendering = false;
+        if (optionalStereo3dBackend == NoOpStereo3dBackend.INSTANCE) {
+            return;
+        }
+        try {
+            optionalStereo3dBackend.release();
+        } catch (RuntimeException | LinkageError error) {
+            Log.w(TAG, "Optional AI stereo release failed", error);
+        }
     }
 
     private void drawTwoPass(int frameTexture,
@@ -459,6 +619,7 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
                                     int frameWidth,
                                     int frameHeight,
                                     float[] transformMatrix) {
+        optionalStereo3dRendering = false;
         try {
             GlProgram program = ensureStereoExternalProgram();
             program.setSamplerTexIdUniform("inputTexture", frameTexture, 0,
@@ -478,6 +639,7 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
     }
 
     private void drawStereoTexture(int textureId, int textureWidth, int textureHeight) {
+        optionalStereo3dRendering = false;
         try {
             GlProgram program = ensureStereoTextureProgram();
             program.setSamplerTexIdUniform("inputTexture", textureId, 0, GLES20.GL_TEXTURE_2D);

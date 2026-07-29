@@ -1,5 +1,6 @@
 include ':app'
 include ':optional-haptics-api'
+include ':optional-stereo3d-api'
 
 def includeKishiHaptics = providers.gradleProperty('includeKishiHaptics')
         .map { it.toBoolean() }
@@ -14,3 +15,22 @@ if (hasKishiHaptics) {
     include ':kishi-haptics'
     project(':kishi-haptics').projectDir = kishiHapticsDir
 }
+
+def includeStereo3dAi = providers.gradleProperty('includeStereo3dAi')
+        .map { it.toBoolean() }
+        .getOrElse(true)
+def stereo3dAiDir = file('private/3d-sbs-android')
+def hasStereo3dAi = includeStereo3dAi &&
+        new File(stereo3dAiDir, 'build.gradle').isFile()
+
+gradle.ext.hasStereo3dAi = hasStereo3dAi
+
+if (hasStereo3dAi) {
+    include ':stereo3d-ai'
+    project(':stereo3d-ai').projectDir = stereo3dAiDir
+}
+
+def protectPrivateModules = providers.gradleProperty('protectPrivateModules')
+        .map { it.toBoolean() }
+        .getOrElse(true)
+gradle.ext.protectPrivateModules = protectPrivateModules

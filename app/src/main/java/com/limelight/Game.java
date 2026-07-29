@@ -3562,7 +3562,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             builder.append(buildFsrPerfLabel()).append("  ");
         }
         if (stereo3dEnabled) {
-            builder.append("SBS 3D  ");
+            builder.append(buildStereo3dPerfLabel()).append("  ");
         }
         builder.append("延迟/解码：");
         builder.append(stats.networkLatencyMs).append(" ms / ");
@@ -3608,7 +3608,8 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         addPerfRow("累计音频流量", formatBytes(stats.audioBytes));
         addPerfRow("渲染方式", glesRenderingEnabled ? "GLES渲染" : "系统渲染");
         addPerfRow("3D输出", stereo3dEnabled
-                ? "SBS 3840x1080 / 景深" + getStereo3dDepthDisplayName()
+                ? "SBS 3840x1080" + getStereo3dAiSuffix()
+                + " / 景深" + getStereo3dDepthDisplayName()
                 : "关闭");
         addPerfRow("超分状态", buildUpscaleStatusText());
         addPerfRow("实际渲染链", buildRenderPipelineText());
@@ -3671,12 +3672,22 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         if (!glesRenderingEnabled) {
             return "系统直出";
         }
-        String stereoSuffix = stereo3dEnabled ? " → SBS 3D" : "";
+        String stereoSuffix = stereo3dEnabled ? " → " + buildStereo3dPerfLabel() : "";
         if (!fsrEnabled) {
             return "GLES直通" + stereoSuffix;
         }
         return (isFsrNativeHdrOutputEnabled() ? "GLES FSR HDR" : "GLES FSR SDR")
                 + stereoSuffix;
+    }
+
+    private String buildStereo3dPerfLabel() {
+        return "SBS 3D" + getStereo3dAiSuffix();
+    }
+
+    private String getStereo3dAiSuffix() {
+        return fsrVideoProcessor != null && fsrVideoProcessor.isOptionalStereo3dRendering()
+                ? " AI"
+                : "";
     }
 
     private String buildUsbControllerStatusText() {

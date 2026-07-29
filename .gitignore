@@ -43,5 +43,8 @@ app/.externalNativeBuild/
 # Optional private Kishi haptics implementation
 /private/kishi-haptics/
 
+# Optional private AI 2D-to-3D implementation
+/private/3d-sbs-android/
+
 # NDK stuff
 .cxx/

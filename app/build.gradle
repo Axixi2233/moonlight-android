@@ -1,5 +1,8 @@
 apply plugin: 'com.android.application'
 
+def privateModuleProtectionEnabled = gradle.ext.protectPrivateModules &&
+        (gradle.ext.hasKishiHaptics || gradle.ext.hasStereo3dAi)
+
 android {
     ndkVersion "27.0.12077973"
 
@@ -15,8 +18,15 @@ android {
         versionCode = 314
         buildConfigField "int", "AXI_CODE", "13"
         buildConfigField "boolean", "HAS_KISHI_HAPTICS", gradle.ext.hasKishiHaptics.toString()
+        buildConfigField "boolean", "HAS_STEREO3D_AI", gradle.ext.hasStereo3dAi.toString()
         // Generate native debug symbols to allow Google Play to symbolicate our native crashes
         ndk.debugSymbolLevel = 'FULL'
+
+        // The optional QNN/HTP stereo backend targets current 64-bit Snapdragon devices.
+        // Keep the normal multi-ABI package when the private backend is excluded.
+        if (gradle.ext.hasStereo3dAi) {
+            ndk.abiFilters 'arm64-v8a'
+        }
     }
 
     flavorDimensions.add("root")
@@ -129,6 +139,12 @@ android {
 
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (privateModuleProtectionEnabled) {
+                proguardFile 'proguard-private-protection.pro'
+            }
+            else {
+                proguardFile 'proguard-no-obfuscation.pro'
+            }
         }
     }
 
@@ -141,8 +157,12 @@ android {
 
 dependencies {
     implementation project(':optional-haptics-api')
+    implementation project(':optional-stereo3d-api')
     if (gradle.ext.hasKishiHaptics) {
         implementation project(':kishi-haptics')
+    }
+    if (gradle.ext.hasStereo3dAi) {
+        implementation project(':stereo3d-ai')
     }
     implementation files('libs/axi_gamepad_1.0.5.aar')
     implementation 'org.bouncycastle:bcprov-jdk18on:1.77'
