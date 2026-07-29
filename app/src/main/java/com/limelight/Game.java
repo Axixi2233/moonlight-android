@@ -268,6 +268,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     private ConnectivityManager connManager;
 
     private TextView performanceRumble;
+    private boolean glesRenderingEnabled;
     private boolean fsrEnabled;
     private boolean fsrInputSurfaceReady;
     private boolean fsrDisplaySurfaceCreated;
@@ -351,8 +352,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         streamView.setOnKeyListener(this);
         streamView.setInputCallbacks(this);
 
+        glesRenderingEnabled = isGlesRenderingEnabled();
         fsrEnabled = isFsrEnabled();
-        configureFsrWindowColorMode();
+        configureGlesWindowColorMode();
 
         performanceRumble=findViewById(R.id.performanceRumble);
         switchPerformanceRumbleHUD();
@@ -386,11 +388,11 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 break;
         }
 
-        if (fsrEnabled) {
+        if (glesRenderingEnabled) {
             fsrVideoProcessor = new FsrVideoProcessor(this);
             fsrVideoProcessor.setSharpness(getFsrSharpness());
-            fsrVideoProcessor.setFsrEnabled(true);
-            fsrView = new VideoProcessingGLSurfaceView(this, false, isFsrNativeHdrOutputEnabled(), fsrVideoProcessor,
+            fsrVideoProcessor.setFsrEnabled(fsrEnabled);
+            fsrView = new VideoProcessingGLSurfaceView(this, false, isGlesNativeHdrOutputEnabled(), fsrVideoProcessor,
                     new VideoProcessingGLSurfaceView.SurfaceListener() {
                         @Override
                         public void onInputSurfaceAvailable(android.graphics.SurfaceTexture surfaceTexture) {
@@ -432,8 +434,10 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             streamView.setZOrderMediaOverlay(true);
             fsrView.getHolder().addCallback(this);
             fsrView.setFrameInputSize(prefConfig.width, prefConfig.height);
-            int[] fsrOutputSize = getFsrOutputSize();
-            fsrView.setFixedSurfacePixelSize(fsrOutputSize[0], fsrOutputSize[1]);
+            if (fsrEnabled) {
+                int[] fsrOutputSize = getFsrOutputSize();
+                fsrView.setFixedSurfacePixelSize(fsrOutputSize[0], fsrOutputSize[1]);
+            }
         }
 
         // Listen for touch events on the background touch view to enable trackpad mode
@@ -824,7 +828,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         }
 
         // The connection will be started when the surface gets created
-        if (!fsrEnabled) {
+        if (!glesRenderingEnabled) {
             streamView.getHolder().addCallback(this);
         }
 
@@ -3261,7 +3265,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-        if (fsrEnabled && (fsrView == null || holder != fsrView.getHolder())) {
+        if (glesRenderingEnabled && (fsrView == null || holder != fsrView.getHolder())) {
             return;
         }
 
@@ -3270,7 +3274,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         }
 
         LimeLog.info("surfaceChanged-->"+width+" x "+height + "----"+prefConfig.width+" x "+prefConfig.height);
-        if (fsrEnabled) {
+        if (glesRenderingEnabled) {
             return;
         }
         if (!attemptedConnection) {
@@ -3292,11 +3296,11 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
-        logSessionInfo("VIDEO", fsrEnabled && fsrView != null && holder == fsrView.getHolder()
-                ? "FSR 显示表面已创建" : "视频表面已创建");
+        logSessionInfo("VIDEO", glesRenderingEnabled && fsrView != null && holder == fsrView.getHolder()
+                ? "GLES 显示表面已创建" : "视频表面已创建");
         float desiredFrameRate;
 
-        if (fsrEnabled) {
+        if (glesRenderingEnabled) {
             if (fsrView == null || holder != fsrView.getHolder()) {
                 return;
             }
@@ -3339,7 +3343,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
         logSessionInfo("VIDEO", "视频表面已销毁");
-        if (fsrEnabled) {
+        if (glesRenderingEnabled) {
             if (fsrView == null || holder != fsrView.getHolder()) {
                 return;
             }
@@ -3565,7 +3569,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         addPerfRow("音频码率", formatRate(stats.audioRateKbps));
         addPerfRow("累计视频流量", formatBytes(stats.videoBytes));
         addPerfRow("累计音频流量", formatBytes(stats.audioBytes));
-        addPerfRow("渲染方式", fsrEnabled ? "GLES渲染" : "系统渲染");
+        addPerfRow("渲染方式", glesRenderingEnabled ? "GLES渲染" : "系统渲染");
         addPerfRow("超分状态", buildUpscaleStatusText());
         addPerfRow("实际渲染链", buildRenderPipelineText());
         addPerfRow("连接地址", nonEmpty(streamHost, "--"));
@@ -3624,8 +3628,11 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     }
 
     private String buildRenderPipelineText() {
-        if (!fsrEnabled) {
+        if (!glesRenderingEnabled) {
             return "系统直出";
+        }
+        if (!fsrEnabled) {
+            return "GLES直通";
         }
         return isFsrNativeHdrOutputEnabled() ? "GLES FSR HDR" : "GLES FSR SDR";
     }
@@ -4277,11 +4284,15 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         streamView.setClipToOutline(true);
     }
 
-    private boolean isFsrEnabled() {
+    private boolean isGlesRenderingEnabled() {
         if (prefConfig.enableExDisplay) {
             return false;
         }
-        return !"off".equalsIgnoreCase(getFsrTarget());
+        return prefConfig.videoRenderMode == PreferenceConfiguration.VideoRenderMode.GLES;
+    }
+
+    private boolean isFsrEnabled() {
+        return glesRenderingEnabled && !"off".equalsIgnoreCase(getFsrTarget());
     }
 
     private float getFsrSharpness() {
@@ -4351,25 +4362,32 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         return prefConfig.enableHdr && "native".equalsIgnoreCase(value);
     }
 
-    private void configureFsrWindowColorMode() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || !fsrEnabled) {
+    private boolean isGlesNativeHdrOutputEnabled() {
+        return prefConfig.enableHdr && (!fsrEnabled || isFsrNativeHdrOutputEnabled());
+    }
+
+    private void configureGlesWindowColorMode() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || !glesRenderingEnabled) {
             return;
         }
-        boolean nativeHdrOutput = isFsrNativeHdrOutputEnabled();
+        boolean nativeHdrOutput = isGlesNativeHdrOutputEnabled();
         getWindow().setColorMode(nativeHdrOutput
                 ? ActivityInfo.COLOR_MODE_HDR
                 : ActivityInfo.COLOR_MODE_DEFAULT);
-        LimeLog.info("HDR validation: FSR window color mode="
-                + (nativeHdrOutput ? "HDR (native output)" : "DEFAULT (software tone-map)"));
+        LimeLog.info("HDR validation: GLES window color mode="
+                + (nativeHdrOutput
+                ? "HDR (native output)"
+                : (fsrEnabled && prefConfig.enableHdr ? "DEFAULT (software tone-map)" : "DEFAULT")));
     }
 
     private void startConnectionIfReady() {
-        if (!fsrEnabled || attemptedConnection || conn == null || !fsrInputSurfaceReady || !fsrDisplaySurfaceCreated) {
+        if (!glesRenderingEnabled || attemptedConnection || conn == null || !fsrInputSurfaceReady || !fsrDisplaySurfaceCreated) {
             return;
         }
 
         attemptedConnection = true;
-        logSessionInfo("CONNECT", "渲染表面就绪，开始连接；渲染路径=" + (fsrEnabled ? "FSR/GLES" : "Surface"));
+        logSessionInfo("CONNECT", "渲染表面就绪，开始连接；渲染路径="
+                + (fsrEnabled ? "FSR/GLES" : "GLES直通"));
         UiHelper.notifyStreamConnecting(Game.this);
         decoderRenderer.setRenderTarget(fsrInputSurface);
         audioRenderer = new AndroidAudioRenderer(Game.this, controllerHandler, prefConfig.enableAudioFx,

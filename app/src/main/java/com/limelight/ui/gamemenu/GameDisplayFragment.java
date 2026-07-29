@@ -70,6 +70,10 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
 
     private RadioGroup rg_game_display_hdr_high_brightness;
 
+    private RadioGroup rg_game_display_render_mode;
+
+    private View v_game_display_fsr_header;
+
     private RadioGroup rg_game_display_fsr;
 
     private View v_game_display_fsr_details;
@@ -89,6 +93,8 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
     private boolean direction;
 
     private boolean exDiaplay;
+
+    private String renderModePending = PreferenceConfiguration.VIDEO_RENDER_MODE_SYSTEM;
 
     private String fsrTargetPending = "off";
 
@@ -126,6 +132,8 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
         rg_game_display_ignore_hdr=v.findViewById(R.id.rg_game_display_ignore_hdr);
         v_game_display_hdr_high_brightness=v.findViewById(R.id.v_game_display_hdr_high_brightness);
         rg_game_display_hdr_high_brightness=v.findViewById(R.id.rg_game_display_hdr_high_brightness);
+        rg_game_display_render_mode=v.findViewById(R.id.rg_game_display_render_mode);
+        v_game_display_fsr_header=v.findViewById(R.id.v_game_display_fsr_header);
         rg_game_display_fsr=v.findViewById(R.id.rg_game_display_fsr);
         v_game_display_fsr_details=v.findViewById(R.id.v_game_display_fsr_details);
         rg_game_display_fsr_sharpness=v.findViewById(R.id.rg_game_display_fsr_sharpness);
@@ -144,6 +152,9 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
             fps=prefConfig.fps;
             direction=prefConfig.enablePortrait;
             exDiaplay=prefConfig.enableExDisplay;
+            renderModePending = prefConfig.videoRenderMode == PreferenceConfiguration.VideoRenderMode.GLES
+                    ? PreferenceConfiguration.VIDEO_RENDER_MODE_GLES
+                    : PreferenceConfiguration.VIDEO_RENDER_MODE_SYSTEM;
         }
         fsrTargetPending = PreferenceManager.getDefaultSharedPreferences(getActivity())
                 .getString("list_fsr_target", "off");
@@ -161,6 +172,7 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
         initVD();
         initVideoFormat();
         initEnfoce();
+        initRenderMode();
         initFsr();
         initFsrSharpness();
         initFsrHdrOutput();
@@ -308,6 +320,18 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
                     return;
                 }
             }
+        });
+
+        rg_game_display_render_mode.setOnCheckedChangeListener((group, checkedId) -> {
+            if (checkedId == R.id.rbt_game_display_render_mode_gles) {
+                renderModePending = PreferenceConfiguration.VIDEO_RENDER_MODE_GLES;
+            }
+            else {
+                renderModePending = PreferenceConfiguration.VIDEO_RENDER_MODE_SYSTEM;
+                fsrTargetPending = "off";
+                rg_game_display_fsr.check(R.id.rbt_game_display_fsr_1);
+            }
+            updateFsrDetailState();
         });
 
         rg_game_display_fsr.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
@@ -482,6 +506,13 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
         updateFsrDetailState();
     }
 
+    private void initRenderMode() {
+        rg_game_display_render_mode.check(
+                PreferenceConfiguration.VIDEO_RENDER_MODE_GLES.equalsIgnoreCase(renderModePending)
+                        ? R.id.rbt_game_display_render_mode_gles
+                        : R.id.rbt_game_display_render_mode_system);
+    }
+
     private void initFsrSharpness() {
         if ("soft".equalsIgnoreCase(fsrSharpnessPending)) {
             rg_game_display_fsr_sharpness.check(R.id.rbt_game_display_fsr_sharpness_1);
@@ -504,7 +535,12 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
     }
 
     private void updateFsrDetailState() {
-        boolean fsrEnabledPending = !"off".equalsIgnoreCase(fsrTargetPending);
+        boolean glesRendering = PreferenceConfiguration.VIDEO_RENDER_MODE_GLES
+                .equalsIgnoreCase(renderModePending);
+        int fsrSectionVisibility = glesRendering ? View.VISIBLE : View.GONE;
+        v_game_display_fsr_header.setVisibility(fsrSectionVisibility);
+        rg_game_display_fsr.setVisibility(fsrSectionVisibility);
+        boolean fsrEnabledPending = glesRendering && !"off".equalsIgnoreCase(fsrTargetPending);
         int visibility = fsrEnabledPending ? View.VISIBLE : View.GONE;
         v_game_display_fsr_details.setVisibility(visibility);
     }
@@ -610,7 +646,8 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
                     .putString("edit_diy_w_h",width+"x"+height)
                     .putBoolean("checkbox_enable_exdisplay",exDiaplay)
                     .putBoolean(PreferenceConfiguration.CHECKBOX_ENABLE_PORTRAIT,direction)
-                    .putString("list_fsr_target", fsrTargetPending)
+                    .putString(PreferenceConfiguration.VIDEO_RENDER_MODE_PREF_STRING, renderModePending)
+                    .putString(PreferenceConfiguration.FSR_TARGET_PREF_STRING, fsrTargetPending)
                     .putString("list_fsr_sharpness", fsrSharpnessPending)
                     .putString("list_fsr_hdr_output", fsrHdrOutputPending)
                     .commit();
@@ -621,6 +658,10 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
                 prefConfig.fps=fps;
                 prefConfig.enablePortrait=direction;
                 prefConfig.enableExDisplay=exDiaplay;
+                prefConfig.videoRenderMode = PreferenceConfiguration.VIDEO_RENDER_MODE_GLES
+                        .equalsIgnoreCase(renderModePending)
+                        ? PreferenceConfiguration.VideoRenderMode.GLES
+                        : PreferenceConfiguration.VideoRenderMode.SYSTEM;
             }
             dismiss();
             onClick.click();

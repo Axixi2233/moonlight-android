@@ -64,6 +64,11 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
         deleteFramebuffer();
         detectHdrWindowState();
 
+        if (!fsrEnabled) {
+            Log.i(TAG, "FSR disabled; using GLES passthrough pipeline");
+            return;
+        }
+
         boolean supportsExternalOesEssl3 = extensions != null
                 && extensions.contains("GL_OES_EGL_image_external_essl3");
         String preferredDir = SHADER_DIR_20;

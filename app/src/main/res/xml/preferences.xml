@@ -60,6 +60,14 @@
             android:defaultValue="false" />
 
         <ListPreference
+            android:key="list_video_render_mode"
+            android:title="渲染模式"
+            android:entries="@array/video_render_mode_names"
+            android:entryValues="@array/video_render_mode_values"
+            android:summary="GLES 渲染支持 FSR 和画面处理功能。"
+            android:defaultValue="system" />
+
+        <ListPreference
             android:key="list_fsr_target"
             android:title="超分目标"
             android:entries="@array/fsr_target_names"

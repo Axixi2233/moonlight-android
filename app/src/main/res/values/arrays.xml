@@ -32,6 +32,15 @@
         <item>120</item>
     </string-array>
 
+    <string-array name="video_render_mode_names">
+        <item>系统渲染</item>
+        <item>GLES渲染</item>
+    </string-array>
+    <string-array name="video_render_mode_values" translatable="false">
+        <item>system</item>
+        <item>gles</item>
+    </string-array>
+
     <string-array name="fsr_target_names">
         <item>关闭</item>
         <item>2K</item>

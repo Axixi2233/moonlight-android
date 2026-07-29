@@ -167,6 +167,28 @@ public class StreamSettings extends Activity {
             pref.setEntryValues(newValues);
         }
 
+        private void updateVideoRenderPreferenceState(String renderMode, String fsrTarget) {
+            ListPreference fsrTargetPref =
+                    (ListPreference) findPreference(PreferenceConfiguration.FSR_TARGET_PREF_STRING);
+            Preference fsrSharpnessPref = findPreference("list_fsr_sharpness");
+            Preference fsrHdrOutputPref = findPreference("list_fsr_hdr_output");
+            if (fsrTargetPref == null || fsrSharpnessPref == null || fsrHdrOutputPref == null) {
+                return;
+            }
+
+            boolean glesRendering = PreferenceConfiguration.VIDEO_RENDER_MODE_GLES
+                    .equalsIgnoreCase(renderMode);
+            if (!glesRendering && !"off".equalsIgnoreCase(fsrTarget)) {
+                fsrTarget = "off";
+                fsrTargetPref.setValue(fsrTarget);
+            }
+
+            boolean fsrEnabled = glesRendering && !"off".equalsIgnoreCase(fsrTarget);
+            fsrTargetPref.setEnabled(glesRendering);
+            fsrSharpnessPref.setEnabled(fsrEnabled);
+            fsrHdrOutputPref.setEnabled(fsrEnabled);
+        }
+
         private void addNativeResolutionEntry(int nativeWidth, int nativeHeight, boolean insetsRemoved, boolean portrait) {
             ListPreference pref = (ListPreference) findPreference(PreferenceConfiguration.RESOLUTION_PREF_STRING);
 
@@ -319,6 +341,29 @@ public class StreamSettings extends Activity {
 
             addPreferencesFromResource(R.xml.preferences);
             PreferenceScreen screen = getPreferenceScreen();
+
+            ListPreference videoRenderModePref = (ListPreference) findPreference(
+                    PreferenceConfiguration.VIDEO_RENDER_MODE_PREF_STRING);
+            ListPreference fsrTargetPref = (ListPreference) findPreference(
+                    PreferenceConfiguration.FSR_TARGET_PREF_STRING);
+            if (videoRenderModePref != null && fsrTargetPref != null) {
+                updateVideoRenderPreferenceState(videoRenderModePref.getValue(), fsrTargetPref.getValue());
+                videoRenderModePref.setOnPreferenceChangeListener((preference, newValue) -> {
+                    String renderMode = String.valueOf(newValue);
+                    String fsrTarget = fsrTargetPref.getValue();
+                    if (!PreferenceConfiguration.VIDEO_RENDER_MODE_GLES.equalsIgnoreCase(renderMode)) {
+                        fsrTarget = "off";
+                        fsrTargetPref.setValue(fsrTarget);
+                    }
+                    updateVideoRenderPreferenceState(renderMode, fsrTarget);
+                    return true;
+                });
+                fsrTargetPref.setOnPreferenceChangeListener((preference, newValue) -> {
+                    updateVideoRenderPreferenceState(videoRenderModePref.getValue(),
+                            String.valueOf(newValue));
+                    return true;
+                });
+            }
 
             Preference streamLogs = findPreference("manage_stream_session_logs");
             if (streamLogs != null) {

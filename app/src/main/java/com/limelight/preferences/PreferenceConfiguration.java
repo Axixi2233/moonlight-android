@@ -23,6 +23,11 @@ public class PreferenceConfiguration {
         LEFT
     }
 
+    public enum VideoRenderMode {
+        SYSTEM,
+        GLES
+    }
+
     private static final String LEGACY_RES_FPS_PREF_STRING = "list_resolution_fps";
     private static final String LEGACY_ENABLE_51_SURROUND_PREF_STRING = "checkbox_51_surround";
 
@@ -30,6 +35,10 @@ public class PreferenceConfiguration {
     public static final String FPS_PREF_STRING = "list_fps";
     public static final String BITRATE_PREF_STRING = "seekbar_bitrate_kbps";
     public static final String BITRATE_PREF_OLD_STRING = "seekbar_bitrate";
+    public static final String VIDEO_RENDER_MODE_PREF_STRING = "list_video_render_mode";
+    public static final String VIDEO_RENDER_MODE_SYSTEM = "system";
+    public static final String VIDEO_RENDER_MODE_GLES = "gles";
+    public static final String FSR_TARGET_PREF_STRING = "list_fsr_target";
     private static final String STRETCH_PREF_STRING = "checkbox_stretch_video";
     private static final String SOPS_PREF_STRING = "checkbox_enable_sops";
     private static final String DISABLE_TOASTS_PREF_STRING = "checkbox_disable_warnings";
@@ -159,6 +168,7 @@ public class PreferenceConfiguration {
     public int width, height, fps;
     public int bitrate;
     public FormatOption videoFormat;
+    public VideoRenderMode videoRenderMode;
     public int deadzonePercentage;
     public int oscOpacity;
     public int oscKeyboardOpacity;
@@ -716,6 +726,20 @@ public class PreferenceConfiguration {
                         .apply();
             }
         }
+
+        String videoRenderMode = prefs.getString(VIDEO_RENDER_MODE_PREF_STRING, null);
+        if (videoRenderMode == null) {
+            videoRenderMode = "off".equalsIgnoreCase(
+                    prefs.getString(FSR_TARGET_PREF_STRING, "off"))
+                    ? VIDEO_RENDER_MODE_SYSTEM
+                    : VIDEO_RENDER_MODE_GLES;
+            prefs.edit()
+                    .putString(VIDEO_RENDER_MODE_PREF_STRING, videoRenderMode)
+                    .apply();
+        }
+        config.videoRenderMode = VIDEO_RENDER_MODE_GLES.equalsIgnoreCase(videoRenderMode)
+                ? VideoRenderMode.GLES
+                : VideoRenderMode.SYSTEM;
 
         String str = prefs.getString(LEGACY_RES_FPS_PREF_STRING, null);
         if (str != null) {

@@ -182,15 +182,24 @@
 \n以下网络端口被阻止：
 \n</string>
     <string name="nettest_text_inconclusive">网络测试无法执行，因为无法连接到Moonlight的连接测试服务器。检查您的互联网连接或稍后再试。</string>
+    <string name="nettest_port_check_inconclusive">所需端口检查没有得到明确结果，但 UDP 网络质量抽样已连接到 Moonlight 测试服务器。</string>
     <string name="nettest_text_success">您的网络似乎没有屏蔽Moonlight。如果您仍然无法连接，请检查您的电脑的防火墙设置。
 \n
 \n如果您想通过互联网进行流媒体传输，请在您的电脑上安装Moonlight互联网主机工具，并运行附带的互联网流媒体测试器来检查您的电脑的互联网连接。</string>
     <string name="nettest_title_done">网络测试完成</string>
-    <string name="nettest_text_waiting">Moonlight正在测试你的网络连接，请确保所需端口没有被屏蔽。
+    <string name="nettest_text_waiting">Moonlight 正在检查所需端口，并通过公共测试服务器抽样检测 UDP 丢包。
 \n
-\n这可能需要几秒钟……</string>
+\n探针往返流量低于 0.25 MB，可能需要几秒钟……</string>
     <string name="nettest_title_waiting">测试网络连接中</string>
     <string name="pcview_menu_test_network">测试网络</string>
+    <string name="nettest_udp_probe_heading">UDP 网络质量抽样</string>
+    <string name="nettest_udp_probe_result">收到数据包：%1$d/%2$d\n往返丢包率：%3$.1f%%\n平均 RTT：%4$.1f 毫秒\n抖动：%5$.1f 毫秒</string>
+    <string name="nettest_udp_probe_good">本次抽样未发现丢包。</string>
+    <string name="nettest_udp_probe_minor_loss">本次抽样发现轻微丢包，建议重复测试以确认是否持续发生。</string>
+    <string name="nettest_udp_probe_poor">本次抽样发现明显丢包，该网络上的实时串流可能出现卡顿。</string>
+    <string name="nettest_udp_probe_blocked">UDP 47998 似乎被拦截，无法测量 UDP 网络质量。</string>
+    <string name="nettest_udp_probe_unavailable">无法测量 UDP 网络质量，可能是测试服务器暂时不可用或回包路径被拦截。</string>
+    <string name="nettest_udp_probe_scope">这是当前设备与 Moonlight 公共测试服务器之间的轻量往返抽样，不会测试所选电脑，也无法区分丢包发生在上行还是下行。</string>
     <string name="pcview_menu_header_unknown">刷新中</string>
     <string name="pcview_menu_header_offline">离线</string>
     <string name="pcview_menu_header_online">在线</string>

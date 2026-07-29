@@ -26,12 +26,21 @@
 
     <!-- Network test strings -->
     <string name="nettest_title_waiting">Testing Network Connection</string>
-    <string name="nettest_text_waiting">Moonlight is testing your network connection to determine if any required ports are blocked.\n\nThis may take a few seconds…</string>
+    <string name="nettest_text_waiting">Moonlight is checking required ports and sampling UDP packet loss to a public test server.\n\nThe probe transfers less than 0.25 MB and may take several seconds…</string>
     <string name="nettest_title_done">Network Test Complete</string>
     <string name="nettest_text_success">Your network does not appear to be blocking Moonlight. If you still have trouble connecting, check your PC\'s firewall settings.\n\nIf you are trying to stream over the Internet, install the Moonlight Internet Hosting Tool on your PC and run the included Internet Streaming Tester to check your PC\'s Internet connection.</string>
     <string name="nettest_text_inconclusive">The network test could not be performed because none of Moonlight\'s connection testing servers were reachable. Check your Internet connection or try again later.</string>
+    <string name="nettest_port_check_inconclusive">The required-port check was inconclusive, but the UDP quality sample reached a Moonlight test server.</string>
     <string name="nettest_text_failure">Your device\'s current network connection seems to be blocking Moonlight. Streaming over the Internet may not work while connected to this network.\n\nThe following network ports were blocked:\n</string>
     <string name="nettest_text_blocked">Your device\'s current network connection is blocking Moonlight. Streaming over the Internet may not work while connected to this network.</string>
+    <string name="nettest_udp_probe_heading">UDP quality sample</string>
+    <string name="nettest_udp_probe_result">Packets received: %1$d/%2$d\nRound-trip packet loss: %3$.1f%%\nAverage RTT: %4$.1f ms\nJitter: %5$.1f ms</string>
+    <string name="nettest_udp_probe_good">No packet loss was observed in this sample.</string>
+    <string name="nettest_udp_probe_minor_loss">Minor packet loss was observed. Repeating the test can help confirm whether it is persistent.</string>
+    <string name="nettest_udp_probe_poor">Significant packet loss was observed. Real-time streaming may stutter on this network.</string>
+    <string name="nettest_udp_probe_blocked">UDP quality could not be measured because UDP 47998 appears to be blocked.</string>
+    <string name="nettest_udp_probe_unavailable">UDP quality could not be measured. The test server may be unavailable or the reply path may be blocked.</string>
+    <string name="nettest_udp_probe_scope">This is a lightweight round-trip sample between this device and a public Moonlight test server. It does not test the selected PC or identify which direction lost a packet.</string>
 
     <!-- Pair messages -->
     <string name="pairing">Pairing…</string>

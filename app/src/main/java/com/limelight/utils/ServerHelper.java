@@ -100,11 +100,22 @@ public class ServerHelper {
                         false);
 
                 int ret = MoonBridge.testClientConnectivity(CONNECTION_TEST_SERVER, 443, MoonBridge.ML_PORT_FLAG_ALL);
+                UdpNetworkProbe.Result udpProbeResult = UdpNetworkProbe.run(CONNECTION_TEST_SERVER);
+
+                // A successful quality probe is stronger evidence than the single-response
+                // connectivity check, which may have resolved a different test server address.
+                if (ret != MoonBridge.ML_TEST_RESULT_INCONCLUSIVE &&
+                        udpProbeResult.status == UdpNetworkProbe.Status.SUCCESS) {
+                    ret &= ~MoonBridge.ML_PORT_FLAG_UDP_47998;
+                }
                 spinnerDialog.dismiss();
 
                 String dialogSummary;
                 if (ret == MoonBridge.ML_TEST_RESULT_INCONCLUSIVE) {
-                    dialogSummary = parent.getResources().getString(R.string.nettest_text_inconclusive);
+                    dialogSummary = parent.getResources().getString(
+                            udpProbeResult.status == UdpNetworkProbe.Status.SUCCESS
+                                    ? R.string.nettest_port_check_inconclusive
+                                    : R.string.nettest_text_inconclusive);
                 }
                 else if (ret == 0) {
                     dialogSummary = parent.getResources().getString(R.string.nettest_text_success);
@@ -114,12 +125,41 @@ public class ServerHelper {
                     dialogSummary += MoonBridge.stringifyPortFlags(ret, "\n");
                 }
 
+                dialogSummary += "\n\n" + parent.getResources().getString(R.string.nettest_udp_probe_heading);
+                if (udpProbeResult.status == UdpNetworkProbe.Status.SUCCESS) {
+                    dialogSummary += "\n" + parent.getResources().getString(
+                            R.string.nettest_udp_probe_result,
+                            udpProbeResult.receivedPackets,
+                            udpProbeResult.sentPackets,
+                            udpProbeResult.packetLossPercent,
+                            udpProbeResult.averageRttMs,
+                            udpProbeResult.jitterMs);
+
+                    if (udpProbeResult.packetLossPercent == 0) {
+                        dialogSummary += "\n" + parent.getResources().getString(R.string.nettest_udp_probe_good);
+                    }
+                    else if (udpProbeResult.packetLossPercent <= 1.0f) {
+                        dialogSummary += "\n" + parent.getResources().getString(R.string.nettest_udp_probe_minor_loss);
+                    }
+                    else {
+                        dialogSummary += "\n" + parent.getResources().getString(R.string.nettest_udp_probe_poor);
+                    }
+                }
+                else if (ret != MoonBridge.ML_TEST_RESULT_INCONCLUSIVE &&
+                        (ret & MoonBridge.ML_PORT_FLAG_UDP_47998) != 0) {
+                    dialogSummary += "\n" + parent.getResources().getString(R.string.nettest_udp_probe_blocked);
+                }
+                else {
+                    dialogSummary += "\n" + parent.getResources().getString(R.string.nettest_udp_probe_unavailable);
+                }
+                dialogSummary += "\n\n" + parent.getResources().getString(R.string.nettest_udp_probe_scope);
+
                 Dialog.displayDialog(parent,
                         parent.getResources().getString(R.string.nettest_title_done),
                         dialogSummary,
                         false);
             }
-        }).start();
+        }, "NetworkTest").start();
     }
 
     public static void doQuit(final Activity parent,

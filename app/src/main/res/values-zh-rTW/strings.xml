@@ -202,15 +202,24 @@
 \n以下網路通訊埠被封鎖：
 \n</string>
     <string name="nettest_text_inconclusive">由於沒有 Moonlight 連線測試伺服器可供訪問，因此無法執行網路測試。請檢查您的 Internet 連線或稍後再試。</string>
+    <string name="nettest_port_check_inconclusive">必要連接埠檢查沒有得到明確結果，但 UDP 網路品質抽樣已連線到 Moonlight 測試伺服器。</string>
     <string name="nettest_text_success">您的網路似乎沒有封鎖 Moonlight。如果仍然無法連線，請檢查您電腦的防火牆設定。
 \n
 \n如果您是嘗試透過網際網路串流，請在您的電腦上安裝 Moonlight Internet Hosting Tool，然後執行裡面的 Internet Streaming Tester 來檢查電腦的網際網路連線。</string>
     <string name="nettest_title_done">網路檢測完畢</string>
-    <string name="nettest_text_waiting">Moonlight 正在測試您的網路連線以確認必要連接埠是否被封鎖。
+    <string name="nettest_text_waiting">Moonlight 正在檢查必要連接埠，並透過公共測試伺服器抽樣檢測 UDP 封包遺失。
 \n
-\n可能需要等待一些時間…</string>
+\n探針往返流量低於 0.25 MB，可能需要幾秒鐘…</string>
     <string name="nettest_title_waiting">正在測試網路連線</string>
     <string name="pcview_menu_test_network">測試網路連線</string>
+    <string name="nettest_udp_probe_heading">UDP 網路品質抽樣</string>
+    <string name="nettest_udp_probe_result">收到封包：%1$d/%2$d\n往返封包遺失率：%3$.1f%%\n平均 RTT：%4$.1f 毫秒\n抖動：%5$.1f 毫秒</string>
+    <string name="nettest_udp_probe_good">本次抽樣未發現封包遺失。</string>
+    <string name="nettest_udp_probe_minor_loss">本次抽樣發現輕微封包遺失，建議重複測試以確認是否持續發生。</string>
+    <string name="nettest_udp_probe_poor">本次抽樣發現明顯封包遺失，此網路上的即時串流可能出現卡頓。</string>
+    <string name="nettest_udp_probe_blocked">UDP 47998 似乎被封鎖，無法測量 UDP 網路品質。</string>
+    <string name="nettest_udp_probe_unavailable">無法測量 UDP 網路品質，可能是測試伺服器暫時無法使用或回包路徑被封鎖。</string>
+    <string name="nettest_udp_probe_scope">這是目前裝置與 Moonlight 公共測試伺服器之間的輕量往返抽樣，不會測試所選電腦，也無法區分封包遺失發生在上行或下行。</string>
     <string name="pcview_menu_header_unknown">正在重新整理</string>
     <string name="pcview_menu_header_offline">離線</string>
     <string name="pcview_menu_header_online">線上</string>
