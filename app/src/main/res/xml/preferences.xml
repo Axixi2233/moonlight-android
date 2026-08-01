@@ -72,7 +72,7 @@
             android:title="3D输出"
             android:entries="@array/stereo_3d_mode_names"
             android:entryValues="@array/stereo_3d_mode_values"
-            android:summary="将2D串流实时转换为3840×1080左右格式；仅支持GLES渲染。"
+            android:summary="将2D串流实时转换为3840×1080或3840×1200左右格式；仅支持GLES渲染。"
             android:defaultValue="off" />
 
         <ListPreference

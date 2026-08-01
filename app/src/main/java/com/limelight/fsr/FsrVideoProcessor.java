@@ -77,6 +77,8 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
     private int outputHeight = -1;
     private int stereoSceneWidth = 1920;
     private int stereoSceneHeight = 1080;
+    private int stereoOutputWidth = 3840;
+    private int stereoOutputHeight = 1080;
     private float[] outputSize = new float[] {1f, 1f};
 
     public FsrVideoProcessor(Context context) {
@@ -96,7 +98,8 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
             initializeOptionalStereo3d(glMajorVersion, glMinorVersion, extensions);
             try {
                 ensureStereoExternalProgram();
-                Log.i(TAG, "SBS renderer ready: logicalOutput=3840x1080"
+                Log.i(TAG, "SBS renderer ready: targetOutput="
+                        + stereoOutputWidth + "x" + stereoOutputHeight
                         + ", scene=" + stereoSceneWidth + "x" + stereoSceneHeight);
             } catch (IOException | GlUtil.GlException e) {
                 Log.e(TAG, "Failed to initialize SBS OES renderer", e);
@@ -168,7 +171,7 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
         }
         if (stereo3dEnabled) {
             Log.i(TAG, "SBS display surface=" + width + "x" + height
-                    + ", logicalOutput=3840x1080"
+                    + ", targetOutput=" + stereoOutputWidth + "x" + stereoOutputHeight
                     + ", eyeViewport=" + (width / 2) + "x" + height);
         }
         updateOutputSize();
@@ -270,6 +273,14 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
         stereoSceneWidth = width;
         stereoSceneHeight = height;
         updateOutputSize();
+    }
+
+    public void setStereoOutputSize(int width, int height) {
+        if (width <= 0 || height <= 0) {
+            return;
+        }
+        stereoOutputWidth = width;
+        stereoOutputHeight = height;
     }
 
     public void setHdrToneMappingEnabled(boolean enabled) {

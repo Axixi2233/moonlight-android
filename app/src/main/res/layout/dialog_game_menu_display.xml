@@ -627,7 +627,7 @@
                     android:layout_marginLeft="5dp"
                     android:ellipsize="end"
                     android:singleLine="true"
-                    android:text="为AR眼镜输出3840×1080左右格式。"
+                    android:text="为AR眼镜自动输出3840×1080或3840×1200左右格式。"
                     android:textColor="#FFC107"
                     android:textSize="6dp"
                     android:textStyle="italic|bold" />

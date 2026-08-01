@@ -142,6 +142,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         PerfOverlayListener, UsbDriverService.UsbDriverStateListener, View.OnKeyListener{
     private static final float EXTERNAL_TOUCHPAD_SCROLL_FACTOR = 0.15f;
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 1001;
+    private static final int STEREO_FULL_SBS_WIDTH = 3840;
+    private static final int STEREO_FULL_SBS_HEIGHT_1080 = 1080;
+    private static final int STEREO_FULL_SBS_HEIGHT_1200 = 1200;
     public static Game instance;
 
     private int lastButtonState = 0;
@@ -271,6 +274,8 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     private boolean glesRenderingEnabled;
     private boolean fsrEnabled;
     private boolean stereo3dEnabled;
+    private int stereoOutputWidth = STEREO_FULL_SBS_WIDTH;
+    private int stereoOutputHeight = STEREO_FULL_SBS_HEIGHT_1080;
     private boolean fsrInputSurfaceReady;
     private boolean fsrDisplaySurfaceCreated;
     private Surface fsrInputSurface;
@@ -399,9 +404,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             fsrVideoProcessor.setStereo3dConvergence(getStereo3dConvergence());
             fsrVideoProcessor.setStereo3dSwapEyes(prefConfig.stereo3dSwapEyes);
             if (stereo3dEnabled) {
-                int[] stereoSceneSize = fsrEnabled
-                        ? getFsrOutputSize()
-                        : new int[] {1920, 1080};
+                fsrVideoProcessor.setStereoOutputSize(
+                        stereoOutputWidth, stereoOutputHeight);
+                int[] stereoSceneSize = getStereoSceneSize();
                 fsrVideoProcessor.setStereoSceneSize(stereoSceneSize[0], stereoSceneSize[1]);
             }
             fsrView = new VideoProcessingGLSurfaceView(this, false, isGlesNativeHdrOutputEnabled(), fsrVideoProcessor,
@@ -448,7 +453,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             fsrView.setFrameInputSize(prefConfig.width, prefConfig.height);
             if (stereo3dEnabled) {
                 // Keep full-SBS as the logical layout, but let the actual display window own
-                // the buffer size. A 3840x1080 AR display will still produce a native surface,
+                // the buffer size. A native Full-SBS AR display will still produce a native surface,
                 // while handset previews no longer allocate an oversized off-screen buffer.
                 fsrView.setFixedSurfacePixelSize(0, 0);
                 fsrView.setMaxRenderFps(60);
@@ -1430,8 +1435,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         }
 
         if (stereo3dEnabled && fsrView != null) {
-            // Full-SBS output is two 16:9 eye images placed side by side.
-            fsrView.setDesiredAspectRatio(3840.0 / 1080.0);
+            fsrView.setDesiredAspectRatio(getStereoOutputAspectRatio());
         }
 
         // Set the desired refresh rate that will get passed into setFrameRate() later
@@ -3608,7 +3612,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         addPerfRow("累计音频流量", formatBytes(stats.audioBytes));
         addPerfRow("渲染方式", glesRenderingEnabled ? "GLES渲染" : "系统渲染");
         addPerfRow("3D输出", stereo3dEnabled
-                ? "SBS 3840x1080" + getStereo3dAiSuffix()
+                ? "SBS " + getStereoOutputSizeLabel() + getStereo3dAiSuffix()
                 + " / 景深" + getStereo3dDepthDisplayName()
                 : "关闭");
         addPerfRow("超分状态", buildUpscaleStatusText());
@@ -4312,16 +4316,53 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             presentation = new SecondaryDisplayPresentation(this, secondaryDisplay);
             presentation.show();
             if (stereo3dEnabled) {
+                int preferredHeight = getPreferredStereoOutputHeight(secondaryDisplay);
+                int alternateHeight = preferredHeight == STEREO_FULL_SBS_HEIGHT_1200
+                        ? STEREO_FULL_SBS_HEIGHT_1080
+                        : STEREO_FULL_SBS_HEIGHT_1200;
+                float targetFps = Math.min(prefConfig.fps, 60.0f);
                 boolean exactModeSelected = presentation.selectPreferredDisplayMode(
-                        3840, 1080, Math.min(prefConfig.fps, 60.0f));
+                        STEREO_FULL_SBS_WIDTH, preferredHeight, targetFps);
+                int selectedHeight = preferredHeight;
+                if (!exactModeSelected) {
+                    exactModeSelected = presentation.selectPreferredDisplayMode(
+                            STEREO_FULL_SBS_WIDTH, alternateHeight, targetFps);
+                    if (exactModeSelected) {
+                        selectedHeight = alternateHeight;
+                    }
+                }
+                configureStereoOutputSize(STEREO_FULL_SBS_WIDTH, selectedHeight);
                 logSessionInfo("DISPLAY", exactModeSelected
-                        ? "外接显示器已请求 3840x1080 SBS 模式"
-                        : "外接显示器未暴露 3840x1080 模式，SBS 将适配实际显示尺寸");
+                        ? "外接显示器已请求 " + getStereoOutputSizeLabel() + " SBS 模式"
+                        : "外接显示器未暴露 3840x1080/1200 模式，SBS 将适配实际显示尺寸");
             }
             View renderView = glesRenderingEnabled ? fsrView : streamView;
             if (renderView != null && renderView.getParent() instanceof ViewGroup) {
                 ((ViewGroup) renderView.getParent()).removeView(renderView);
+                if (stereo3dEnabled && renderView == fsrView) {
+                    // Some Android vendors expose the physical Full-SBS mode through Display.Mode,
+                    // but keep the Presentation layer stack at a 16:9 logical size (for example,
+                    // 3840x2160 mapped to a physical 3840x1200 panel). Fill that logical window and
+                    // let SurfaceFlinger scale a native Full-SBS buffer across it. Keeping the view
+                    // itself at 3840x1200 would apply the aspect correction twice and letterbox or
+                    // vertically shrink the image on the glasses.
+                    fsrView.setDesiredAspectRatio(0.0);
+                    fsrView.setFixedSurfacePixelSize(stereoOutputWidth, stereoOutputHeight);
+                    FrameLayout.LayoutParams externalLayoutParams = new FrameLayout.LayoutParams(
+                            FrameLayout.LayoutParams.MATCH_PARENT,
+                            FrameLayout.LayoutParams.MATCH_PARENT);
+                    externalLayoutParams.gravity = Gravity.FILL;
+                    fsrView.setLayoutParams(externalLayoutParams);
+                    LimeLog.info("SBS external presentation: layout=fill-parent, fixedSurface="
+                            + getStereoOutputSizeLabel());
+                }
                 presentation.addView(renderView);
+                if (stereo3dEnabled && renderView == fsrView) {
+                    fsrView.post(() -> LimeLog.info(
+                            "SBS external presentation measuredLayout="
+                                    + fsrView.getWidth() + "x" + fsrView.getHeight()
+                                    + ", fixedSurface=" + getStereoOutputSizeLabel()));
+                }
             }
 
         }
@@ -4406,17 +4447,85 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     private int[] getFsrOutputSize() {
         String target = getFsrTarget();
-        int targetHeight = "4k".equalsIgnoreCase(target) ? 2160 : 1440;
+        int baseWidth = "4k".equalsIgnoreCase(target) ? 3840 : 2560;
+        int baseHeight = "4k".equalsIgnoreCase(target) ? 2160 : 1440;
         float aspect = prefConfig.width > 0 && prefConfig.height > 0
                 ? (prefConfig.width / (float) prefConfig.height)
                 : (16f / 9f);
-        int targetWidth = Math.round(targetHeight * aspect);
-        if ("4k".equalsIgnoreCase(target)) {
-            targetWidth = Math.max(targetWidth, 3840);
-        } else {
-            targetWidth = Math.max(targetWidth, 2560);
+        int targetWidth;
+        int targetHeight;
+        if (aspect >= (16f / 9f)) {
+            targetHeight = baseHeight;
+            targetWidth = Math.round(targetHeight * aspect);
+        }
+        else {
+            targetWidth = baseWidth;
+            targetHeight = Math.round(targetWidth / aspect);
         }
         return new int[] {targetWidth, targetHeight};
+    }
+
+    private int[] getStereoSceneSize() {
+        return fsrEnabled
+                ? getFsrOutputSize()
+                : new int[] {stereoOutputWidth / 2, stereoOutputHeight};
+    }
+
+    private double getStereoOutputAspectRatio() {
+        return stereoOutputWidth / (double) stereoOutputHeight;
+    }
+
+    private String getStereoOutputSizeLabel() {
+        return stereoOutputWidth + "x" + stereoOutputHeight;
+    }
+
+    private void configureStereoOutputSize(int width, int height) {
+        int safeWidth = Math.max(2, width);
+        if ((safeWidth & 1) != 0) {
+            safeWidth--;
+        }
+        int safeHeight = Math.max(1, height);
+        stereoOutputWidth = safeWidth;
+        stereoOutputHeight = safeHeight;
+        final int configuredWidth = safeWidth;
+        final int configuredHeight = safeHeight;
+
+        if (fsrVideoProcessor != null) {
+            int[] stereoSceneSize = getStereoSceneSize();
+            if (fsrView != null) {
+                fsrView.queueEvent(() -> {
+                    fsrVideoProcessor.setStereoOutputSize(
+                            configuredWidth, configuredHeight);
+                    fsrVideoProcessor.setStereoSceneSize(
+                            stereoSceneSize[0], stereoSceneSize[1]);
+                });
+            }
+            else {
+                fsrVideoProcessor.setStereoOutputSize(
+                        configuredWidth, configuredHeight);
+                fsrVideoProcessor.setStereoSceneSize(
+                        stereoSceneSize[0], stereoSceneSize[1]);
+            }
+        }
+        if (fsrView != null) {
+            fsrView.setDesiredAspectRatio(getStereoOutputAspectRatio());
+        }
+        LimeLog.info("SBS output target=" + getStereoOutputSizeLabel()
+                + ", eye=" + (stereoOutputWidth / 2) + "x" + stereoOutputHeight);
+    }
+
+    private int getPreferredStereoOutputHeight(Display display) {
+        if (display == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            return STEREO_FULL_SBS_HEIGHT_1080;
+        }
+        int currentHeight = display.getMode().getPhysicalHeight();
+        int distanceTo1200 = Math.abs(
+                currentHeight - STEREO_FULL_SBS_HEIGHT_1200);
+        int distanceTo1080 = Math.abs(
+                currentHeight - STEREO_FULL_SBS_HEIGHT_1080);
+        return distanceTo1200 < distanceTo1080
+                ? STEREO_FULL_SBS_HEIGHT_1200
+                : STEREO_FULL_SBS_HEIGHT_1080;
     }
 
     private String getFsrTarget() {
@@ -4484,7 +4593,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         attemptedConnection = true;
         logSessionInfo("CONNECT", "渲染表面就绪，开始连接；渲染路径="
                 + (fsrEnabled ? "FSR/GLES" : "GLES直通")
-                + (stereo3dEnabled ? "/SBS3D 3840x1080" : ""));
+                + (stereo3dEnabled
+                ? "/SBS3D " + getStereoOutputSizeLabel()
+                : ""));
         UiHelper.notifyStreamConnecting(Game.this);
         decoderRenderer.setRenderTarget(fsrInputSurface);
         audioRenderer = new AndroidAudioRenderer(Game.this, controllerHandler, prefConfig.enableAudioFx,
