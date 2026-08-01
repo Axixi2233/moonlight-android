@@ -645,6 +645,10 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         return (device.getSources() & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD;
     }
 
+    public static boolean isGamepadWithJoystickAxes(InputDevice device) {
+        return device != null && hasGamepadButtons(device) && hasJoystickAxes(device);
+    }
+
     public static boolean isGameControllerDevice(InputDevice device) {
         if (device == null) {
             return true;

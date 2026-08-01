@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/homeDeviceCard"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/home_info_card_height"
+    android:background="@drawable/bg_home_status_card"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:padding="@dimen/home_info_card_padding">
+
+    <ImageView
+        android:layout_width="@dimen/home_info_icon_size"
+        android:layout_height="@dimen/home_info_icon_size"
+        android:background="@drawable/bg_home_icon_tile"
+        android:padding="10dp"
+        android:src="@drawable/ic_home_device" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/home_info_content_gap"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/homeDeviceTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/home_primary_text"
+            android:textSize="@dimen/home_info_title_text_size"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/homeDeviceSubtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/home_secondary_text"
+            android:textSize="@dimen/home_info_subtitle_text_size" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/homeDeviceStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_home_meta_pill"
+        android:text="@string/home_current_device"
+        android:textColor="@color/home_accent_bright"
+        android:textSize="@dimen/home_info_status_text_size"
+        android:textStyle="bold" />
+</LinearLayout>

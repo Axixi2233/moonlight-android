@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Compact phone landscape values. values-sw600dp-land restores the roomy Pad scale. -->
+    <dimen name="home_header_action_size">38dp</dimen>
+    <dimen name="home_top_bar_height">46dp</dimen>
+    <dimen name="home_title_text_size">20sp</dimen>
+    <dimen name="home_header_action_gap">6dp</dimen>
+    <dimen name="home_info_card_height">62dp</dimen>
+    <dimen name="home_info_card_padding">10dp</dimen>
+    <dimen name="home_info_icon_size">36dp</dimen>
+    <dimen name="home_info_content_gap">10dp</dimen>
+    <dimen name="home_info_title_text_size">12sp</dimen>
+    <dimen name="home_info_subtitle_text_size">9sp</dimen>
+    <dimen name="home_info_status_text_size">9sp</dimen>
+    <dimen name="home_host_header_title_text_size">17sp</dimen>
+    <dimen name="home_host_hint_text_size">9sp</dimen>
+    <dimen name="home_host_counter_text_size">10sp</dimen>
+    <dimen name="home_land_horizontal_inset">12dp</dimen>
+    <dimen name="home_land_vertical_inset">6dp</dimen>
+    <dimen name="home_land_info_gap">6dp</dimen>
+    <dimen name="home_land_host_header_gap">9dp</dimen>
+    <dimen name="home_land_summary_gap">6dp</dimen>
+    <dimen name="home_land_column_gap">12dp</dimen>
+    <dimen name="home_land_summary_padding">10dp</dimen>
+    <dimen name="home_host_card_padding_horizontal">17dp</dimen>
+    <dimen name="home_host_card_padding_top">8dp</dimen>
+    <dimen name="home_host_card_padding_bottom">10dp</dimen>
+    <dimen name="home_host_icon_size">76dp</dimen>
+    <dimen name="home_host_icon_padding">18dp</dimen>
+    <dimen name="home_host_icon_margin_top">2dp</dimen>
+    <dimen name="home_host_title_margin_top">3dp</dimen>
+    <dimen name="home_host_title_text_size">19sp</dimen>
+    <dimen name="home_host_address_margin_top">2dp</dimen>
+    <dimen name="home_host_meta_margin_top">2dp</dimen>
+    <dimen name="home_host_action_padding_horizontal">11dp</dimen>
+    <dimen name="home_host_action_padding_vertical">5dp</dimen>
+    <dimen name="home_host_badge_text_size">9sp</dimen>
+    <dimen name="home_host_more_size">30dp</dimen>
+    <dimen name="home_host_more_gap">4dp</dimen>
+    <dimen name="home_host_more_padding">7dp</dimen>
+    <dimen name="home_host_address_text_size">10sp</dimen>
+    <dimen name="home_host_meta_text_size">9sp</dimen>
+    <dimen name="home_host_status_dot_size">6dp</dimen>
+    <dimen name="home_host_status_gap">5dp</dimen>
+    <dimen name="home_host_status_text_size">9sp</dimen>
+    <dimen name="home_host_action_text_size">10sp</dimen>
+</resources>

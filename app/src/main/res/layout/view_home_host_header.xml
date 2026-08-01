@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/homeHostHeader"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="bottom"
+    android:orientation="horizontal">
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/homeHostSectionTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/home_select_host"
+            android:textColor="@color/home_primary_text"
+            android:textSize="@dimen/home_host_header_title_text_size"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/homeHostHint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="@string/home_select_host_hint"
+            android:textColor="@color/home_secondary_text"
+            android:textSize="@dimen/home_host_hint_text_size" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/homeHostCounter"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_home_meta_pill"
+        android:textColor="@color/home_accent_bright"
+        android:textSize="@dimen/home_host_counter_text_size"
+        android:textStyle="bold" />
+</LinearLayout>

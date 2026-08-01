@@ -96,8 +96,8 @@ android {
     buildTypes {
         debug {
             applicationIdSuffix ".debug"
-            resValue "string", "app_label", "Moonlight (Debug)"
-            resValue "string", "app_label_root", "Moonlight (Root Debug)"
+            resValue "string", "app_label", "D·月光"
+            resValue "string", "app_label_root", "DR·月光"
 
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
@@ -173,6 +173,7 @@ dependencies {
     implementation 'com.github.cgutman:ShieldControllerExtensions:1.0.1'
     implementation 'com.google.code.gson:gson:2.10.1'
     implementation 'com.android.support:appcompat-v7:28.0.0'
+    implementation 'com.android.support:recyclerview-v7:28.0.0'
     implementation 'com.github.bumptech.glide:glide:3.8.0'
     implementation 'org.apmem.tools:layouts:1.10@aar'
     testImplementation 'junit:junit:4.13.2'

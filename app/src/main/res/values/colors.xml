@@ -11,4 +11,17 @@
     <color name="screen_bg_bottom">#FF050609</color>
     <color name="screen_glow_cool">#302B63</color>
     <color name="screen_glow_warm">#6E4A97</color>
+    <color name="home_background">#050711</color>
+    <color name="home_background_raised">#090B1A</color>
+    <color name="home_panel">#141329</color>
+    <color name="home_elevated_panel">#191732</color>
+    <color name="home_primary_text">#F7F5FF</color>
+    <color name="home_secondary_text">#A5A0B8</color>
+    <color name="home_accent">#7C3AED</color>
+    <color name="home_accent_bright">#A78BFA</color>
+    <color name="home_connected">#42D69B</color>
+    <color name="home_warning">#FFB454</color>
+    <color name="home_destructive">#FF6B7A</color>
+    <color name="home_border">#24FFFFFF</color>
+    <color name="home_soft_border">#14FFFFFF</color>
 </resources>

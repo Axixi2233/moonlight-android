@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/homeTopBar"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/home_top_bar_height"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+
+    <TextView
+        android:id="@+id/tx_label"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:ellipsize="end"
+        android:gravity="center_vertical"
+        android:maxLines="1"
+        android:text="@string/app_label"
+        android:textColor="@color/home_primary_text"
+        android:textSize="@dimen/home_title_text_size"
+        android:textStyle="bold" />
+
+    <ImageButton
+        android:id="@+id/settingsButton"
+        android:layout_width="@dimen/home_header_action_size"
+        android:layout_height="@dimen/home_header_action_size"
+        android:background="@drawable/bg_home_circle_button"
+        android:contentDescription="@string/home_action_settings"
+        android:focusable="true"
+        android:nextFocusDown="@id/hostCarousel"
+        android:nextFocusRight="@id/helpButton"
+        android:padding="11dp"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_settings" />
+
+    <ImageButton
+        android:id="@+id/helpButton"
+        android:layout_width="@dimen/home_header_action_size"
+        android:layout_height="@dimen/home_header_action_size"
+        android:layout_marginStart="@dimen/home_header_action_gap"
+        android:background="@drawable/bg_home_circle_button"
+        android:contentDescription="@string/home_action_about"
+        android:focusable="true"
+        android:nextFocusDown="@id/hostCarousel"
+        android:nextFocusLeft="@id/settingsButton"
+        android:nextFocusRight="@id/axiButton"
+        android:padding="11dp"
+        android:scaleType="centerInside"
+        android:src="@drawable/icon_app_info" />
+
+    <ImageButton
+        android:id="@+id/axiButton"
+        android:layout_width="@dimen/home_header_action_size"
+        android:layout_height="@dimen/home_header_action_size"
+        android:layout_marginStart="@dimen/home_header_action_gap"
+        android:background="@drawable/bg_home_circle_button"
+        android:contentDescription="@string/home_action_gamepad"
+        android:focusable="true"
+        android:nextFocusDown="@id/hostCarousel"
+        android:nextFocusLeft="@id/helpButton"
+        android:padding="10dp"
+        android:scaleType="centerInside"
+        android:src="@drawable/icon_app_stadia_controller" />
+
+</LinearLayout>

@@ -342,10 +342,13 @@ public class UiHelper {
 //                            tappableInsets.top,
 //                            tappableInsets.right,
 //                            0);
-                    activity.findViewById(R.id.rv_top_view).setPadding(0,
-                            tappableInsets.top,
-                            0,
-                            0);
+                    View topInsetView = activity.findViewById(R.id.rv_top_view);
+                    if (topInsetView != null) {
+                        topInsetView.setPadding(0,
+                                tappableInsets.top,
+                                0,
+                                0);
+                    }
 
                     // Show a translucent navigation bar if we can't tap there
                     if (tappableInsets.bottom != 0) {

@@ -4,11 +4,18 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.limelight.binding.PlatformBinding;
 import com.limelight.binding.crypto.AndroidCryptoProvider;
+import com.limelight.binding.input.ControllerHandler;
 import com.limelight.computers.ComputerManagerListener;
 import com.limelight.computers.ComputerManagerService;
 import com.limelight.grid.PcGridAdapter;
@@ -23,10 +30,10 @@ import com.limelight.preferences.AddComputerManually;
 import com.limelight.preferences.GlPreferences;
 import com.limelight.preferences.PreferenceConfiguration;
 import com.limelight.preferences.StreamSettings;
-import com.limelight.ui.AdapterFragment;
-import com.limelight.ui.AdapterFragmentCallbacks;
 import com.limelight.ui.AppDialog;
 import com.limelight.ui.PcActionsDialog;
+import com.limelight.ui.home.HomeHostCarouselView;
+import com.limelight.ui.home.HomePageIndicatorView;
 import com.limelight.utils.DeviceUtils;
 import com.limelight.utils.Dialog;
 import com.limelight.utils.HelpLauncher;
@@ -43,10 +50,13 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.graphics.RenderEffect;
 import android.graphics.Shader;
+import android.hardware.input.InputManager;
 import android.net.Uri;
 import android.opengl.GLSurfaceView;
 import android.os.Build;
@@ -54,16 +64,16 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
+import android.view.InputDevice;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.ViewGroup;
 import android.view.Window;
+import android.view.WindowInsets;
 import android.view.WindowManager;
-import android.widget.AbsListView;
-import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -77,14 +87,44 @@ import cn.axi.gamepad.an.AxiGamePadIndexActivity;
 import static android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
 import static android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE;
 
-public class PcView extends Activity implements AdapterFragmentCallbacks {
+public class PcView extends Activity {
+    private static final String STATE_SELECTED_HOST = "selectedHost";
+    private static final String ADD_HOST_SELECTION = "__moonlight_add_host__";
+
     private AlertDialog pairingDialog;
-    private RelativeLayout noPcFoundLayout;
     private PcGridAdapter pcGridAdapter;
+    private HomeHostCarouselView hostCarousel;
+    private HomePageIndicatorView pageIndicator;
+    private TextView hostCounter;
+    private TextView selectedHostSummary;
+    private TextView controllerTitle;
+    private TextView controllerSubtitle;
+    private TextView controllerStatus;
+    private View controllerDot;
+    private InputManager inputManager;
+    private boolean inputListenerRegistered;
+    private String selectedHostKey = ADD_HOST_SELECTION;
+    private boolean hostSelectionExplicit;
     private ShortcutHelper shortcutHelper;
     private ComputerManagerService.ComputerManagerBinder managerBinder;
     private boolean freezeUpdates, runningPolling, inForeground, completeOnCreateCalled;
     private boolean autoUpdateCheckStarted;
+    private final InputManager.InputDeviceListener inputDeviceListener = new InputManager.InputDeviceListener() {
+        @Override
+        public void onInputDeviceAdded(int deviceId) {
+            updateControllerCard();
+        }
+
+        @Override
+        public void onInputDeviceRemoved(int deviceId) {
+            updateControllerCard();
+        }
+
+        @Override
+        public void onInputDeviceChanged(int deviceId) {
+            updateControllerCard();
+        }
+    };
     private final ServiceConnection serviceConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder binder) {
             final ComputerManagerService.ComputerManagerBinder localBinder =
@@ -139,9 +179,6 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
         // Set default preferences if we've never been run
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 
-        // Set the correct layout for the PC grid
-        pcGridAdapter.updateLayoutWithPreferences(this, PreferenceConfiguration.readPreferences(this));
-
         ImageView imageView=findViewById(R.id.iv_root_view);
 
         PreferenceConfiguration pref=PreferenceConfiguration.readPreferences(this);
@@ -173,9 +210,7 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
         if(!TextUtils.isEmpty(pref.screenLabel)){
             tx_label.setText(pref.screenLabel);
         }
-        // Setup the list view
         ImageButton settingsButton = findViewById(R.id.settingsButton);
-        ImageButton addComputerButton = findViewById(R.id.manuallyAddPc);
         ImageButton helpButton = findViewById(R.id.helpButton);
         ImageButton axButton = findViewById(R.id.axiButton);
         axButton.setVisibility(View.VISIBLE);
@@ -183,13 +218,6 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
             @Override
             public void onClick(View v) {
                 startActivity(new Intent(PcView.this, StreamSettings.class));
-            }
-        });
-        addComputerButton.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent i = new Intent(PcView.this, AddComputerManually.class);
-                startActivity(i);
             }
         });
         helpButton.setOnClickListener(new OnClickListener() {
@@ -200,13 +228,6 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
             }
         });
 
-        // Amazon review didn't like the help button because the wiki was not entirely
-        // navigable via the Fire TV remote (though the relevant parts were). Let's hide
-        // it on Fire TV.
-        if (getPackageManager().hasSystemFeature("amazon.hardware.fire_tv")) {
-            helpButton.setVisibility(View.GONE);
-        }
-
         axButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -215,23 +236,61 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
             }
         });
 
-        getFragmentManager().beginTransaction()
-            .replace(R.id.pcFragmentContainer, new AdapterFragment())
-            .commitAllowingStateLoss();
+        hostCarousel = findViewById(R.id.hostCarousel);
+        pageIndicator = findViewById(R.id.homePageIndicator);
+        hostCounter = findViewById(R.id.homeHostCounter);
+        selectedHostSummary = findViewById(R.id.homeSelectedSummary);
+        controllerTitle = findViewById(R.id.homeControllerTitle);
+        controllerSubtitle = findViewById(R.id.homeControllerSubtitle);
+        controllerStatus = findViewById(R.id.homeControllerStatus);
+        controllerDot = findViewById(R.id.homeControllerDot);
 
-        noPcFoundLayout = findViewById(R.id.no_pc_found_layout);
-        if (pcGridAdapter.getCount() == 0) {
-            noPcFoundLayout.setVisibility(View.VISIBLE);
+        hostCarousel.setListener(new HomeHostCarouselView.Listener() {
+            @Override
+            public void onSelectionChanged(String selectionKey, int position, int hostCount,
+                                           ComputerObject computer, boolean addCard,
+                                           boolean userInitiated) {
+                selectedHostKey = selectionKey;
+                hostSelectionExplicit |= userInitiated;
+                pageIndicator.setPageState(hostCount + 1, position);
+                updateHostSelectionSummary(position, hostCount, computer, addCard);
+            }
+
+            @Override
+            public void onHostActivated(ComputerObject computer, View sourceView) {
+                activateComputer(computer, sourceView);
+            }
+
+            @Override
+            public void onHostActions(ComputerObject computer, View sourceView, int position) {
+                showComputerActions(sourceView, position, computer);
+            }
+
+            @Override
+            public void onAddHost() {
+                startActivity(new Intent(PcView.this, AddComputerManually.class));
+            }
+        });
+
+        configureHomeLayout();
+        configureHomeSystemBars();
+        updateDeviceCard();
+        updateControllerCard();
+        syncHomeHosts();
+        if (isTelevision()) {
+            hostCarousel.post(hostCarousel::requestFocusOnSelectedCard);
         }
-        else {
-            noPcFoundLayout.setVisibility(View.INVISIBLE);
-        }
-        pcGridAdapter.notifyDataSetChanged();
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        if (savedInstanceState != null) {
+            selectedHostKey = savedInstanceState.getString(
+                    STATE_SELECTED_HOST, ADD_HOST_SELECTION);
+            hostSelectionExplicit = true;
+        }
 
         // Assume we're in the foreground when created to avoid a race
         // between binding to CMS and onResume()
@@ -280,6 +339,7 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
         completeOnCreateCalled = true;
 
         shortcutHelper = new ShortcutHelper(this);
+        inputManager = (InputManager) getSystemService(INPUT_SERVICE);
 
         UiHelper.setLocale(this);
 
@@ -346,6 +406,8 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
     public void onDestroy() {
         super.onDestroy();
 
+        unregisterInputDeviceListener();
+
         if (managerBinder != null) {
             unbindService(serviceConnection);
         }
@@ -360,6 +422,8 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
 
         inForeground = true;
         startComputerUpdates();
+        registerInputDeviceListener();
+        updateControllerCard();
     }
 
     @Override
@@ -368,6 +432,27 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
 
         inForeground = false;
         stopComputerUpdates(false);
+        unregisterInputDeviceListener();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        if (hostCarousel != null) {
+            selectedHostKey = hostCarousel.getSelectedKey();
+        }
+        outState.putString(STATE_SELECTED_HOST, selectedHostKey);
+        super.onSaveInstanceState(outState);
+    }
+
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        if (event.getKeyCode() == KeyEvent.KEYCODE_BUTTON_B) {
+            if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) {
+                onBackPressed();
+            }
+            return true;
+        }
+        return super.dispatchKeyEvent(event);
     }
 
     @Override
@@ -378,7 +463,7 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
         Dialog.closeDialogs();
     }
 
-    private void showComputerActions(AbsListView listView, View sourceView, int position, ComputerObject computer) {
+    private void showComputerActions(View sourceView, int position, ComputerObject computer) {
         if (computer == null || computer.details == null) {
             return;
         }
@@ -445,7 +530,7 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
             @Override
             public void onDismiss() {
                 startComputerUpdates();
-                restoreListFocus(listView, sourceView, position);
+                restoreHostFocus(sourceView);
             }
         });
         dialog.show();
@@ -471,13 +556,14 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
                 null);
     }
 
-    private void restoreListFocus(AbsListView listView, View sourceView, int position) {
+    private void restoreHostFocus(View sourceView) {
         if (sourceView != null && sourceView.isAttachedToWindow()) {
             sourceView.requestFocus();
             return;
         }
-        listView.setSelection(position);
-        listView.post(listView::requestFocus);
+        if (hostCarousel != null) {
+            hostCarousel.post(hostCarousel::requestFocusOnSelectedCard);
+        }
     }
 
     private void doPair(final ComputerDetails computer) {
@@ -716,11 +802,13 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
 
                 pcGridAdapter.removeComputer(computer);
                 pcGridAdapter.notifyDataSetChanged();
-
-                if (pcGridAdapter.getCount() == 0) {
-                    // Show the "Discovery in progress" view
-                    noPcFoundLayout.setVisibility(View.VISIBLE);
+                if (details.uuid != null && details.uuid.equals(selectedHostKey)) {
+                    selectedHostKey = pcGridAdapter.getCount() == 0
+                            ? ADD_HOST_SELECTION
+                            : ((ComputerObject) pcGridAdapter.getItem(
+                                    Math.min(i, pcGridAdapter.getCount() - 1))).details.uuid;
                 }
+                syncHomeHosts();
 
                 break;
             }
@@ -747,45 +835,340 @@ public class PcView extends Activity implements AdapterFragmentCallbacks {
         else {
             // Add a new entry
             pcGridAdapter.addComputer(new ComputerObject(details));
-
-            // Remove the "Discovery in progress" view
-            noPcFoundLayout.setVisibility(View.INVISIBLE);
         }
 
         // Notify the view that the data has changed
         pcGridAdapter.notifyDataSetChanged();
+        syncHomeHosts();
     }
 
-    @Override
-    public int getAdapterFragmentLayoutId() {
-        return R.layout.pc_grid_view_new;
+    private void activateComputer(ComputerObject computer, View sourceView) {
+        if (computer == null || computer.details == null) {
+            return;
+        }
+
+        ComputerDetails details = computer.details;
+        if (details.state == ComputerDetails.State.UNKNOWN
+                || details.state == ComputerDetails.State.OFFLINE) {
+            showComputerActions(sourceView, 0, computer);
+        }
+        else if (details.pairState != PairState.PAIRED) {
+            doPair(details);
+        }
+        else {
+            doAppList(details, false, false);
+        }
     }
 
-    @Override
-    public void receiveAbsListView(AbsListView listView) {
-        listView.setAdapter(pcGridAdapter);
-        listView.setOnItemClickListener(new OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> arg0, View arg1, int pos,
-                                    long id) {
-                ComputerObject computer = (ComputerObject) pcGridAdapter.getItem(pos);
-                if (computer.details.state == ComputerDetails.State.UNKNOWN ||
-                    computer.details.state == ComputerDetails.State.OFFLINE) {
-                    showComputerActions(listView, arg1, pos, computer);
-                } else if (computer.details.pairState != PairState.PAIRED) {
-                    // Pair an unpaired machine by default
-                    doPair(computer.details);
-                } else {
-                    doAppList(computer.details, false, false);
+    private void syncHomeHosts() {
+        if (hostCarousel == null || pcGridAdapter == null) {
+            return;
+        }
+
+        List<ComputerObject> computers = new ArrayList<>();
+        for (int index = 0; index < pcGridAdapter.getCount(); index++) {
+            computers.add((ComputerObject) pcGridAdapter.getItem(index));
+        }
+        Collections.sort(computers, (left, right) -> {
+            int stateComparison = Integer.compare(
+                    getHostSortRank(left), getHostSortRank(right));
+            if (stateComparison != 0) {
+                return stateComparison;
+            }
+            String leftName = left == null || left.details == null || left.details.name == null
+                    ? "" : left.details.name;
+            String rightName = right == null || right.details == null || right.details.name == null
+                    ? "" : right.details.name;
+            return leftName.compareToIgnoreCase(rightName);
+        });
+        if (!computers.isEmpty() && !hostSelectionExplicit) {
+            selectedHostKey = computers.get(0).details.uuid;
+        }
+        hostCarousel.setComputers(computers, selectedHostKey);
+    }
+
+    private static int getHostSortRank(ComputerObject computer) {
+        if (computer == null || computer.details == null
+                || computer.details.state == ComputerDetails.State.UNKNOWN) {
+            return 1;
+        }
+        return computer.details.state == ComputerDetails.State.ONLINE ? 0 : 2;
+    }
+
+    private void updateHostSelectionSummary(int position, int hostCount,
+                                            ComputerObject computer, boolean addCard) {
+        if (hostCounter != null) {
+            hostCounter.setText(addCard
+                    ? getString(R.string.home_add_host)
+                    : getString(R.string.home_host_count_format, position + 1, hostCount));
+        }
+        if (selectedHostSummary == null) {
+            return;
+        }
+        if (addCard || computer == null || computer.details == null) {
+            selectedHostSummary.setText(getString(R.string.home_discovery_active));
+            return;
+        }
+
+        ComputerDetails details = computer.details;
+        int statusRes;
+        if (details.state == ComputerDetails.State.UNKNOWN) {
+            statusRes = R.string.home_host_checking;
+        }
+        else if (details.state == ComputerDetails.State.OFFLINE) {
+            statusRes = R.string.home_host_offline;
+        }
+        else if (details.pairState != PairState.PAIRED) {
+            statusRes = R.string.home_host_pair_required;
+        }
+        else if (details.runningGameId != 0) {
+            statusRes = R.string.home_host_running;
+        }
+        else {
+            statusRes = R.string.home_host_ready;
+        }
+        selectedHostSummary.setText(details.name + " · " + getString(statusRes));
+    }
+
+    private void configureHomeLayout() {
+        if (hostCarousel == null) {
+            return;
+        }
+
+        float density = getResources().getDisplayMetrics().density;
+        int heightDp = Math.round(getResources().getDisplayMetrics().heightPixels / density);
+        View sidebar = findViewById(R.id.homeSidebar);
+        ViewGroup.LayoutParams carouselParams = hostCarousel.getLayoutParams();
+        if (sidebar != null) {
+            boolean compactPhoneLandscape = isCompactPhoneLandscape();
+            View wideContent = findViewById(R.id.homeWideContent);
+            if (wideContent != null && isTelevision()) {
+                int horizontal = UiHelper.dpToPx(this, 36);
+                int vertical = UiHelper.dpToPx(this, 20);
+                wideContent.setPadding(horizontal, vertical, horizontal, vertical);
+            }
+            int widthDp = Math.round(getResources().getDisplayMetrics().widthPixels / density);
+            int sidebarWidthDp = compactPhoneLandscape
+                    ? Math.min(288, Math.max(248, Math.round(widthDp * 0.34f)))
+                    : Math.min(320, Math.max(260, Math.round(widthDp * 0.32f)));
+            ViewGroup.LayoutParams sidebarParams = sidebar.getLayoutParams();
+            sidebarParams.width = UiHelper.dpToPx(this, sidebarWidthDp);
+            sidebar.setLayoutParams(sidebarParams);
+            int carouselHeightDp = compactPhoneLandscape
+                    ? Math.min(270, Math.max(230, heightDp - 112))
+                    : Math.min(312, Math.max(250, heightDp - 50));
+            carouselParams.height = UiHelper.dpToPx(this, carouselHeightDp);
+            if (compactPhoneLandscape) {
+                View hostHint = findViewById(R.id.homeHostHint);
+                if (hostHint != null) {
+                    hostHint.setVisibility(View.VISIBLE);
+                }
+                if (selectedHostSummary != null) {
+                    selectedHostSummary.setVisibility(View.GONE);
                 }
             }
+        }
+        else {
+            boolean phonePortrait = getResources().getConfiguration().smallestScreenWidthDp < 600;
+            int carouselHeightDp;
+            if (phonePortrait) {
+                if (heightDp < 720) {
+                    carouselHeightDp = 310;
+                }
+                else if (heightDp < 840) {
+                    carouselHeightDp = 340;
+                }
+                else {
+                    carouselHeightDp = 360;
+                }
+            }
+            else if (heightDp < 720) {
+                carouselHeightDp = 340;
+            }
+            else if (heightDp < 790) {
+                carouselHeightDp = 370;
+            }
+            else {
+                carouselHeightDp = 390;
+            }
+            carouselParams.height = UiHelper.dpToPx(this, carouselHeightDp);
+        }
+        hostCarousel.setLayoutParams(carouselParams);
+    }
+
+    private void configureHomeSystemBars() {
+        Window window = getWindow();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            window.setStatusBarColor(Color.TRANSPARENT);
+            window.setNavigationBarColor(Color.TRANSPARENT);
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.setStatusBarContrastEnforced(false);
+            window.setNavigationBarContrastEnforced(false);
+        }
+
+        View decorView = window.getDecorView();
+        decorView.setSystemUiVisibility(decorView.getSystemUiVisibility()
+                | SYSTEM_UI_FLAG_LAYOUT_STABLE
+                | SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
+
+        View root = findViewById(R.id.homeRoot);
+        View safeContent = findViewById(R.id.homeWideContent);
+        if (safeContent == null) {
+            safeContent = findViewById(R.id.homeScroll);
+        }
+        if (root == null || safeContent == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT_WATCH) {
+            return;
+        }
+
+        final View insetContent = safeContent;
+        final int baseLeft = safeContent.getPaddingLeft();
+        final int baseTop = safeContent.getPaddingTop();
+        final int baseRight = safeContent.getPaddingRight();
+        final int baseBottom = safeContent.getPaddingBottom();
+        final boolean ignoreHorizontalInsets = isCompactPhoneLandscape();
+        root.setOnApplyWindowInsetsListener((view, windowInsets) -> {
+            int insetLeft;
+            int insetTop;
+            int insetRight;
+            int insetBottom;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                // Keep the home layout stable while an immersive dialog temporarily hides
+                // the bars. The background still draws edge-to-edge, but safe content keeps
+                // the same padding before, during, and after the dialog transition.
+                android.graphics.Insets insets = windowInsets.getInsetsIgnoringVisibility(
+                        WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
+                insetLeft = insets.left;
+                insetTop = insets.top;
+                insetRight = insets.right;
+                insetBottom = insets.bottom;
+            }
+            else {
+                insetLeft = windowInsets.getStableInsetLeft();
+                insetTop = windowInsets.getStableInsetTop();
+                insetRight = windowInsets.getStableInsetRight();
+                insetBottom = windowInsets.getStableInsetBottom();
+            }
+            if (ignoreHorizontalInsets) {
+                insetLeft = 0;
+                insetRight = 0;
+            }
+            insetContent.setPadding(
+                    baseLeft + insetLeft,
+                    baseTop + insetTop,
+                    baseRight + insetRight,
+                    baseBottom + insetBottom);
+            return windowInsets;
         });
-        listView.setOnItemLongClickListener((parent, view, position, id) -> {
-            ComputerObject computer = (ComputerObject) pcGridAdapter.getItem(position);
-            showComputerActions(listView, view, position, computer);
-            return true;
-        });
-        UiHelper.applyStatusBarPadding(listView);
+        root.requestApplyInsets();
+    }
+
+    private boolean isTelevision() {
+        return getPackageManager().hasSystemFeature(PackageManager.FEATURE_TELEVISION)
+                || getPackageManager().hasSystemFeature(PackageManager.FEATURE_LEANBACK);
+    }
+
+    private boolean isCompactPhoneLandscape() {
+        Configuration configuration = getResources().getConfiguration();
+        return configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+                && configuration.smallestScreenWidthDp < 600
+                && !isTelevision();
+    }
+
+    private void updateDeviceCard() {
+        TextView title = findViewById(R.id.homeDeviceTitle);
+        TextView subtitle = findViewById(R.id.homeDeviceSubtitle);
+        if (title == null || subtitle == null) {
+            return;
+        }
+
+        String manufacturer = Build.MANUFACTURER == null ? "" : Build.MANUFACTURER.trim();
+        String model = Build.MODEL == null ? Build.DEVICE : Build.MODEL.trim();
+        if (!manufacturer.isEmpty()
+                && !model.toLowerCase(Locale.ROOT).startsWith(manufacturer.toLowerCase(Locale.ROOT))) {
+            model = Character.toUpperCase(manufacturer.charAt(0)) + manufacturer.substring(1) + " " + model;
+        }
+        title.setText(model);
+        subtitle.setText(getString(
+                R.string.home_device_version_format,
+                Build.VERSION.RELEASE,
+                getKernelVersion()));
+    }
+
+    private String getKernelVersion() {
+        String kernelVersion = System.getProperty("os.version", "-").trim();
+        if (kernelVersion.isEmpty()) {
+            return "-";
+        }
+
+        int suffixStart = kernelVersion.indexOf('-');
+        if (suffixStart > 0) {
+            kernelVersion = kernelVersion.substring(0, suffixStart);
+        }
+        return kernelVersion;
+    }
+
+    private void registerInputDeviceListener() {
+        if (inputManager != null && !inputListenerRegistered) {
+            inputManager.registerInputDeviceListener(inputDeviceListener, null);
+            inputListenerRegistered = true;
+        }
+    }
+
+    private void unregisterInputDeviceListener() {
+        if (inputManager != null && inputListenerRegistered) {
+            inputManager.unregisterInputDeviceListener(inputDeviceListener);
+            inputListenerRegistered = false;
+        }
+    }
+
+    private void updateControllerCard() {
+        if (controllerTitle == null || controllerSubtitle == null
+                || controllerStatus == null || controllerDot == null) {
+            return;
+        }
+
+        List<InputDevice> controllers = new ArrayList<>();
+        Set<String> descriptors = new HashSet<>();
+        for (int deviceId : InputDevice.getDeviceIds()) {
+            InputDevice device = InputDevice.getDevice(deviceId);
+            if (device == null || device.isVirtual()
+                    || !ControllerHandler.isGamepadWithJoystickAxes(device)) {
+                continue;
+            }
+            String descriptor = device.getDescriptor();
+            String key = descriptor == null ? String.valueOf(deviceId) : descriptor;
+            if (descriptors.add(key)) {
+                controllers.add(device);
+            }
+        }
+
+        boolean connected = !controllers.isEmpty();
+        if (connected) {
+            controllerTitle.setText(controllers.get(0).getName());
+            controllerSubtitle.setText(controllers.size() == 1
+                    ? getString(R.string.home_controller_system_input)
+                    : getString(R.string.home_controller_count_format, controllers.size()));
+            controllerStatus.setText(R.string.home_controller_connected);
+            controllerStatus.setTextColor(getResources().getColor(R.color.home_connected));
+            setStatusDot(controllerDot, getResources().getColor(R.color.home_connected));
+        }
+        else {
+            controllerTitle.setText(R.string.home_controller_waiting);
+            controllerSubtitle.setText(R.string.home_controller_waiting_detail);
+            controllerStatus.setText(R.string.home_controller_disconnected);
+            controllerStatus.setTextColor(getResources().getColor(R.color.home_secondary_text));
+            setStatusDot(controllerDot, getResources().getColor(R.color.home_secondary_text));
+        }
+    }
+
+    private static void setStatusDot(View view, int color) {
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setShape(GradientDrawable.OVAL);
+        drawable.setColor(color);
+        view.setBackground(drawable);
     }
 
     private void dismissPairingDialog() {

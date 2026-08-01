@@ -20,10 +20,10 @@
         android:layout_height="match_parent"
         android:baselineAligned="false"
         android:orientation="horizontal"
-        android:paddingStart="@dimen/home_land_horizontal_inset"
-        android:paddingTop="@dimen/home_land_vertical_inset"
-        android:paddingEnd="@dimen/home_land_horizontal_inset"
-        android:paddingBottom="@dimen/home_land_vertical_inset">
+        android:paddingStart="20dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="10dp">
 
         <LinearLayout
             android:id="@+id/homeSidebar"
@@ -36,30 +36,30 @@
             <include
                 layout="@layout/view_home_device_card"
                 android:layout_width="match_parent"
-                android:layout_height="@dimen/home_info_card_height"
-                android:layout_marginTop="@dimen/home_land_info_gap" />
+                android:layout_height="76dp"
+                android:layout_marginTop="10dp" />
 
             <include
                 layout="@layout/view_home_controller_card"
                 android:layout_width="match_parent"
-                android:layout_height="@dimen/home_info_card_height"
-                android:layout_marginTop="@dimen/home_land_info_gap" />
+                android:layout_height="76dp"
+                android:layout_marginTop="10dp" />
 
             <include
                 layout="@layout/view_home_host_header"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/home_land_host_header_gap" />
+                android:layout_marginTop="20dp" />
 
             <TextView
                 android:id="@+id/homeSelectedSummary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/home_land_summary_gap"
+                android:layout_marginTop="10dp"
                 android:background="@drawable/bg_home_status_card"
                 android:ellipsize="end"
                 android:maxLines="2"
-                android:padding="@dimen/home_land_summary_padding"
+                android:padding="13dp"
                 android:textColor="@color/home_secondary_text"
                 android:textSize="11sp" />
         </LinearLayout>
@@ -67,7 +67,7 @@
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_marginStart="@dimen/home_land_column_gap"
+            android:layout_marginStart="20dp"
             android:layout_weight="1"
             android:gravity="center"
             android:orientation="vertical">

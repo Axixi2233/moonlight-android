@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/homeHostCardRoot"
+    android:layout_width="300dp"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_home_host_card"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="start"
+    android:nextFocusUp="@id/axiButton"
+    android:orientation="vertical"
+    android:paddingStart="@dimen/home_host_card_padding_horizontal"
+    android:paddingTop="@dimen/home_host_card_padding_top"
+    android:paddingEnd="@dimen/home_host_card_padding_horizontal"
+    android:paddingBottom="@dimen/home_host_card_padding_bottom">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/homeHostBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_home_meta_pill"
+            android:textColor="@color/home_primary_text"
+            android:textSize="@dimen/home_host_badge_text_size"
+            android:textStyle="bold" />
+
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <ImageButton
+            android:id="@+id/homeHostMore"
+            android:layout_width="@dimen/home_host_more_size"
+            android:layout_height="@dimen/home_host_more_size"
+            android:layout_marginStart="@dimen/home_host_more_gap"
+            android:background="@drawable/bg_home_circle_button"
+            android:focusable="false"
+            android:padding="@dimen/home_host_more_padding"
+            android:src="@drawable/ic_home_more" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/homeHostIconTile"
+        android:layout_width="@dimen/home_host_icon_size"
+        android:layout_height="@dimen/home_host_icon_size"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="@dimen/home_host_icon_margin_top"
+        android:background="@drawable/bg_home_icon_tile">
+
+        <ImageView
+            android:id="@+id/homeHostIcon"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="@dimen/home_host_icon_padding"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_computer" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/homeHostTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/home_host_title_margin_top"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="@color/home_primary_text"
+        android:textSize="@dimen/home_host_title_text_size"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/homeHostAddress"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/home_host_address_margin_top"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="@color/home_secondary_text"
+        android:textSize="@dimen/home_host_address_text_size" />
+
+    <TextView
+        android:id="@+id/homeHostMeta"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/home_host_meta_margin_top"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="@color/home_secondary_text"
+        android:textSize="@dimen/home_host_meta_text_size" />
+
+    <Space
+        android:layout_width="1dp"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <View
+            android:id="@+id/homeHostStatusDot"
+            android:layout_width="@dimen/home_host_status_dot_size"
+            android:layout_height="@dimen/home_host_status_dot_size" />
+
+        <TextView
+            android:id="@+id/homeHostStatus"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/home_host_status_gap"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/home_secondary_text"
+            android:textSize="@dimen/home_host_status_text_size"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/homeHostPrimaryAction"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_home_primary_action"
+            android:gravity="center"
+            android:includeFontPadding="false"
+            android:paddingStart="@dimen/home_host_action_padding_horizontal"
+            android:paddingTop="@dimen/home_host_action_padding_vertical"
+            android:paddingEnd="@dimen/home_host_action_padding_horizontal"
+            android:paddingBottom="@dimen/home_host_action_padding_vertical"
+            android:textColor="@color/home_primary_text"
+            android:textSize="@dimen/home_host_action_text_size"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+</LinearLayout>

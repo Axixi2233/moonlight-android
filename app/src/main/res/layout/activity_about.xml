@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:id="@+id/lv_gamepad"
-    android:background="@drawable/bg_gradient_axi_main"
+    android:background="@drawable/bg_home_root"
     android:fitsSystemWindows="true"
     tools:ignore="MissingDefaultResource">
 
