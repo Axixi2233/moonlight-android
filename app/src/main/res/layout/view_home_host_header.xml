@@ -3,7 +3,7 @@
     android:id="@+id/homeHostHeader"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:gravity="bottom"
+    android:gravity="center_vertical"
     android:orientation="horizontal">
 
     <LinearLayout
@@ -37,8 +37,36 @@
         android:id="@+id/homeHostCounter"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
         android:background="@drawable/bg_home_meta_pill"
         android:textColor="@color/home_accent_bright"
         android:textSize="@dimen/home_host_counter_text_size"
         android:textStyle="bold" />
+
+    <ImageButton
+        android:id="@+id/homeHostLayoutToggle"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:background="@drawable/bg_home_circle_button"
+        android:contentDescription="@string/home_switch_to_list"
+        android:focusable="true"
+        android:nextFocusDown="@id/hostCarousel"
+        android:padding="8dp"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_home_layout_list"
+        android:visibility="gone" />
+
+    <ImageButton
+        android:id="@+id/homeHostAddButton"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_marginStart="8dp"
+        android:background="@drawable/bg_home_circle_button"
+        android:contentDescription="@string/home_add_host"
+        android:focusable="true"
+        android:nextFocusDown="@id/hostCarousel"
+        android:padding="9dp"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_home_add"
+        android:visibility="gone" />
 </LinearLayout>

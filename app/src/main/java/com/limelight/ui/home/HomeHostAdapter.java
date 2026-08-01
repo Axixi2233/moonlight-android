@@ -56,6 +56,8 @@ final class HomeHostAdapter extends RecyclerView.Adapter<HomeHostAdapter.HostVie
     private static final int OFFLINE_SURFACE_END = 0xFF0F1013;
     private static final int ADD_SURFACE_START = 0xFF24183A;
     private static final int ADD_SURFACE_END = 0xFF110C20;
+    private static final int LIST_CARD_SURFACE_START = 0xE6141329;
+    private static final int LIST_CARD_SURFACE_END = 0xCC090B1A;
 
     interface InteractionListener {
         void onCardClicked(int position, View sourceView);
@@ -69,6 +71,8 @@ final class HomeHostAdapter extends RecyclerView.Adapter<HomeHostAdapter.HostVie
     private final InteractionListener interactionListener;
     private int selectedPosition;
     private int cardWidth;
+    private boolean listMode;
+    private boolean headerAddAvailable;
 
     HomeHostAdapter(InteractionListener interactionListener) {
         this.interactionListener = interactionListener;
@@ -78,7 +82,28 @@ final class HomeHostAdapter extends RecyclerView.Adapter<HomeHostAdapter.HostVie
     void setComputers(List<PcView.ComputerObject> newComputers) {
         computers.clear();
         computers.addAll(newComputers);
-        selectedPosition = Math.min(selectedPosition, getItemCount() - 1);
+        selectedPosition = getItemCount() == 0
+                ? 0 : Math.min(selectedPosition, getItemCount() - 1);
+        notifyDataSetChanged();
+    }
+
+    void setListMode(boolean listMode) {
+        if (this.listMode == listMode) {
+            return;
+        }
+        this.listMode = listMode;
+        selectedPosition = getItemCount() == 0
+                ? 0 : Math.min(selectedPosition, getItemCount() - 1);
+        notifyDataSetChanged();
+    }
+
+    void setHeaderAddAvailable(boolean headerAddAvailable) {
+        if (this.headerAddAvailable == headerAddAvailable) {
+            return;
+        }
+        this.headerAddAvailable = headerAddAvailable;
+        selectedPosition = getItemCount() == 0
+                ? 0 : Math.min(selectedPosition, getItemCount() - 1);
         notifyDataSetChanged();
     }
 
@@ -94,7 +119,11 @@ final class HomeHostAdapter extends RecyclerView.Adapter<HomeHostAdapter.HostVie
     }
 
     boolean isAddPosition(int position) {
-        return position == computers.size();
+        return shouldShowAddCard() && position == computers.size();
+    }
+
+    private boolean shouldShowAddCard() {
+        return !listMode && (!headerAddAvailable || computers.size() < 2);
     }
 
     PcView.ComputerObject getComputerAt(int position) {
@@ -117,7 +146,7 @@ final class HomeHostAdapter extends RecyclerView.Adapter<HomeHostAdapter.HostVie
             return computers.isEmpty() ? 0 : 0;
         }
         if (ADD_HOST_KEY.equals(key)) {
-            return computers.size();
+            return shouldShowAddCard() ? computers.size() : 0;
         }
         for (int index = 0; index < computers.size(); index++) {
             ComputerDetails details = computers.get(index).details;
@@ -129,14 +158,20 @@ final class HomeHostAdapter extends RecyclerView.Adapter<HomeHostAdapter.HostVie
     }
 
     void setSelectedPosition(int position) {
+        if (getItemCount() == 0) {
+            selectedPosition = 0;
+            return;
+        }
         int boundedPosition = Math.max(0, Math.min(position, getItemCount() - 1));
         if (selectedPosition == boundedPosition) {
             return;
         }
         int oldPosition = selectedPosition;
         selectedPosition = boundedPosition;
-        notifyItemChanged(oldPosition);
-        notifyItemChanged(selectedPosition);
+        if (!listMode) {
+            notifyItemChanged(oldPosition);
+            notifyItemChanged(selectedPosition);
+        }
     }
 
     int getSelectedPosition() {
@@ -156,17 +191,26 @@ final class HomeHostAdapter extends RecyclerView.Adapter<HomeHostAdapter.HostVie
 
     @Override
     public int getItemCount() {
-        return computers.size() + 1;
+        return computers.size() + (shouldShowAddCard() ? 1 : 0);
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        return listMode ? 1 : 0;
     }
 
     @NonNull
     @Override
     public HostViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_home_host_card, parent, false);
+                .inflate(viewType == 1
+                        ? R.layout.item_home_host_list
+                        : R.layout.item_home_host_card, parent, false);
         RecyclerView.LayoutParams layoutParams = new RecyclerView.LayoutParams(
                 cardWidth > 0 ? cardWidth : dp(parent, 300),
-                ViewGroup.LayoutParams.MATCH_PARENT);
+                viewType == 1
+                        ? ViewGroup.LayoutParams.WRAP_CONTENT
+                        : ViewGroup.LayoutParams.MATCH_PARENT);
         view.setLayoutParams(layoutParams);
         return new HostViewHolder(view);
     }
@@ -175,8 +219,14 @@ final class HomeHostAdapter extends RecyclerView.Adapter<HomeHostAdapter.HostVie
     public void onBindViewHolder(@NonNull HostViewHolder holder, int position) {
         RecyclerView.LayoutParams layoutParams = (RecyclerView.LayoutParams) holder.itemView.getLayoutParams();
         layoutParams.width = cardWidth > 0 ? cardWidth : dp(holder.itemView, 300);
+        layoutParams.height = listMode
+                ? ViewGroup.LayoutParams.WRAP_CONTENT
+                : ViewGroup.LayoutParams.MATCH_PARENT;
         holder.itemView.setLayoutParams(layoutParams);
-        holder.itemView.setSelected(position == selectedPosition);
+        // The vertical list has no persistent visual selection. Its highlight is
+        // reserved for real DPAD/gamepad focus, while the carousel keeps a centered
+        // selected card for paging semantics.
+        holder.itemView.setSelected(!listMode && position == selectedPosition);
         applyCardTheme(holder, position);
 
         if (isAddPosition(position)) {
@@ -241,17 +291,20 @@ final class HomeHostAdapter extends RecyclerView.Adapter<HomeHostAdapter.HostVie
         boolean paired = details.pairState == PairingManager.PairState.PAIRED;
         boolean unpaired = details.pairState == PairingManager.PairState.NOT_PAIRED;
 
+        holder.badge.setVisibility(listMode ? View.GONE : View.VISIBLE);
         holder.badge.setText(details.nvidiaServer
                 ? R.string.home_host_source_gamestream
                 : R.string.home_host_source_sunshine);
-        holder.moreButton.setVisibility(View.VISIBLE);
+        holder.moreButton.setVisibility(listMode ? View.GONE : View.VISIBLE);
         holder.moreButton.setContentDescription(holder.itemView.getContext().getString(
                 R.string.home_host_more, details.name));
+        holder.meta.setVisibility(listMode ? View.GONE : View.VISIBLE);
+        holder.statusDot.setVisibility(listMode ? View.GONE : View.VISIBLE);
+        holder.primaryAction.setVisibility(listMode ? View.GONE : View.VISIBLE);
         holder.icon.setImageResource(R.drawable.ic_computer);
         holder.title.setText(details.name);
 
         AddressDisplay addressDisplay = getAddressDisplay(details, holder.itemView.getContext());
-        holder.address.setText(addressDisplay.address);
         int pairStateRes;
         if (details.state == ComputerDetails.State.UNKNOWN || (!paired && !unpaired)) {
             pairStateRes = R.string.pc_actions_pair_unknown;
@@ -261,8 +314,15 @@ final class HomeHostAdapter extends RecyclerView.Adapter<HomeHostAdapter.HostVie
                     ? R.string.home_host_pair_paired
                     : R.string.home_host_pair_unpaired;
         }
-        holder.meta.setText(holder.itemView.getContext().getString(addressDisplay.labelRes)
-                + " · " + holder.itemView.getContext().getString(pairStateRes));
+        String connectionMeta = holder.itemView.getContext().getString(addressDisplay.labelRes)
+                + " · " + holder.itemView.getContext().getString(pairStateRes);
+        if (listMode) {
+            holder.address.setText(addressDisplay.address);
+        }
+        else {
+            holder.address.setText(addressDisplay.address);
+            holder.meta.setText(connectionMeta);
+        }
 
         int statusRes;
         int actionRes;
@@ -289,7 +349,9 @@ final class HomeHostAdapter extends RecyclerView.Adapter<HomeHostAdapter.HostVie
         }
         else {
             statusRes = details.runningGameId != 0
-                    ? R.string.home_host_running
+                    ? (listMode
+                            ? R.string.home_host_running_compact
+                            : R.string.home_host_running)
                     : R.string.home_host_ready;
             actionRes = R.string.home_host_view_apps;
             statusColor = color(holder.itemView, R.color.home_connected);
@@ -297,7 +359,13 @@ final class HomeHostAdapter extends RecyclerView.Adapter<HomeHostAdapter.HostVie
 
         holder.status.setText(statusRes);
         holder.primaryAction.setText(actionRes);
-        setDotColor(holder.statusDot, statusColor);
+        if (listMode) {
+            holder.status.setTextColor(statusColor);
+        }
+        else {
+            holder.status.setTextColor(color(holder.itemView, R.color.home_secondary_text));
+            setDotColor(holder.statusDot, statusColor);
+        }
         holder.itemView.setContentDescription(holder.itemView.getContext().getString(
                 R.string.home_host_card_accessibility,
                 details.name,
@@ -306,6 +374,24 @@ final class HomeHostAdapter extends RecyclerView.Adapter<HomeHostAdapter.HostVie
     }
 
     private void applyCardTheme(HostViewHolder holder, int position) {
+        if (listMode) {
+            ComputerDetails details = computers.get(position).details;
+            boolean offline = details != null
+                    && details.state == ComputerDetails.State.OFFLINE;
+            holder.itemView.setBackground(createListCardBackground(holder.itemView, offline));
+            if (offline) {
+                holder.iconTile.setBackground(createIconBackground(
+                        holder.iconTile,
+                        OFFLINE_CARD_ACCENT,
+                        OFFLINE_SURFACE_START,
+                        OFFLINE_SURFACE_END));
+            }
+            else {
+                holder.iconTile.setBackgroundResource(R.drawable.bg_home_icon_tile);
+            }
+            return;
+        }
+
         int accent;
         int secondaryAccent;
         int surfaceStart;
@@ -344,10 +430,50 @@ final class HomeHostAdapter extends RecyclerView.Adapter<HomeHostAdapter.HostVie
                 holder.itemView, accent, secondaryAccent, surfaceStart, surfaceEnd));
         holder.iconTile.setBackground(createIconBackground(
                 holder.iconTile, accent, surfaceStart, surfaceEnd));
+        holder.moreButton.setBackground(createMoreButtonBackground(
+                holder.moreButton,
+                accent,
+                secondaryAccent,
+                surfaceStart,
+                surfaceEnd));
         holder.primaryAction.setBackground(createActionBackground(
                 holder.primaryAction,
                 accent,
                 secondaryAccent));
+    }
+
+    private static StateListDrawable createListCardBackground(View view, boolean offline) {
+        int surfaceStart = offline ? OFFLINE_SURFACE_START : LIST_CARD_SURFACE_START;
+        int surfaceEnd = offline ? OFFLINE_SURFACE_END : LIST_CARD_SURFACE_END;
+        StateListDrawable states = new StateListDrawable();
+        states.addState(
+                new int[] {android.R.attr.state_focused},
+                createListCardLayer(
+                        view, Color.WHITE, Color.WHITE, surfaceStart, surfaceEnd, 2));
+        states.addState(
+                new int[] {},
+                createListCardLayer(
+                        view, 0x24FFFFFF, 0x24FFFFFF, surfaceStart, surfaceEnd, 1));
+        return states;
+    }
+
+    private static Drawable createListCardLayer(View view, int borderStart,
+                                                 int borderEnd, int surfaceStart,
+                                                 int surfaceEnd, int insetDp) {
+        GradientDrawable border = new GradientDrawable(
+                GradientDrawable.Orientation.LEFT_RIGHT,
+                new int[] {borderStart, borderEnd});
+        border.setCornerRadius(dp(view, 20));
+
+        GradientDrawable surface = new GradientDrawable(
+                GradientDrawable.Orientation.TL_BR,
+                new int[] {surfaceStart, surfaceEnd});
+        surface.setCornerRadius(dp(view, 20 - insetDp));
+
+        LayerDrawable layers = new LayerDrawable(new Drawable[] {border, surface});
+        int inset = dp(view, insetDp);
+        layers.setLayerInset(1, inset, inset, inset, inset);
+        return layers;
     }
 
     private static StateListDrawable createCardBackground(View view, int accent,
@@ -424,6 +550,46 @@ final class HomeHostAdapter extends RecyclerView.Adapter<HomeHostAdapter.HostVie
                 });
         drawable.setShape(GradientDrawable.OVAL);
         drawable.setStroke(dp(view, 1), withAlpha(accent, 0x68));
+        return drawable;
+    }
+
+    private static StateListDrawable createMoreButtonBackground(View view, int accent,
+                                                                 int secondaryAccent,
+                                                                 int surfaceStart,
+                                                                 int surfaceEnd) {
+        StateListDrawable states = new StateListDrawable();
+        states.addState(
+                new int[] {android.R.attr.state_pressed},
+                createMoreButtonLayer(
+                        view, accent, secondaryAccent, surfaceStart, surfaceEnd, true));
+        states.addState(
+                new int[] {android.R.attr.state_focused},
+                createMoreButtonLayer(
+                        view, accent, secondaryAccent, surfaceStart, surfaceEnd, true));
+        states.addState(
+                new int[] {},
+                createMoreButtonLayer(
+                        view, accent, secondaryAccent, surfaceStart, surfaceEnd, false));
+        return states;
+    }
+
+    private static Drawable createMoreButtonLayer(View view, int accent,
+                                                   int secondaryAccent,
+                                                   int surfaceStart,
+                                                   int surfaceEnd,
+                                                   boolean emphasized) {
+        float startBlend = emphasized ? 0.52f : 0.30f;
+        float endBlend = emphasized ? 0.38f : 0.20f;
+        GradientDrawable drawable = new GradientDrawable(
+                GradientDrawable.Orientation.TL_BR,
+                new int[] {
+                        blendColor(surfaceStart, accent, startBlend),
+                        blendColor(surfaceEnd, secondaryAccent, endBlend)
+                });
+        drawable.setShape(GradientDrawable.OVAL);
+        drawable.setStroke(
+                dp(view, emphasized ? 2 : 1),
+                emphasized ? withAlpha(accent, 0xE0) : withAlpha(accent, 0x70));
         return drawable;
     }
 

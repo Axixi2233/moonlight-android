@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/homeHostCardRoot"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/home_info_card_height"
+    android:background="@drawable/bg_home_status_card"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center_vertical"
+    android:nextFocusUp="@id/homeHostLayoutToggle"
+    android:orientation="horizontal"
+    android:padding="@dimen/home_info_card_padding">
+
+    <FrameLayout
+        android:id="@+id/homeHostIconTile"
+        android:layout_width="@dimen/home_info_icon_size"
+        android:layout_height="@dimen/home_info_icon_size"
+        android:background="@drawable/bg_home_icon_tile">
+
+        <ImageView
+            android:id="@+id/homeHostIcon"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="10dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_computer" />
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/home_info_content_gap"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/homeHostTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/home_primary_text"
+            android:textSize="@dimen/home_info_title_text_size"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/homeHostAddress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/home_secondary_text"
+            android:textSize="@dimen/home_info_subtitle_text_size" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/homeHostStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_home_meta_pill"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="@color/home_secondary_text"
+        android:textSize="@dimen/home_info_status_text_size"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/homeHostBadge"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/homeHostMeta"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
+
+    <View
+        android:id="@+id/homeHostStatusDot"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/homeHostPrimaryAction"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
+
+    <ImageButton
+        android:id="@+id/homeHostMore"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:focusable="false"
+        android:visibility="gone" />
+
+</LinearLayout>

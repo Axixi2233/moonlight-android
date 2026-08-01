@@ -24,6 +24,8 @@
     <dimen name="home_host_header_title_text_size">20sp</dimen>
     <dimen name="home_host_hint_text_size">11sp</dimen>
     <dimen name="home_host_counter_text_size">11sp</dimen>
+    <dimen name="home_host_carousel_margin_top">14dp</dimen>
+    <dimen name="home_host_carousel_portrait_card_margin_top">20dp</dimen>
     <dimen name="home_land_horizontal_inset">20dp</dimen>
     <dimen name="home_land_vertical_inset">10dp</dimen>
     <dimen name="home_land_info_gap">10dp</dimen>

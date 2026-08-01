@@ -36,6 +36,7 @@ public final class HomeHostCarouselView extends RecyclerView
     private final LinearLayoutManager layoutManager;
     private final LinearSnapHelper snapHelper = new LinearSnapHelper();
     private final HomeHostAdapter hostAdapter;
+    private final SpacingDecoration spacingDecoration;
     private final int touchSlop;
     private Listener listener;
     private int cardWidth;
@@ -49,6 +50,8 @@ public final class HomeHostCarouselView extends RecyclerView
     private VelocityTracker touchVelocityTracker;
     private boolean horizontalDragLocked;
     private boolean userScrollPending;
+    private boolean listMode;
+    private boolean headerAddAvailable;
 
     public HomeHostCarouselView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -62,7 +65,8 @@ public final class HomeHostCarouselView extends RecyclerView
         setClipToPadding(false);
         setOverScrollMode(OVER_SCROLL_NEVER);
         setItemViewCacheSize(5);
-        addItemDecoration(new SpacingDecoration(dp(7)));
+        spacingDecoration = new SpacingDecoration(dp(7));
+        addItemDecoration(spacingDecoration);
         snapHelper.attachToRecyclerView(this);
 
         addOnScrollListener(new OnScrollListener() {
@@ -73,6 +77,9 @@ public final class HomeHostCarouselView extends RecyclerView
 
             @Override
             public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
+                if (listMode) {
+                    return;
+                }
                 if (newState == SCROLL_STATE_DRAGGING) {
                     userScrollPending = true;
                 }
@@ -92,12 +99,78 @@ public final class HomeHostCarouselView extends RecyclerView
         this.listener = listener;
     }
 
+    public void setListMode(boolean listMode) {
+        if (this.listMode == listMode) {
+            return;
+        }
+
+        String selectedKey = getSelectedKey();
+        boolean restoreCardFocus = hasFocus();
+        stopScroll();
+        snapHelper.attachToRecyclerView(null);
+        this.listMode = listMode;
+        layoutManager.setOrientation(listMode
+                ? LinearLayoutManager.VERTICAL
+                : LinearLayoutManager.HORIZONTAL);
+        hostAdapter.setListMode(listMode);
+        invalidateItemDecorations();
+        setNestedScrollingEnabled(listMode);
+        if (!listMode) {
+            snapHelper.attachToRecyclerView(this);
+        }
+
+        int position = hostAdapter.findPositionForKey(selectedKey);
+        setSelectionInternal(position, false, false, false);
+        configureCardSize(getWidth());
+        requestLayout();
+        post(() -> {
+            centerPosition(hostAdapter.getSelectedPosition(), false);
+            if (restoreCardFocus) {
+                requestSelectedCardFocus();
+            }
+        });
+    }
+
+    public boolean isListMode() {
+        return listMode;
+    }
+
+    public void setHeaderAddAvailable(boolean headerAddAvailable) {
+        if (this.headerAddAvailable == headerAddAvailable) {
+            return;
+        }
+        String selectedKey = getSelectedKey();
+        this.headerAddAvailable = headerAddAvailable;
+        hostAdapter.setHeaderAddAvailable(headerAddAvailable);
+        int position = hostAdapter.findPositionForKey(selectedKey);
+        setSelectionInternal(position, false, false, false);
+        requestLayout();
+    }
+
+    public boolean shouldShowHeaderAddButton() {
+        return listMode || (headerAddAvailable && hostAdapter.getHostCount() >= 2);
+    }
+
+    public int getDisplayItemCount() {
+        return hostAdapter.getItemCount();
+    }
+
+    public int getHostCount() {
+        return hostAdapter.getHostCount();
+    }
+
     public void setComputers(List<PcView.ComputerObject> computers, String preferredSelectionKey) {
         List<PcView.ComputerObject> safeComputers = computers == null
                 ? Collections.emptyList()
                 : computers;
         hostAdapter.setComputers(safeComputers);
         int position = hostAdapter.findPositionForKey(preferredSelectionKey);
+        if (listMode) {
+            hostAdapter.setSelectedPosition(position);
+            applyCardTransforms();
+            notifySelectionChanged(false);
+            return;
+        }
         setSelectionInternal(position, false, false, false);
         post(() -> centerPosition(position, false));
     }
@@ -138,7 +211,18 @@ public final class HomeHostCarouselView extends RecyclerView
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
+        configureCardSize(w);
+    }
+
+    private void configureCardSize(int w) {
         if (w <= 0) {
+            return;
+        }
+
+        if (listMode) {
+            cardWidth = w;
+            setPadding(0, getPaddingTop(), 0, getPaddingBottom());
+            hostAdapter.setCardWidth(cardWidth);
             return;
         }
 
@@ -158,6 +242,22 @@ public final class HomeHostCarouselView extends RecyclerView
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent event) {
+        if (listMode) {
+            if (event.getActionMasked() == MotionEvent.ACTION_DOWN && getParent() != null) {
+                // A focused off-screen row can be restored by RecyclerView after the
+                // periodic host refresh. Touch scrolling takes ownership from DPAD
+                // focus so refreshes preserve the user's current viewport instead.
+                clearFocus();
+                getParent().requestDisallowInterceptTouchEvent(true);
+            }
+            boolean handled = super.dispatchTouchEvent(event);
+            if ((event.getActionMasked() == MotionEvent.ACTION_UP
+                    || event.getActionMasked() == MotionEvent.ACTION_CANCEL)
+                    && getParent() != null) {
+                getParent().requestDisallowInterceptTouchEvent(false);
+            }
+            return handled;
+        }
         if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
             beginTouchGesture(event);
         }
@@ -182,7 +282,9 @@ public final class HomeHostCarouselView extends RecyclerView
     public void onCardClicked(int position, View sourceView) {
         if (position != hostAdapter.getSelectedPosition()) {
             setSelectionInternal(position, true, false, true);
-            return;
+            if (!listMode) {
+                return;
+            }
         }
         activateSelectedCard();
     }
@@ -215,15 +317,21 @@ public final class HomeHostCarouselView extends RecyclerView
         boolean keyDown = event.getAction() == KeyEvent.ACTION_DOWN;
         boolean firstDown = keyDown && event.getRepeatCount() == 0;
 
-        if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT || keyCode == KeyEvent.KEYCODE_BUTTON_L1) {
+        int previousKey = listMode ? KeyEvent.KEYCODE_DPAD_UP : KeyEvent.KEYCODE_DPAD_LEFT;
+        int nextKey = listMode ? KeyEvent.KEYCODE_DPAD_DOWN : KeyEvent.KEYCODE_DPAD_RIGHT;
+        if (keyCode == previousKey || keyCode == KeyEvent.KEYCODE_BUTTON_L1) {
             if (keyDown && (event.getRepeatCount() == 0 || event.getRepeatCount() % 3 == 0)) {
-                moveSelection(-1, true);
+                if (!moveSelection(-1, true) && keyCode == previousKey) {
+                    return super.dispatchKeyEvent(event);
+                }
             }
             return true;
         }
-        if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT || keyCode == KeyEvent.KEYCODE_BUTTON_R1) {
+        if (keyCode == nextKey || keyCode == KeyEvent.KEYCODE_BUTTON_R1) {
             if (keyDown && (event.getRepeatCount() == 0 || event.getRepeatCount() % 3 == 0)) {
-                moveSelection(1, true);
+                if (!moveSelection(1, true) && keyCode == nextKey) {
+                    return super.dispatchKeyEvent(event);
+                }
             }
             return true;
         }
@@ -263,20 +371,23 @@ public final class HomeHostCarouselView extends RecyclerView
         if (event.getAction() == MotionEvent.ACTION_MOVE
                 && (event.getSource() & android.view.InputDevice.SOURCE_JOYSTICK)
                 == android.view.InputDevice.SOURCE_JOYSTICK) {
-            float horizontal = event.getAxisValue(MotionEvent.AXIS_HAT_X);
-            if (Math.abs(horizontal) < 0.01f) {
-                horizontal = event.getAxisValue(MotionEvent.AXIS_X);
+            float direction = event.getAxisValue(listMode
+                    ? MotionEvent.AXIS_HAT_Y : MotionEvent.AXIS_HAT_X);
+            if (Math.abs(direction) < 0.01f) {
+                direction = event.getAxisValue(listMode
+                        ? MotionEvent.AXIS_Y : MotionEvent.AXIS_X);
             }
 
-            if (Math.abs(horizontal) < 0.35f) {
+            if (Math.abs(direction) < 0.35f) {
                 joystickArmed = true;
             }
-            else if (Math.abs(horizontal) >= 0.65f && joystickArmed
+            else if (Math.abs(direction) >= 0.65f && joystickArmed
                     && event.getEventTime() - lastJoystickMoveMs >= 180) {
                 joystickArmed = false;
                 lastJoystickMoveMs = event.getEventTime();
-                moveSelection(horizontal > 0 ? 1 : -1, true);
-                return true;
+                if (moveSelection(direction > 0 ? 1 : -1, true)) {
+                    return true;
+                }
             }
         }
         return super.onGenericMotionEvent(event);
@@ -290,15 +401,19 @@ public final class HomeHostCarouselView extends RecyclerView
         }
     }
 
-    private void moveSelection(int delta, boolean requestFocus) {
+    private boolean moveSelection(int delta, boolean requestFocus) {
+        if (hostAdapter.getItemCount() == 0) {
+            return false;
+        }
         int target = Math.max(0, Math.min(
                 hostAdapter.getSelectedPosition() + delta,
                 hostAdapter.getItemCount() - 1));
         if (target == hostAdapter.getSelectedPosition()) {
             performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
-            return;
+            return false;
         }
         setSelectionInternal(target, true, requestFocus, true);
+        return true;
     }
 
     private void beginTouchGesture(MotionEvent event) {
@@ -383,6 +498,11 @@ public final class HomeHostCarouselView extends RecyclerView
 
     private void setSelectionInternal(int position, boolean smooth, boolean requestFocus,
                                       boolean userInitiated) {
+        if (hostAdapter.getItemCount() == 0) {
+            hostAdapter.setSelectedPosition(0);
+            notifySelectionChanged(userInitiated);
+            return;
+        }
         int boundedPosition = Math.max(0, Math.min(position, hostAdapter.getItemCount() - 1));
         boolean changed = boundedPosition != hostAdapter.getSelectedPosition();
         hostAdapter.setSelectedPosition(boundedPosition);
@@ -407,7 +527,7 @@ public final class HomeHostCarouselView extends RecyclerView
             smoothScrollToPosition(position);
         }
         else {
-            layoutManager.scrollToPositionWithOffset(position, 0);
+            layoutManager.scrollToPositionWithOffset(position, listMode ? dp(6) : 0);
         }
     }
 
@@ -450,6 +570,16 @@ public final class HomeHostCarouselView extends RecyclerView
 
     private void applyCardTransforms() {
         if (getWidth() == 0) {
+            return;
+        }
+        if (listMode) {
+            for (int index = 0; index < getChildCount(); index++) {
+                View child = getChildAt(index);
+                child.setScaleX(1f);
+                child.setScaleY(1f);
+                child.setAlpha(1f);
+                child.setTranslationZ(child.hasFocus() ? dp(8) : dp(2));
+            }
             return;
         }
         float center = getWidth() / 2f;
@@ -496,7 +626,7 @@ public final class HomeHostCarouselView extends RecyclerView
         return Math.round(value * getResources().getDisplayMetrics().density);
     }
 
-    private static final class SpacingDecoration extends ItemDecoration {
+    private final class SpacingDecoration extends ItemDecoration {
         private final int halfSpacing;
 
         SpacingDecoration(int halfSpacing) {
@@ -506,8 +636,14 @@ public final class HomeHostCarouselView extends RecyclerView
         @Override
         public void getItemOffsets(@NonNull Rect outRect, @NonNull View view,
                                    @NonNull RecyclerView parent, @NonNull State state) {
-            outRect.left = halfSpacing;
-            outRect.right = halfSpacing;
+            if (listMode) {
+                outRect.top = dp(6);
+                outRect.bottom = dp(6);
+            }
+            else {
+                outRect.left = halfSpacing;
+                outRect.right = halfSpacing;
+            }
         }
     }
 }

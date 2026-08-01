@@ -16,15 +16,20 @@
         android:paddingRight="10dp"
         android:paddingBottom="4dp">
 
-        <ImageView
+        <ImageButton
             android:id="@+id/iv_back"
-            android:layout_width="@dimen/axi_gameplay_index_app_icon_size"
-            android:layout_height="@dimen/axi_gameplay_index_app_icon_size"
+            android:layout_width="@dimen/home_header_action_size"
+            android:layout_height="@dimen/home_header_action_size"
             android:layout_alignParentLeft="true"
             android:layout_centerVertical="true"
             android:layout_marginRight="10dp"
-            android:focusable="false"
-            android:src="@drawable/axi_gameplay_ic_back_selector" />
+            android:background="@drawable/bg_home_circle_button"
+            android:contentDescription="@string/home_action_back"
+            android:focusable="true"
+            android:nextFocusRight="@id/tx_sponsored"
+            android:padding="11dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_axi_back" />
 
         <TextView
             android:layout_width="wrap_content"

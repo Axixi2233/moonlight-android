@@ -55,7 +55,7 @@
                 android:id="@+id/hostCarousel"
                 android:layout_width="match_parent"
                 android:layout_height="390dp"
-                android:layout_marginTop="14dp"
+                android:layout_marginTop="@dimen/home_host_carousel_margin_top"
                 android:clipToPadding="false"
                 android:descendantFocusability="afterDescendants"
                 android:focusable="true"

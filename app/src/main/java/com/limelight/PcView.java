@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -25,6 +26,7 @@ import com.limelight.nvstream.http.NvApp;
 import com.limelight.nvstream.http.NvHTTP;
 import com.limelight.nvstream.http.PairingManager;
 import com.limelight.nvstream.http.PairingManager.PairState;
+import com.limelight.nvstream.jni.MoonBridge;
 import com.limelight.nvstream.wol.WakeOnLanSender;
 import com.limelight.preferences.AddComputerManually;
 import com.limelight.preferences.GlPreferences;
@@ -57,6 +59,8 @@ import android.graphics.drawable.GradientDrawable;
 import android.graphics.RenderEffect;
 import android.graphics.Shader;
 import android.hardware.input.InputManager;
+import android.hardware.usb.UsbDevice;
+import android.hardware.usb.UsbManager;
 import android.net.Uri;
 import android.opengl.GLSurfaceView;
 import android.os.Build;
@@ -89,6 +93,8 @@ import static android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE;
 
 public class PcView extends Activity {
     private static final String STATE_SELECTED_HOST = "selectedHost";
+    private static final String STATE_HOST_LIST_MODE = "hostListMode";
+    private static final String PREF_HOST_LIST_MODE = "home_host_list_mode";
     private static final String ADD_HOST_SELECTION = "__moonlight_add_host__";
 
     private AlertDialog pairingDialog;
@@ -96,6 +102,9 @@ public class PcView extends Activity {
     private HomeHostCarouselView hostCarousel;
     private HomePageIndicatorView pageIndicator;
     private TextView hostCounter;
+    private TextView hostHint;
+    private ImageButton hostLayoutToggle;
+    private ImageButton hostAddButton;
     private TextView selectedHostSummary;
     private TextView controllerTitle;
     private TextView controllerSubtitle;
@@ -105,6 +114,7 @@ public class PcView extends Activity {
     private boolean inputListenerRegistered;
     private String selectedHostKey = ADD_HOST_SELECTION;
     private boolean hostSelectionExplicit;
+    private boolean hostListMode;
     private ShortcutHelper shortcutHelper;
     private ComputerManagerService.ComputerManagerBinder managerBinder;
     private boolean freezeUpdates, runningPolling, inForeground, completeOnCreateCalled;
@@ -240,11 +250,25 @@ public class PcView extends Activity {
         hostCarousel = findViewById(R.id.hostCarousel);
         pageIndicator = findViewById(R.id.homePageIndicator);
         hostCounter = findViewById(R.id.homeHostCounter);
+        hostHint = findViewById(R.id.homeHostHint);
+        hostLayoutToggle = findViewById(R.id.homeHostLayoutToggle);
+        hostAddButton = findViewById(R.id.homeHostAddButton);
         selectedHostSummary = findViewById(R.id.homeSelectedSummary);
         controllerTitle = findViewById(R.id.homeControllerTitle);
         controllerSubtitle = findViewById(R.id.homeControllerSubtitle);
         controllerStatus = findViewById(R.id.homeControllerStatus);
         controllerDot = findViewById(R.id.homeControllerDot);
+
+        hostLayoutToggle.setOnClickListener(view -> {
+            hostListMode = !hostListMode;
+            PreferenceManager.getDefaultSharedPreferences(PcView.this)
+                    .edit()
+                    .putBoolean(PREF_HOST_LIST_MODE, hostListMode)
+                    .apply();
+            applyHostLayoutMode();
+            configureHomeLayout();
+        });
+        hostAddButton.setOnClickListener(view -> launchAddHost());
 
         hostCarousel.setListener(new HomeHostCarouselView.Listener() {
             @Override
@@ -253,8 +277,12 @@ public class PcView extends Activity {
                                            boolean userInitiated) {
                 selectedHostKey = selectionKey;
                 hostSelectionExplicit |= userInitiated;
-                pageIndicator.setPageState(hostCount + 1, position);
+                pageIndicator.setPageState(hostCarousel.getDisplayItemCount(), position);
+                if (hostCarousel.isListMode()) {
+                    pageIndicator.setVisibility(View.GONE);
+                }
                 updateHostSelectionSummary(position, hostCount, computer, addCard);
+                updateHostHeaderActions();
             }
 
             @Override
@@ -269,10 +297,11 @@ public class PcView extends Activity {
 
             @Override
             public void onAddHost() {
-                startActivity(new Intent(PcView.this, AddComputerManually.class));
+                launchAddHost();
             }
         });
 
+        applyHostLayoutMode();
         configureHomeLayout();
         configureHomeSystemBars();
         updateDeviceCard();
@@ -296,7 +325,12 @@ public class PcView extends Activity {
         if (savedInstanceState != null) {
             selectedHostKey = savedInstanceState.getString(
                     STATE_SELECTED_HOST, ADD_HOST_SELECTION);
+            hostListMode = savedInstanceState.getBoolean(STATE_HOST_LIST_MODE, false);
             hostSelectionExplicit = true;
+        }
+        else {
+            hostListMode = PreferenceManager.getDefaultSharedPreferences(this)
+                    .getBoolean(PREF_HOST_LIST_MODE, false);
         }
 
         // Assume we're in the foreground when created to avoid a race
@@ -454,6 +488,7 @@ public class PcView extends Activity {
             selectedHostKey = hostCarousel.getSelectedKey();
         }
         outState.putString(STATE_SELECTED_HOST, selectedHostKey);
+        outState.putBoolean(STATE_HOST_LIST_MODE, hostListMode);
         super.onSaveInstanceState(outState);
     }
 
@@ -898,6 +933,7 @@ public class PcView extends Activity {
             selectedHostKey = computers.get(0).details.uuid;
         }
         hostCarousel.setComputers(computers, selectedHostKey);
+        configureHomeLayout();
     }
 
     private static int getHostSortRank(ComputerObject computer) {
@@ -908,12 +944,62 @@ public class PcView extends Activity {
         return computer.details.state == ComputerDetails.State.ONLINE ? 0 : 2;
     }
 
-    private void updateHostSelectionSummary(int position, int hostCount,
-                                            ComputerObject computer, boolean addCard) {
+    private void launchAddHost() {
+        startActivity(new Intent(PcView.this, AddComputerManually.class));
+    }
+
+    private void applyHostLayoutMode() {
+        if (hostCarousel == null || hostLayoutToggle == null || hostAddButton == null) {
+            return;
+        }
+
+        boolean portrait = getResources().getConfiguration().orientation
+                == Configuration.ORIENTATION_PORTRAIT;
+        boolean activeListMode = portrait && hostListMode;
+        hostLayoutToggle.setVisibility(portrait ? View.VISIBLE : View.GONE);
+        hostCarousel.setHeaderAddAvailable(portrait);
+        hostCarousel.setListMode(activeListMode);
+        hostLayoutToggle.setImageResource(activeListMode
+                ? R.drawable.ic_home_layout_cards
+                : R.drawable.ic_home_layout_list);
+        hostLayoutToggle.setContentDescription(getString(activeListMode
+                ? R.string.home_switch_to_cards
+                : R.string.home_switch_to_list));
+        if (hostHint != null) {
+            hostHint.setText(activeListMode
+                    ? R.string.home_select_host_list_hint
+                    : R.string.home_select_host_hint);
+        }
         if (hostCounter != null) {
-            hostCounter.setText(addCard
-                    ? getString(R.string.home_add_host)
-                    : getString(R.string.home_host_count_format, position + 1, hostCount));
+            hostCounter.setVisibility(activeListMode ? View.GONE : View.VISIBLE);
+        }
+        if (pageIndicator != null) {
+            pageIndicator.setVisibility(activeListMode ? View.GONE : View.VISIBLE);
+        }
+        updateHostHeaderActions();
+    }
+
+    private void updateHostHeaderActions() {
+        if (hostCarousel == null || hostAddButton == null) {
+            return;
+        }
+        hostAddButton.setVisibility(hostCarousel.shouldShowHeaderAddButton()
+                ? View.VISIBLE : View.GONE);
+    }
+
+    private void updateHostSelectionSummary(int position, int hostCount,
+                                             ComputerObject computer, boolean addCard) {
+        if (hostCounter != null) {
+            if (addCard) {
+                hostCounter.setText(R.string.home_add_host);
+            }
+            else if (hostCount == 0) {
+                hostCounter.setText(getString(R.string.home_host_count_format, 0, 0));
+            }
+            else {
+                hostCounter.setText(getString(
+                        R.string.home_host_count_format, position + 1, hostCount));
+            }
         }
         if (selectedHostSummary == null) {
             return;
@@ -982,9 +1068,22 @@ public class PcView extends Activity {
             }
         }
         else {
+            if (carouselParams instanceof ViewGroup.MarginLayoutParams) {
+                ViewGroup.MarginLayoutParams marginParams =
+                        (ViewGroup.MarginLayoutParams) carouselParams;
+                marginParams.topMargin = getResources().getDimensionPixelSize(
+                        hostCarousel.isListMode()
+                                ? R.dimen.home_host_carousel_margin_top
+                                : R.dimen.home_host_carousel_portrait_card_margin_top);
+            }
             boolean phonePortrait = getResources().getConfiguration().smallestScreenWidthDp < 600;
             int carouselHeightDp;
-            if (phonePortrait) {
+            if (hostCarousel.isListMode()) {
+                int maxVisibleRows = heightDp < 720 ? 3 : heightDp < 840 ? 4 : 5;
+                int visibleRows = Math.min(hostCarousel.getHostCount(), maxVisibleRows);
+                carouselHeightDp = visibleRows == 0 ? 0 : visibleRows * 88;
+            }
+            else if (phonePortrait) {
                 if (heightDp < 720) {
                     carouselHeightDp = 310;
                 }
@@ -1160,10 +1259,13 @@ public class PcView extends Activity {
 
         boolean connected = !controllers.isEmpty();
         if (connected) {
-            controllerTitle.setText(controllers.get(0).getName());
-            controllerSubtitle.setText(controllers.size() == 1
-                    ? getString(R.string.home_controller_system_input)
-                    : getString(R.string.home_controller_count_format, controllers.size()));
+            InputDevice primaryController = controllers.get(0);
+            controllerTitle.setText(getControllerDisplayName(primaryController));
+            controllerSubtitle.setText(getString(
+                    R.string.home_controller_device_detail,
+                    formatUsbId(primaryController.getVendorId()),
+                    formatUsbId(primaryController.getProductId()),
+                    getControllerTypeDisplayName(primaryController)));
             controllerStatus.setText(R.string.home_controller_connected);
             controllerStatus.setTextColor(getResources().getColor(R.color.home_connected));
             setStatusDot(controllerDot, getResources().getColor(R.color.home_connected));
@@ -1175,6 +1277,100 @@ public class PcView extends Activity {
             controllerStatus.setTextColor(getResources().getColor(R.color.home_secondary_text));
             setStatusDot(controllerDot, getResources().getColor(R.color.home_secondary_text));
         }
+    }
+
+    private String getControllerDisplayName(InputDevice inputDevice) {
+        String displayName = inputDevice.getName();
+        UsbManager usbManager = (UsbManager) getSystemService(USB_SERVICE);
+        if (usbManager != null) {
+            try {
+                for (UsbDevice usbDevice : usbManager.getDeviceList().values()) {
+                    if (usbDevice.getVendorId() == inputDevice.getVendorId()
+                            && usbDevice.getProductId() == inputDevice.getProductId()
+                            && !TextUtils.isEmpty(usbDevice.getProductName())) {
+                        displayName = usbDevice.getProductName();
+                        break;
+                    }
+                }
+            }
+            catch (SecurityException ignored) {
+                // Some devices hide USB string descriptors until permission is granted.
+            }
+        }
+
+        return removeDuplicatedControllerBrand(displayName);
+    }
+
+    private static String removeDuplicatedControllerBrand(String rawName) {
+        if (TextUtils.isEmpty(rawName)) {
+            return "Gamepad";
+        }
+
+        String cleanedName = rawName.trim().replaceAll("\\s+", " ");
+        String[] words = cleanedName.split(" ");
+        for (int prefixLength = words.length / 2; prefixLength >= 1; prefixLength--) {
+            boolean duplicated = true;
+            for (int index = 0; index < prefixLength; index++) {
+                if (!words[index].equalsIgnoreCase(words[index + prefixLength])) {
+                    duplicated = false;
+                    break;
+                }
+            }
+            if (duplicated) {
+                return TextUtils.join(
+                        " ", Arrays.copyOfRange(words, prefixLength, words.length));
+            }
+        }
+        return cleanedName;
+    }
+
+    private static String formatUsbId(int id) {
+        return String.format(Locale.ROOT, "%04X", id & 0xFFFF);
+    }
+
+    private static String getControllerTypeDisplayName(InputDevice inputDevice) {
+        int vendorId = inputDevice.getVendorId();
+        int productId = inputDevice.getProductId();
+        byte type;
+        switch (vendorId) {
+            case 0x045e:
+                type = MoonBridge.LI_CTYPE_XBOX;
+                break;
+            case 0x054c:
+                type = MoonBridge.LI_CTYPE_PS;
+                break;
+            case 0x057e:
+                type = MoonBridge.LI_CTYPE_NINTENDO;
+                break;
+            default:
+                type = MoonBridge.guessControllerType(vendorId, productId);
+                break;
+        }
+
+        if (type == MoonBridge.LI_CTYPE_XBOX) {
+            return "Xbox";
+        }
+        if (type == MoonBridge.LI_CTYPE_PS) {
+            return "DS";
+        }
+        if (type == MoonBridge.LI_CTYPE_NINTENDO) {
+            return "NS";
+        }
+
+        String deviceName = inputDevice.getName() == null
+                ? "" : inputDevice.getName().toLowerCase(Locale.ROOT);
+        if (deviceName.contains("xbox") || deviceName.contains("xinput")) {
+            return "Xbox";
+        }
+        if (deviceName.contains("dualsense") || deviceName.contains("dualshock")
+                || deviceName.contains("playstation")) {
+            return "DS";
+        }
+        if (deviceName.contains("nintendo") || deviceName.contains("switch")
+                || deviceName.contains("joy-con")) {
+            return "NS";
+        }
+        return "HID";
     }
 
     private static void setStatusDot(View view, int color) {
