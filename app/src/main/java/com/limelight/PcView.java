@@ -109,6 +109,7 @@ public class PcView extends Activity {
     private ComputerManagerService.ComputerManagerBinder managerBinder;
     private boolean freezeUpdates, runningPolling, inForeground, completeOnCreateCalled;
     private boolean autoUpdateCheckStarted;
+    private boolean redirectingToBackgroundStream;
     private final InputManager.InputDeviceListener inputDeviceListener = new InputManager.InputDeviceListener() {
         @Override
         public void onInputDeviceAdded(int deviceId) {
@@ -286,6 +287,12 @@ public class PcView extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        if (Game.resumeBackgroundStreamIfPresent(this)) {
+            redirectingToBackgroundStream = true;
+            finish();
+            return;
+        }
+
         if (savedInstanceState != null) {
             selectedHostKey = savedInstanceState.getString(
                     STATE_SELECTED_HOST, ADD_HOST_SELECTION);
@@ -416,6 +423,12 @@ public class PcView extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+
+        if (!redirectingToBackgroundStream && Game.resumeBackgroundStreamIfPresent(this)) {
+            redirectingToBackgroundStream = true;
+            finish();
+            return;
+        }
 
         // Display a decoder crash notification if we've returned after a crash
         UiHelper.showDecoderCrashDialog(this);

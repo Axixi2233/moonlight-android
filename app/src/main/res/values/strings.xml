@@ -170,6 +170,7 @@
     <string name="stream_loading_step_picture">Picture</string>
     <string name="stream_loading_cancel">Cancel connection</string>
     <string name="stream_loading_back">Back</string>
+    <string name="stream_background_reconnecting">Restoring stream (%1$d/%2$d)…</string>
     <string name="stream_phase_preparing">Preparing stream</string>
     <string name="stream_phase_preparing_detail">Preparing the decoder and display surface</string>
     <string name="stream_phase_launching">Starting host application</string>

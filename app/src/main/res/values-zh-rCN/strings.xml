@@ -251,6 +251,7 @@
     <string name="stream_loading_step_picture">画面</string>
     <string name="stream_loading_cancel">取消连接</string>
     <string name="stream_loading_back">返回</string>
+    <string name="stream_background_reconnecting">正在恢复串流（%1$d/%2$d）</string>
     <string name="stream_phase_preparing">正在准备串流</string>
     <string name="stream_phase_preparing_detail">正在准备解码器和画面输出</string>
     <string name="stream_phase_launching">正在启动主机应用</string>

@@ -82,7 +82,8 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
     private boolean reportedCrash;
     private int consecutiveCrashCount;
     private String glRenderer;
-    private boolean foreground = true;
+    private volatile boolean foreground = true;
+    private volatile boolean resumeNeedsIdr;
     private PerfOverlayListener perfListener;
     private volatile FirstFrameListener firstFrameListener;
     private final AtomicBoolean firstFrameReported = new AtomicBoolean(false);
@@ -302,10 +303,19 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
     }
 
     public void setRenderTarget(Surface renderTarget) {
+        Surface previousRenderTarget = this.renderTarget;
         this.renderTarget = renderTarget;
 
         MediaCodec decoder = videoDecoder;
-        if (decoder == null || renderTarget == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+        if (decoder == null || renderTarget == null || previousRenderTarget == renderTarget) {
+            return;
+        }
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            LimeLog.info("MediaCodec output surface changed on Android 5.x; requesting decoder restart");
+            if (!codecRecoveryType.compareAndSet(CR_RECOVERY_TYPE_NONE, CR_RECOVERY_TYPE_RESTART)) {
+                codecRecoveryType.compareAndSet(CR_RECOVERY_TYPE_FLUSH, CR_RECOVERY_TYPE_RESTART);
+            }
             return;
         }
 
@@ -482,6 +492,11 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
     }
 
     public void notifyVideoForeground() {
+        if (!foreground) {
+            // All compressed frames are discarded while the Activity has no renderable surface.
+            // Require a fresh reference frame before feeding MediaCodec again.
+            resumeNeedsIdr = true;
+        }
         foreground = true;
     }
 
@@ -1028,6 +1043,22 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
             return;
         }
 
+        if (!foreground) {
+            Integer outputBuffer;
+            while ((outputBuffer = outputBufferQueue.poll()) != null) {
+                try {
+                    videoDecoder.releaseOutputBuffer(outputBuffer, false);
+                } catch (IllegalStateException e) {
+                    handleDecoderException(e);
+                    break;
+                }
+            }
+
+            doCodecRecoveryIfRequired(CR_FLAG_CHOREOGRAPHER);
+            Choreographer.getInstance().postFrameCallback(this);
+            return;
+        }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             frameTimeNanos -= activity.getWindowManager().getDefaultDisplay().getAppVsyncOffsetNanos();
         }
@@ -1111,6 +1142,15 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
                             int lastIndex = outIndex;
 
                             numFramesOut++;
+
+                            if (!foreground) {
+                                videoDecoder.releaseOutputBuffer(lastIndex, false);
+                                while ((outIndex = videoDecoder.dequeueOutputBuffer(info, 0)) >= 0) {
+                                    videoDecoder.releaseOutputBuffer(outIndex, false);
+                                    numFramesOut++;
+                                }
+                                continue;
+                            }
 
                             // Render the latest frame now if frame pacing isn't in balanced mode
                             if (forceImmediateRendering || prefs.framePacing != PreferenceConfiguration.FRAME_PACING_BALANCED) {
@@ -1453,6 +1493,21 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
         if (stopping) {
             // Don't bother if we're stopping
             return MoonBridge.DR_OK;
+        }
+
+        if (!foreground) {
+            // Keep the network session alive without feeding frames into a decoder whose Surface
+            // may already have been destroyed. A new IDR is requested when rendering resumes.
+            return MoonBridge.DR_OK;
+        }
+
+        if (resumeNeedsIdr) {
+            if (frameType != MoonBridge.FRAME_TYPE_IDR) {
+                return MoonBridge.DR_NEED_IDR;
+            }
+
+            resumeNeedsIdr = false;
+            lastFrameNumber = 0;
         }
 
         if (lastFrameNumber == 0) {

@@ -328,9 +328,6 @@ public class PreferenceConfiguration {
     //显示无障碍模式的键值
     public boolean enableAccessibilityShowLog;
 
-    //亮屏自动回连
-    public int enableScreenOnAuto;
-
     //使用自定义主屏幕背景
     public boolean enableScreenBg;
 
@@ -993,7 +990,6 @@ public class PreferenceConfiguration {
 
         config.enableAccessibilityShowLog=prefs.getBoolean("checkbox_enable_accessibility_show_log",false);
 
-        config.enableScreenOnAuto=prefs.getInt("enable_screen_on_auto",0);
 
         config.enableScreenBg=prefs.getBoolean("checkbox_enable_screen_bg",false);
 

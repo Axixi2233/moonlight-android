@@ -91,7 +91,17 @@ public final class StreamLoadingOverlayController {
     }
 
     public void showPreparing(String customDetail) {
-        postPhase(Phase.PREPARING, customDetail);
+        mainHandler.post(() -> {
+            // A retained stream can fail after this overlay has already reached CONNECTED.
+            // Reset the terminal phase so the reconnect attempt is visible and subsequent
+            // connection stages are allowed to advance normally again.
+            if (phase == Phase.CONNECTED || phase == Phase.FAILED) {
+                mainHandler.removeCallbacks(hideRunnable);
+                cancelProgressAnimator();
+                progress.setProgress(0);
+            }
+            showPhase(Phase.PREPARING, customDetail);
+        });
     }
 
     public void onStageStarting(String stage) {

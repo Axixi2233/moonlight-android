@@ -93,6 +93,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
+import android.os.PowerManager;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.text.SpannableString;
@@ -142,10 +144,38 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         PerfOverlayListener, UsbDriverService.UsbDriverStateListener, View.OnKeyListener{
     private static final float EXTERNAL_TOUCHPAD_SCROLL_FACTOR = 0.15f;
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 1001;
+    private static final String EXTRA_BACKGROUND_RECONNECT_ATTEMPT = "BackgroundReconnectAttempt";
+    private static final int MAX_BACKGROUND_RECONNECT_ATTEMPTS = 3;
+    private static final long BACKGROUND_RECONNECT_GRACE_MS = 10_000L;
     private static final int STEREO_FULL_SBS_WIDTH = 3840;
     private static final int STEREO_FULL_SBS_HEIGHT_1080 = 1080;
     private static final int STEREO_FULL_SBS_HEIGHT_1200 = 1200;
     public static Game instance;
+
+    public static boolean resumeBackgroundStreamIfPresent(Activity launcherActivity) {
+        Game game = instance;
+        if (game == null || game.activityResumed || game.isFinishing() ||
+                (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && game.isDestroyed())) {
+            return false;
+        }
+
+        boolean hasRecoverableSession = game.connected || game.streamSessionBackgrounded ||
+                game.pendingBackgroundReconnect || game.restartingForBackgroundReconnect;
+        if (!hasRecoverableSession) {
+            return false;
+        }
+
+        // Some launchers create a new root PcView when the user taps the app icon instead of
+        // bringing the stopped Game activity to the front. Reorder the existing stream activity
+        // explicitly so onResume() can restore the retained session or run the reconnect fallback.
+        Intent restoreIntent = new Intent(game.getIntent());
+        restoreIntent.setClass(launcherActivity, Game.class);
+        restoreIntent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT |
+                Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        LimeLog.info("Background stream: launcher entry is returning to the active stream");
+        launcherActivity.startActivity(restoreIntent);
+        return true;
+    }
 
     private int lastButtonState = 0;
     private float externalTouchpadScrollRemainderX = 0f;
@@ -281,6 +311,18 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     private Surface fsrInputSurface;
     private boolean usbPermissionPromptVisible;
     private boolean fsrViewLifecyclePaused;
+    private boolean activityResumed;
+    private volatile boolean streamSessionBackgrounded;
+    private boolean restoreInputGrabAfterBackground;
+    private boolean restartMicAfterBackground;
+    private PowerManager.WakeLock backgroundStreamWakeLock;
+    private final Handler backgroundReconnectHandler = new Handler(Looper.getMainLooper());
+    private volatile long backgroundReconnectEligibleUntilElapsedMs;
+    private volatile int backgroundReconnectAttempt;
+    private volatile boolean pendingBackgroundReconnect;
+    private boolean backgroundReconnectCleanupComplete;
+    private volatile boolean restartingForBackgroundReconnect;
+    private int pendingBackgroundReconnectErrorCode;
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -333,8 +375,17 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         prefConfig = PreferenceConfiguration.readPreferences(this);
         appName = getIntent().getStringExtra(EXTRA_APP_NAME);
         pcName = getIntent().getStringExtra(EXTRA_PC_NAME);
+        backgroundReconnectAttempt = getIntent().getIntExtra(EXTRA_BACKGROUND_RECONNECT_ATTEMPT, 0);
         streamSessionLogger = StreamSessionLogger.create(this, prefConfig, pcName, appName);
         logSessionInfo("LIFECYCLE", "串流页面已创建");
+        if (backgroundReconnectAttempt > 0) {
+            logSessionInfo("CONNECT", "开始后台回连，第 " + backgroundReconnectAttempt + "/"
+                    + MAX_BACKGROUND_RECONNECT_ATTEMPTS + " 次");
+            streamLoadingController.showPreparing(getString(
+                    R.string.stream_background_reconnecting,
+                    backgroundReconnectAttempt,
+                    MAX_BACKGROUND_RECONNECT_ATTEMPTS));
+        }
         tombstonePrefs = Game.this.getSharedPreferences("DecoderTombstone", 0);
 
         // Enter landscape unless we're on a square screen
@@ -422,10 +473,14 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                                 decoderRenderer.setRenderTarget(fsrInputSurface);
                             }
                             startConnectionIfReady();
+                            resumeRetainedStreamIfReady();
                         }
 
                         @Override
                         public void onInputSurfaceDestroyed() {
+                            if (attemptedConnection && connected && !isFinishing()) {
+                                suspendStreamForBackground(true);
+                            }
                             fsrInputSurfaceReady = false;
                             if (fsrInputSurface != null) {
                                 fsrInputSurface.release();
@@ -1500,12 +1555,14 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         // that case here too.
         if (isInMultiWindowMode) {
             getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-            decoderRenderer.notifyVideoBackground();
         }
         else {
             getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-            decoderRenderer.notifyVideoForeground();
         }
+
+        // Multi-window and PiP are still visible rendering states. If a Surface replacement
+        // temporarily suspended the stream, resume it as soon as the new target is ready.
+        resumeRetainedStreamIfReady();
 
         // Correct the system UI visibility flags
         hideSystemUi(50);
@@ -1514,6 +1571,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     @Override
     protected void onDestroy() {
         logSessionInfo("LIFECYCLE", "串流页面正在销毁");
+        backgroundReconnectHandler.removeCallbacksAndMessages(null);
 
         if (virtualMouseOverlay != null) {
             virtualMouseOverlay.destroy();
@@ -1533,6 +1591,12 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
         if(presentation!=null){
             presentation.dismiss();
+        }
+
+        releaseBackgroundStreamWakeLock();
+        if (connecting || connected) {
+            decoderRenderer.prepareForStop();
+            stopConnection();
         }
 
         if (controllerHandler != null) {
@@ -1577,6 +1641,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     @Override
     protected void onResume() {
         super.onResume();
+        activityResumed = true;
 
         if (virtualMouseOverlay != null) {
             setVirtualMouseInputSuppressed(false);
@@ -1589,10 +1654,19 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             fsrView.onResume();
             fsrViewLifecyclePaused = false;
         }
+
+        resumeRetainedStreamIfReady();
+        maybeStartBackgroundReconnect();
     }
 
     @Override
     protected void onPause() {
+        activityResumed = false;
+
+        if (!isFinishing()) {
+            suspendStreamForBackground();
+        }
+
         if (virtualMouseOverlay != null) {
             virtualMouseOverlay.setInputSuppressed(true);
         }
@@ -1646,6 +1720,18 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
         if(dialogGameMenu!=null&&dialogGameMenu.isVisible()){
             dialogGameMenu.dismiss();
+        }
+
+        if (restartingForBackgroundReconnect || isChangingConfigurations()) {
+            logSessionInfo("LIFECYCLE", "串流页面为后台回连而重建");
+            return;
+        }
+
+        if (!isFinishing() && connected) {
+            suspendStreamForBackground();
+            if (streamSessionBackgrounded || isStreamVisibleWhilePaused()) {
+                return;
+            }
         }
 
         if (conn != null) {
@@ -1712,33 +1798,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                         .apply();
             }
         }
-        if(prefConfig.enableScreenOnAuto!=0){
-            isAutoLink=true;
-            return;
-        }
         finish();
-    }
-
-    @Override
-    public void finish() {
-        super.finish();
-        if(prefConfig.enableScreenOnAuto==1){
-            PreferenceManager.getDefaultSharedPreferences(this)
-                    .edit()
-                    .putInt("enable_screen_on_auto",0)
-                    .commit();
-        }
-    }
-
-    private boolean isAutoLink=false;
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        if (isAutoLink) {
-            isAutoLink = false;
-            recreate();
-        }
     }
 
     private void setInputGrabState(boolean grab) {
@@ -2987,6 +3047,15 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     }
 
     private void stopConnection() {
+        stopConnection(null);
+    }
+
+    private void stopConnection(final Runnable afterStop) {
+        streamSessionBackgrounded = false;
+        restoreInputGrabAfterBackground = false;
+        restartMicAfterBackground = false;
+        releaseBackgroundStreamWakeLock();
+
         if (connecting || connected) {
             logSessionInfo("CONNECT", "请求停止串流连接");
             connecting = connected = false;
@@ -3004,11 +3073,18 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             // thread to keep things smooth for the UI. Inside moonlight-common,
             // we prevent another thread from starting a connection before and
             // during the process of stopping this one.
+            final NvConnection connectionToStop = conn;
             new Thread() {
                 public void run() {
-                    conn.stop();
+                    connectionToStop.stop();
+                    if (afterStop != null) {
+                        runOnUiThread(afterStop);
+                    }
                 }
             }.start();
+        }
+        else if (afterStop != null) {
+            runOnUiThread(afterStop);
         }
     }
 
@@ -3016,6 +3092,16 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     public void stageFailed(final String stage, final int portFlags, final int errorCode) {
         logSessionWarn("CONNECT", "连接阶段失败: " + stage + ", error=" + errorCode
                 + (portFlags != 0 ? ", ports=" + portFlags : ""));
+
+        if (restartingForBackgroundReconnect) {
+            return;
+        }
+        if (backgroundReconnectAttempt > 0 &&
+                backgroundReconnectAttempt < MAX_BACKGROUND_RECONNECT_ATTEMPTS) {
+            runOnUiThread(() -> handleBackgroundReconnectAttemptFailed(errorCode));
+            return;
+        }
+
         // Perform a connection test if the failure could be due to a blocked port
         // This does network I/O, so don't do it on the main thread.
         final int portTestResult = MoonBridge.testClientConnectivity(ServerHelper.CONNECTION_TEST_SERVER, 443, portFlags);
@@ -3057,6 +3143,22 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         else {
             logSessionWarn("CONNECT", "连接异常中断, code=" + errorCode);
         }
+
+        if (pendingBackgroundReconnect || restartingForBackgroundReconnect) {
+            logSessionInfo("CONNECT", "后台回连清理期间忽略重复的终止回调, code=" + errorCode);
+            return;
+        }
+        boolean backgroundReconnectCandidate = isBackgroundReconnectCandidate(errorCode);
+        LimeLog.info("Background recovery decision: code=" + errorCode +
+                ", candidate=" + backgroundReconnectCandidate +
+                ", backgrounded=" + streamSessionBackgrounded +
+                ", resumed=" + activityResumed +
+                ", attempt=" + backgroundReconnectAttempt);
+        if (backgroundReconnectCandidate) {
+            runOnUiThread(() -> prepareBackgroundReconnect(errorCode));
+            return;
+        }
+
         // Perform a connection test if the failure could be due to a blocked port
         // This does network I/O, so don't do it on the main thread.
         final int portFlags = MoonBridge.getPortFlagsFromTerminationErrorCode(errorCode);
@@ -3193,6 +3295,21 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 connected = true;
                 connecting = false;
                 streamStartElapsedMs = SystemClock.elapsedRealtime();
+                if (backgroundReconnectAttempt > 0) {
+                    final int completedAttempt = backgroundReconnectAttempt;
+                    backgroundReconnectEligibleUntilElapsedMs = SystemClock.elapsedRealtime()
+                            + BACKGROUND_RECONNECT_GRACE_MS;
+                    logSessionInfo("CONNECT", "后台回连已建立，等待连接稳定");
+                    backgroundReconnectHandler.postDelayed(() -> {
+                        if (connected && !streamSessionBackgrounded &&
+                                backgroundReconnectAttempt == completedAttempt) {
+                            backgroundReconnectAttempt = 0;
+                            backgroundReconnectEligibleUntilElapsedMs = 0L;
+                            getIntent().removeExtra(EXTRA_BACKGROUND_RECONNECT_ATTEMPT);
+                            logSessionInfo("CONNECT", "后台回连已稳定");
+                        }
+                    }, BACKGROUND_RECONNECT_GRACE_MS);
+                }
                 updatePipAutoEnter();
                 streamLoadingController.onConnectionStarted();
 
@@ -3252,6 +3369,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     @Override
     public void rumble(short controllerNumber, short lowFreqMotor, short highFreqMotor) {
+        if (streamSessionBackgrounded) {
+            return;
+        }
         LimeLog.info(String.format((Locale)null, "Rumble on gamepad %d: %04x %04x", controllerNumber, lowFreqMotor, highFreqMotor));
         controllerHandler.handleRumble(controllerNumber, lowFreqMotor, highFreqMotor);
         //联动扳机震动
@@ -3271,6 +3391,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     @Override
     public void rumbleTriggers(short controllerNumber, short leftTrigger, short rightTrigger) {
+        if (streamSessionBackgrounded) {
+            return;
+        }
         LimeLog.info(String.format((Locale)null, "Rumble on gamepad triggers %d: %04x %04x", controllerNumber, leftTrigger, rightTrigger));
 
         controllerHandler.handleRumbleTriggers(controllerNumber, leftTrigger, rightTrigger);
@@ -3326,6 +3449,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             conn.start(audioRenderer,
                     decoderRenderer, Game.this);
         }
+        else {
+            resumeRetainedStreamIfReady();
+        }
     }
 
     @Override
@@ -3339,10 +3465,14 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 return;
             }
             fsrDisplaySurfaceCreated = true;
-            startConnectionIfReady();
         }
 
         surfaceCreated = true;
+
+        if (glesRenderingEnabled) {
+            startConnectionIfReady();
+        }
+        resumeRetainedStreamIfReady();
 
         // Android will pick the lowest matching refresh rate for a given frame rate value, so we want
         // to report the true FPS value if refresh rate reduction is enabled. We also report the true
@@ -3394,6 +3524,11 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         surfaceCreated = false;
 
         if (attemptedConnection) {
+            if (connected && !isFinishing()) {
+                suspendStreamForBackground(true);
+                return;
+            }
+
             // Let the decoder know immediately that the surface is gone
             decoderRenderer.prepareForStop();
 
@@ -4106,6 +4241,259 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         if (virtualMouseOverlay != null) {
             virtualMouseOverlay.toggleEnabledForCurrentStream();
         }
+    }
+
+    private boolean isBackgroundReconnectCandidate(int errorCode) {
+        if (errorCode == MoonBridge.ML_ERROR_GRACEFUL_TERMINATION ||
+                errorCode == MoonBridge.ML_ERROR_PROTECTED_CONTENT ||
+                errorCode == MoonBridge.ML_ERROR_FRAME_CONVERSION ||
+                isQuitSteamingFlag || isFinishing()) {
+            return false;
+        }
+        if (backgroundReconnectAttempt >= MAX_BACKGROUND_RECONNECT_ATTEMPTS) {
+            return false;
+        }
+
+        long now = SystemClock.elapsedRealtime();
+        return streamSessionBackgrounded ||
+                backgroundReconnectAttempt > 0 ||
+                now <= backgroundReconnectEligibleUntilElapsedMs;
+    }
+
+    private void prepareBackgroundReconnect(int errorCode) {
+        if (!isBackgroundReconnectCandidate(errorCode) || pendingBackgroundReconnect ||
+                restartingForBackgroundReconnect) {
+            return;
+        }
+
+        pendingBackgroundReconnect = true;
+        backgroundReconnectCleanupComplete = false;
+        pendingBackgroundReconnectErrorCode = errorCode;
+        backgroundReconnectEligibleUntilElapsedMs = 0L;
+        displayedFailureDialog = false;
+        logSessionWarn("CONNECT", "后台期间连接中断，等待回到前台自动恢复, code=" + errorCode);
+        LimeLog.warning("Background stream interrupted; reconnect will start when Game resumes. code="
+                + errorCode);
+
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        if (controllerHandler != null) {
+            controllerHandler.stop();
+        }
+        if (grabbedInput) {
+            setInputGrabState(false);
+        }
+
+        int nextAttempt = Math.min(backgroundReconnectAttempt + 1,
+                MAX_BACKGROUND_RECONNECT_ATTEMPTS);
+        streamLoadingController.showPreparing(getString(
+                R.string.stream_background_reconnecting,
+                nextAttempt,
+                MAX_BACKGROUND_RECONNECT_ATTEMPTS));
+        stopConnection(() -> {
+            backgroundReconnectCleanupComplete = true;
+            maybeStartBackgroundReconnect();
+        });
+    }
+
+    private void handleBackgroundReconnectAttemptFailed(int errorCode) {
+        if (isFinishing() || isQuitSteamingFlag || restartingForBackgroundReconnect ||
+                backgroundReconnectAttempt <= 0 ||
+                backgroundReconnectAttempt >= MAX_BACKGROUND_RECONNECT_ATTEMPTS) {
+            return;
+        }
+
+        pendingBackgroundReconnect = true;
+        backgroundReconnectCleanupComplete = true;
+        pendingBackgroundReconnectErrorCode = errorCode;
+        displayedFailureDialog = false;
+        connecting = false;
+        logSessionWarn("CONNECT", "后台回连失败，准备重试, attempt="
+                + backgroundReconnectAttempt + ", code=" + errorCode);
+        maybeStartBackgroundReconnect();
+    }
+
+    private void maybeStartBackgroundReconnect() {
+        if (!pendingBackgroundReconnect || !backgroundReconnectCleanupComplete ||
+                restartingForBackgroundReconnect || !activityResumed ||
+                isFinishing() || isQuitSteamingFlag) {
+            return;
+        }
+
+        final int nextAttempt = backgroundReconnectAttempt + 1;
+        if (nextAttempt > MAX_BACKGROUND_RECONNECT_ATTEMPTS) {
+            pendingBackgroundReconnect = false;
+            displayedFailureDialog = true;
+            streamLoadingController.showFailure(getString(R.string.conn_terminated_msg)
+                    + "\n\n" + getString(R.string.error_code_prefix) + " "
+                    + pendingBackgroundReconnectErrorCode);
+            return;
+        }
+
+        pendingBackgroundReconnect = false;
+        restartingForBackgroundReconnect = true;
+        getIntent().putExtra(EXTRA_BACKGROUND_RECONNECT_ATTEMPT, nextAttempt);
+        streamLoadingController.showPreparing(getString(
+                R.string.stream_background_reconnecting,
+                nextAttempt,
+                MAX_BACKGROUND_RECONNECT_ATTEMPTS));
+        logSessionInfo("CONNECT", "准备重建串流页面并回连，第 " + nextAttempt + "/"
+                + MAX_BACKGROUND_RECONNECT_ATTEMPTS + " 次");
+        LimeLog.info("Background stream reconnect: scheduling attempt " + nextAttempt + "/"
+                + MAX_BACKGROUND_RECONNECT_ATTEMPTS);
+
+        long retryDelayMs = nextAttempt == 1 ? 250L : nextAttempt == 2 ? 1_250L : 2_500L;
+        backgroundReconnectHandler.postDelayed(() -> {
+            if (isFinishing() || isQuitSteamingFlag) {
+                restartingForBackgroundReconnect = false;
+                return;
+            }
+            if (!activityResumed) {
+                restartingForBackgroundReconnect = false;
+                pendingBackgroundReconnect = true;
+                backgroundReconnectCleanupComplete = true;
+                return;
+            }
+            recreate();
+        }, retryDelayMs);
+    }
+
+    private boolean isStreamVisibleWhilePaused() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && isInMultiWindowMode()) {
+            return true;
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && isInPictureInPictureMode()) {
+            return true;
+        }
+        return presentation != null && presentation.isShowing();
+    }
+
+    private void acquireBackgroundStreamWakeLock() {
+        if (backgroundStreamWakeLock == null) {
+            PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
+            backgroundStreamWakeLock = powerManager.newWakeLock(
+                    PowerManager.PARTIAL_WAKE_LOCK, getPackageName() + ":background-stream");
+            backgroundStreamWakeLock.setReferenceCounted(false);
+        }
+        if (!backgroundStreamWakeLock.isHeld()) {
+            backgroundStreamWakeLock.acquire();
+        }
+    }
+
+    private void releaseBackgroundStreamWakeLock() {
+        if (backgroundStreamWakeLock != null && backgroundStreamWakeLock.isHeld()) {
+            backgroundStreamWakeLock.release();
+        }
+    }
+
+    private void suspendStreamForBackground() {
+        suspendStreamForBackground(false);
+    }
+
+    private void suspendStreamForBackground(boolean renderSurfaceUnavailable) {
+        if (streamSessionBackgrounded || !connected || isFinishing()) {
+            return;
+        }
+        if (!renderSurfaceUnavailable && isStreamVisibleWhilePaused()) {
+            return;
+        }
+
+        streamSessionBackgrounded = true;
+        backgroundReconnectEligibleUntilElapsedMs = Long.MAX_VALUE;
+        logSessionInfo("LIFECYCLE", "串流进入后台挂起，保留网络会话");
+        LimeLog.info("Background stream: retaining session while activity is stopped");
+
+        decoderRenderer.notifyVideoBackground();
+        if (audioRenderer != null) {
+            audioRenderer.setBackgrounded(true);
+        }
+
+        restoreInputGrabAfterBackground = grabbedInput;
+        if (grabbedInput) {
+            setInputGrabState(false);
+        }
+        if (controllerHandler != null) {
+            controllerHandler.disableSensors();
+        }
+
+        if (micStatus == 1 && conn != null) {
+            restartMicAfterBackground = true;
+            conn.stopMicUplink();
+            micStatus = 0;
+        }
+
+        acquireBackgroundStreamWakeLock();
+    }
+
+    private void resumeRetainedStreamIfReady() {
+        if (!streamSessionBackgrounded || !connected || isFinishing()) {
+            return;
+        }
+        if (!activityResumed && !isStreamVisibleWhilePaused()) {
+            return;
+        }
+
+        Surface renderTarget;
+        if (glesRenderingEnabled) {
+            if (!surfaceCreated || !fsrDisplaySurfaceCreated || !fsrInputSurfaceReady ||
+                    fsrInputSurface == null || !fsrInputSurface.isValid()) {
+                return;
+            }
+            renderTarget = fsrInputSurface;
+        }
+        else {
+            renderTarget = streamView.getHolder().getSurface();
+            if (!surfaceCreated || renderTarget == null || !renderTarget.isValid()) {
+                return;
+            }
+        }
+
+        decoderRenderer.setRenderTarget(renderTarget);
+        decoderRenderer.notifyVideoForeground();
+        if (audioRenderer != null) {
+            audioRenderer.setBackgrounded(false);
+        }
+        if (controllerHandler != null) {
+            controllerHandler.enableSensors();
+        }
+
+        streamSessionBackgrounded = false;
+        backgroundReconnectEligibleUntilElapsedMs = SystemClock.elapsedRealtime()
+                + BACKGROUND_RECONNECT_GRACE_MS;
+        releaseBackgroundStreamWakeLock();
+        logSessionInfo("LIFECYCLE", "渲染表面已恢复，继续原串流会话");
+
+        if (restoreInputGrabAfterBackground) {
+            restoreInputGrabAfterBackground = false;
+            streamView.postDelayed(() -> {
+                if (activityResumed && connected && !streamSessionBackgrounded && hasWindowFocus()) {
+                    setInputGrabState(true);
+                }
+            }, 150);
+        }
+
+        restartMicAfterBackgroundIfNeeded();
+    }
+
+    private void restartMicAfterBackgroundIfNeeded() {
+        if (!restartMicAfterBackground || conn == null || micToggleInFlight) {
+            return;
+        }
+
+        restartMicAfterBackground = false;
+        micToggleInFlight = true;
+        final NvConnection currentConn = conn;
+        new Thread(() -> {
+            boolean started = currentConn.startMicUplink();
+            runOnUiThread(() -> {
+                micToggleInFlight = false;
+                if (currentConn == conn && connected && !streamSessionBackgrounded) {
+                    micStatus = started ? 1 : 0;
+                }
+                else if (started) {
+                    currentConn.stopMicUplink();
+                }
+            });
+        }, "MicBackgroundResume").start();
     }
 
     public void setVirtualMouseInputSuppressed(boolean suppressed) {

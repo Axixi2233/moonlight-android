@@ -50,8 +50,6 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
 
     private TextView tx_game_display_ex;
 
-    private RadioGroup rg_game_display_lock;
-
     private RadioGroup rg_game_display_video_format;
 
     private RadioGroup rg_game_display_audio;
@@ -122,7 +120,6 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
 
     private String fsrHdrOutputPending = "native";
 
-    private boolean showLock=true;
     @Override
     public void bindView(View v) {
         super.bindView(v);
@@ -141,7 +138,6 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
         tx_game_display_direction=v.findViewById(R.id.tx_game_display_direction);
         tx_game_display_ex=v.findViewById(R.id.tx_game_display_ex);
 
-        rg_game_display_lock=v.findViewById(R.id.rg_game_display_lock);
         rg_game_display_video_format=v.findViewById(R.id.rg_game_display_video_format);
         rg_game_display_hdr=v.findViewById(R.id.rg_game_display_hdr);
         rg_game_display_audio=v.findViewById(R.id.rg_game_display_audio);
@@ -168,8 +164,6 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
         if(!TextUtils.isEmpty(title)){
             tx_title.setText(title);
         }
-
-        v.findViewById(R.id.lv_display_lock).setVisibility(showLock?View.VISIBLE:View.GONE);
 
         if(prefConfig!=null){
             width=prefConfig.width;
@@ -198,7 +192,6 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
         fsrHdrOutputPending = PreferenceManager.getDefaultSharedPreferences(getActivity())
                 .getString("list_fsr_hdr_output", "native");
         initViewData();
-        initLock();
         initAudio();
         initHDR();
         initIgnoreHDR();
@@ -223,31 +216,6 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
         bt_display_bitrate.setOnClickListener(this);
         v.findViewById(R.id.btn_right).setOnClickListener(this);
         v.findViewById(R.id.bt_display_ex).setOnClickListener(this);
-
-        rg_game_display_lock.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(RadioGroup group, int checkedId) {
-                Toast.makeText(getActivity(),"切换成功！",Toast.LENGTH_SHORT).show();
-                if(checkedId==R.id.rbt_game_display_lock_1){
-                    prefConfig.enableScreenOnAuto=0;
-                    saveLock(0);
-                    dismiss();
-                    return;
-                }
-                if(checkedId==R.id.rbt_game_display_lock_2){
-                    prefConfig.enableScreenOnAuto=1;
-                    saveLock(1);
-                    dismiss();
-                    return;
-                }
-                if(checkedId==R.id.rbt_game_display_lock_3){
-                    prefConfig.enableScreenOnAuto=2;
-                    saveLock(2);
-                    dismiss();
-                    return;
-                }
-            }
-        });
 
         rg_game_display_video_format.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
@@ -484,21 +452,6 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
         tx_game_display_ex.setText("\t模式："+(exDiaplay?"外接显示器":"正常模式"));
     }
 
-    private void initLock(){
-        int lockFlag=PreferenceManager.getDefaultSharedPreferences(getActivity()).getInt("enable_screen_on_auto",0);
-        switch (lockFlag){
-            case 0:
-                rg_game_display_lock.check(R.id.rbt_game_display_lock_1);
-                break;
-            case 1:
-                rg_game_display_lock.check(R.id.rbt_game_display_lock_2);
-                break;
-            case 2:
-                rg_game_display_lock.check(R.id.rbt_game_display_lock_3);
-                break;
-        }
-    }
-
     private void initAudio(){
         boolean audioFlag=PreferenceManager.getDefaultSharedPreferences(getActivity()).getBoolean("checkbox_host_audio",false);
         rg_game_display_audio.check(audioFlag?R.id.rbt_game_display_audio_2:R.id.rbt_game_display_audio_1);
@@ -674,10 +627,6 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
                 stereo3dEnabledPending ? View.VISIBLE : View.GONE);
     }
 
-    public void setShowLock(boolean showLock) {
-        this.showLock = showLock;
-    }
-
     @Override
     public float getDimAmount() {
         return super.getDimAmount();
@@ -694,14 +643,6 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
                 .putString("video_format",value)
                 .commit();
     }
-
-    private void saveLock(int value){
-        PreferenceManager.getDefaultSharedPreferences(getActivity())
-                .edit()
-                .putInt("enable_screen_on_auto",value)
-                .commit();
-    }
-
 
     private void saveAudio(boolean value){
         PreferenceManager.getDefaultSharedPreferences(getActivity())

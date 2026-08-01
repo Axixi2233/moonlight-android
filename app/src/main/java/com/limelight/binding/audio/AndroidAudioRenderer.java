@@ -24,6 +24,7 @@ public class AndroidAudioRenderer implements AudioRenderer {
     private final ControllerAudioHapticsController controllerAudioHapticsController;
 
     private AudioTrack track;
+    private volatile boolean backgrounded;
 
     public AndroidAudioRenderer(Context context, ControllerHandler controllerHandler, boolean enableAudioFx,
                                 boolean enableAudioHaptics, int audioHapticsStrength,
@@ -204,6 +205,10 @@ public class AndroidAudioRenderer implements AudioRenderer {
 
     @Override
     public void playDecodedAudio(short[] audioData) {
+        if (backgrounded) {
+            return;
+        }
+
         phoneAudioHapticsController.onAudioFrame(audioData);
         controllerAudioHapticsController.onAudioFrame(audioData);
         if(PreferenceManager.getDefaultSharedPreferences(context).getBoolean("ax_audio_mute",false))return;
@@ -253,6 +258,10 @@ public class AndroidAudioRenderer implements AudioRenderer {
         track.flush();
 
         track.release();
+    }
+
+    public void setBackgrounded(boolean backgrounded) {
+        this.backgrounded = backgrounded;
     }
 
     public void updateAudioHapticsSettings(boolean enabled, int strengthPercent,
