@@ -221,7 +221,7 @@ public class KeyBoardLayoutController {
 
         keyboardView.findViewById(R.id.iv_down).setOnClickListener(v -> hide());
 
-        keyboardView.findViewById(R.id.iv_game_menu).setOnClickListener(v -> Game.instance.showGameMenu(null));
+        keyboardView.findViewById(R.id.iv_game_menu).setOnClickListener(v -> Game.instance.showGameMenu());
 
         rg_keyboard=keyboardView.findViewById(R.id.rg_keyboard);
         rg_keyboard.check(R.id.rbt_keyboard_1);

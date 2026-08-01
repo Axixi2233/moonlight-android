@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.support.annotation.LayoutRes;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -15,12 +16,18 @@ import android.view.WindowManager;
 
 import com.limelight.R;
 
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.List;
+
 
 public abstract class BaseGameMenuFragmentDialog extends DialogFragment {
 
     private static final String TAG = "base_bottom_dialog";
 
     private static final float DEFAULT_DIM = 0.3f;
+    private static final List<WeakReference<BaseGameMenuFragmentDialog>> ACTIVE_DIALOGS =
+            new ArrayList<>();
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -59,6 +66,11 @@ public abstract class BaseGameMenuFragmentDialog extends DialogFragment {
     @Override
     public void onStart() {
         super.onStart();
+
+        synchronized (ACTIVE_DIALOGS) {
+            removeInactiveDialogs(this);
+            ACTIVE_DIALOGS.add(new WeakReference<>(this));
+        }
 
         Window window = getDialog().getWindow();
         WindowManager.LayoutParams params = window.getAttributes();
@@ -103,6 +115,39 @@ public abstract class BaseGameMenuFragmentDialog extends DialogFragment {
 //                        | View.SYSTEM_UI_FLAG_FULLSCREEN
 //                        | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
 //        );
+    }
+
+    @Override
+    public void onStop() {
+        synchronized (ACTIVE_DIALOGS) {
+            removeInactiveDialogs(this);
+        }
+        super.onStop();
+    }
+
+    public static boolean dispatchKeyEventToTopDialog(KeyEvent event) {
+        synchronized (ACTIVE_DIALOGS) {
+            for (int i = ACTIVE_DIALOGS.size() - 1; i >= 0; i--) {
+                BaseGameMenuFragmentDialog fragment = ACTIVE_DIALOGS.get(i).get();
+                if (fragment == null || fragment.getDialog() == null ||
+                        !fragment.getDialog().isShowing()) {
+                    ACTIVE_DIALOGS.remove(i);
+                    continue;
+                }
+                return fragment.getDialog().dispatchKeyEvent(event);
+            }
+        }
+        return false;
+    }
+
+    private static void removeInactiveDialogs(BaseGameMenuFragmentDialog target) {
+        for (int i = ACTIVE_DIALOGS.size() - 1; i >= 0; i--) {
+            BaseGameMenuFragmentDialog fragment = ACTIVE_DIALOGS.get(i).get();
+            if (fragment == null || fragment == target || fragment.getDialog() == null ||
+                    !fragment.getDialog().isShowing()) {
+                ACTIVE_DIALOGS.remove(i);
+            }
+        }
     }
 
     public int getViewSize() {

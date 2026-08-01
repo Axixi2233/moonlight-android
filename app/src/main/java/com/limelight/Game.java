@@ -5,7 +5,6 @@ import android.Manifest;
 import com.limelight.binding.PlatformBinding;
 import com.limelight.binding.audio.AndroidAudioRenderer;
 import com.limelight.binding.input.ControllerHandler;
-import com.limelight.binding.input.GameInputDevice;
 import com.limelight.binding.input.KeyboardTranslator;
 import com.limelight.binding.input.haptics.OptionalPcmHapticsLoader;
 import com.limelight.binding.input.capture.InputCaptureManager;
@@ -44,6 +43,7 @@ import com.limelight.preferences.PreferenceConfiguration;
 import com.limelight.ui.gamemenu.GameMenuFragment;
 import com.limelight.ui.AppDialog;
 import com.limelight.ui.GameGestures;
+import com.limelight.ui.BaseFragmentDialog.BaseGameMenuFragmentDialog;
 import com.limelight.ui.StreamView;
 import com.limelight.ui.StreamLoadingOverlayController;
 import com.limelight.ui.virtualmouse.RemoteMouseSink;
@@ -694,7 +694,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         setPerformanceOverlayLiteMagin();
         performanceOverlayLite.setOnClickListener(v -> {
             if(prefConfig.enablePerfOverlayLiteDialog){
-                showGameMenu(null);
+                showGameMenu();
             }
         });
 
@@ -4033,11 +4033,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             }
             return;
         }
-        if(prefConfig.enableQtDialog){
-            showGameMenu(null);
-            return;
-        }
-        super.onBackPressed();
+        showGameMenu();
     }
 
     //禁用鼠标
@@ -4671,18 +4667,63 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     private GameMenuFragment dialogGameMenu;
     @Override
-    public void showGameMenu(GameInputDevice device) {
+    public void showGameMenu() {
+        if (dialogGameMenu != null && dialogGameMenu.getDialog() != null &&
+                dialogGameMenu.getDialog().isShowing()) {
+            return;
+        }
         setVirtualMouseInputSuppressed(true);
         setVideoZoomInputSuppressed(true);
-        if(dialogGameMenu!=null){
-            dialogGameMenu=null;
+        if (controllerHandler != null) {
+            controllerHandler.setGameMenuVisible(true);
         }
         dialogGameMenu=new GameMenuFragment();
         dialogGameMenu.setWidth(UiHelper.dpToPx(this,364));
         dialogGameMenu.setConn(conn);
-        dialogGameMenu.setDevice(device);
         dialogGameMenu.setGame(this);
         dialogGameMenu.show(getFragmentManager());
+    }
+
+    public boolean isGamepadMouseModeEnabled() {
+        return controllerHandler != null && controllerHandler.isMouseEmulationActive();
+    }
+
+    public void toggleGamepadMouseMode() {
+        if (controllerHandler == null) {
+            return;
+        }
+
+        boolean enable = !controllerHandler.isMouseEmulationActive();
+        if (!controllerHandler.setMouseEmulationActive(enable)) {
+            Toast.makeText(this, R.string.game_menu_connect_gamepad, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Toast.makeText(this, enable ? R.string.game_menu_gamepad_mouse_enabled
+                : R.string.game_menu_gamepad_mouse_disabled, Toast.LENGTH_SHORT).show();
+    }
+
+    public void onGameMenuDismissed() {
+        if (controllerHandler != null) {
+            controllerHandler.setGameMenuVisible(false);
+        }
+        dialogGameMenu = null;
+    }
+
+    @Override
+    public void dispatchGameMenuKeyEvent(int keyCode, boolean down) {
+        runOnUiThread(() -> {
+            if (dialogGameMenu == null) {
+                return;
+            }
+
+            long eventTime = SystemClock.uptimeMillis();
+            KeyEvent event = new KeyEvent(eventTime, eventTime,
+                    down ? KeyEvent.ACTION_DOWN : KeyEvent.ACTION_UP,
+                    keyCode, 0, 0, KeyCharacterMap.VIRTUAL_KEYBOARD, 0,
+                    KeyEvent.FLAG_FROM_SYSTEM, InputDevice.SOURCE_GAMEPAD);
+            BaseGameMenuFragmentDialog.dispatchKeyEventToTopDialog(event);
+        });
     }
 
 
@@ -5036,7 +5077,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             public void onClick(AXFloatingMagnetView magnetView) {
                 switch (prefConfig.axFloatingOperate){
                     case 0://游戏菜单
-                        showGameMenu(null);
+                        showGameMenu();
                         break;
                     case 1://软键盘
                         toggleKeyboard();

@@ -478,13 +478,6 @@
     <PreferenceCategory android:title="阿西西的日常设置"
         android:key="category_axixi_settings">
 
-        <CheckBoxPreference
-            android:key="checkbox_enable_quit_dialog"
-            android:title="快捷选项"
-            android:summary="开启后，串流界面点击手机物理返回键 展示相关选项！
-            \n软键盘、性能信息、触控模式切换、发送特殊按键"
-            android:defaultValue="true"/>
-
         <EditTextPreference
             android:key="edit_diy_w_h"
             android:defaultValue="1920x1080"

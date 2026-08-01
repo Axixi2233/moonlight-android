@@ -785,7 +785,7 @@ public class KeyBoardController {
                     Game.instance.showHUD();
                     break;
                 case 13://6 快捷菜单
-                    Game.instance.showGameMenu(null);
+                    Game.instance.showGameMenu();
                     break;
             }
             return;

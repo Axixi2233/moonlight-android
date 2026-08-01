@@ -14,9 +14,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.limelight.Game;
-import com.limelight.binding.input.GameMenuOption;
 import com.limelight.R;
-import com.limelight.binding.input.GameInputDevice;
 import com.limelight.binding.input.KeyboardTranslator;
 import com.limelight.binding.input.virtual_controller.VirtualController;
 import com.limelight.binding.input.virtual_controller.keyboard.KeyBoardController;
@@ -28,8 +26,6 @@ import com.limelight.ui.gamemenu.bean.GameMenuQuickBean;
 import com.limelight.utils.UiHelper;
 
 import java.security.Key;
-import java.util.List;
-
 /**
  * Description
  * Date: 2024-10-20
@@ -40,6 +36,14 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
     private void refreshMicButton() {
         if (btn_mic != null && game != null) {
             btn_mic.setBackgroundResource(game.micStatus == 0?R.drawable.ic_game_menu_btn_selector:R.drawable.ic_game_menu_btn_green_selector);
+        }
+    }
+
+    private void refreshGamepadMouseButton() {
+        if (btn_gamepad_mouse != null && game != null) {
+            btn_gamepad_mouse.setBackgroundResource(game.isGamepadMouseModeEnabled()
+                    ? R.drawable.ic_game_menu_btn_green_selector
+                    : R.drawable.ic_game_menu_btn_selector);
         }
     }
 
@@ -66,7 +70,6 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
 
     private Game game;
     private NvConnection conn;
-    private GameInputDevice device;
 
     @Override
     public void bindView(View v) {
@@ -88,10 +91,8 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
             btn_virtual_mouse.setText(game.isVirtualMouseEnabled()
                     ? R.string.game_menu_disable_virtual_mouse
                     : R.string.game_menu_enable_virtual_mouse);
-
+            refreshGamepadMouseButton();
         }
-        btn_gamepad_mouse.setVisibility(device!=null?View.VISIBLE:View.INVISIBLE);
-
         v.findViewById(R.id.btn_unlink).setOnClickListener(this);
         v.findViewById(R.id.btn_exit).setOnClickListener(this);
         v.findViewById(R.id.btn_swicth_screen).setOnClickListener(this);
@@ -329,11 +330,9 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
         }
 
         if(v.getId()==R.id.btn_gamepad_mouse){
-            if (device != null) {
-                List<GameMenuOption> menuOptions=device.getGameMenuOptions();
-                if(menuOptions!=null&& !menuOptions.isEmpty()){
-                    menuOptions.get(0).runnable.run();
-                }
+            if (game != null) {
+                game.toggleGamepadMouseMode();
+                refreshGamepadMouseButton();
             }
             return;
         }
@@ -556,14 +555,11 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
         this.conn = conn;
     }
 
-    public void setDevice(GameInputDevice device) {
-        this.device = device;
-    }
-
     @Override
     public void onDismiss(DialogInterface dialog) {
         super.onDismiss(dialog);
         if (game != null) {
+            game.onGameMenuDismissed();
             game.setVirtualMouseInputSuppressed(false);
             game.setVideoZoomInputSuppressed(false);
         }

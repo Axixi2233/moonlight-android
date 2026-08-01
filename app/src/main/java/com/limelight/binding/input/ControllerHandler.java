@@ -69,6 +69,10 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
     private static final int START_DOWN_TIME_MOUSE_MODE_MS = 750;
 
     private static final int MINIMUM_BUTTON_DOWN_TIME_MS = 25;
+    private static final int MOUSE_EMULATION_REPORT_PERIOD_MS = 50;
+    private static final float MENU_STICK_THRESHOLD = 0.65f;
+    private static final long MENU_STICK_INITIAL_REPEAT_MS = 300;
+    private static final long MENU_STICK_REPEAT_MS = 120;
 
     private static final long HAPTICS_ROUTE_RECENT_MS = 2500L;
 
@@ -137,6 +141,10 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
     private boolean hasGameController;
     private boolean stopped = false;
     private boolean streamReady;
+    private volatile boolean mouseEmulationActive;
+    private volatile boolean gameMenuVisible;
+    private volatile boolean suppressRemoteControllerUntilNeutral;
+    private final int[] mouseEmulationLastInputMaps = new int[MAX_GAMEPADS];
     private boolean optionalPcmHapticsWasActive;
     private volatile String nativeGameHapticsOutputRoute = "";
     private volatile long nativeGameHapticsOutputTimeMs;
@@ -145,6 +153,31 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
 
     private final PreferenceConfiguration prefConfig;
     private short currentControllers, initialControllers;
+
+    private final Runnable mouseEmulationRunnable = new Runnable() {
+        @Override
+        public void run() {
+            synchronized (ControllerHandler.this) {
+                if (!mouseEmulationActive || stopped) {
+                    return;
+                }
+
+                if (!gameMenuVisible && !suppressRemoteControllerUntilNeutral) {
+                    for (int i = 0; i < inputDeviceContexts.size(); i++) {
+                        GenericControllerContext context = inputDeviceContexts.valueAt(i);
+                        if (isMouseEmulationEligible(context)) {
+                            sendEmulatedMouseMotion(context);
+                        }
+                    }
+                    for (int i = 0; i < usbDeviceContexts.size(); i++) {
+                        sendEmulatedMouseMotion(usbDeviceContexts.valueAt(i));
+                    }
+                }
+
+                mainThreadHandler.postDelayed(this, MOUSE_EMULATION_REPORT_PERIOD_MS);
+            }
+        }
+    };
 
     private boolean shouldUseControllerAudioHaptics() {
         return prefConfig.enableAudioHaptics &&
@@ -309,7 +342,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         }
     }
 
-    public boolean handleStandardControllerAudioHaptics(short lowFreqMotor, short highFreqMotor) {
+    public synchronized boolean handleStandardControllerAudioHaptics(short lowFreqMotor, short highFreqMotor) {
         if (stopped || !shouldUseControllerAudioHaptics()) {
             return false;
         }
@@ -352,7 +385,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         return vibrated;
     }
 
-    public boolean handleControllerAdvancedAudioHapticsFrame(byte[] frame, float intensityGain) {
+    public synchronized boolean handleControllerAdvancedAudioHapticsFrame(byte[] frame, float intensityGain) {
         if (stopped || !shouldUseControllerAudioHaptics() || frame == null || frame.length == 0) {
             return false;
         }
@@ -394,7 +427,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         return submitted;
     }
 
-    public void refreshAudioHapticsState() {
+    public synchronized void refreshAudioHapticsState() {
         if (stopped) {
             return;
         }
@@ -549,20 +582,21 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
     }
 
     @Override
-    public void onInputDeviceRemoved(int deviceId) {
+    public synchronized void onInputDeviceRemoved(int deviceId) {
         InputDeviceContext context = inputDeviceContexts.get(deviceId);
         if (context != null) {
             LimeLog.info("Removed controller: "+context.name+" ("+deviceId+")");
+            inputDeviceContexts.remove(deviceId);
             releaseControllerNumber(context);
             context.destroy();
-            inputDeviceContexts.remove(deviceId);
+            reconcileControllerStateAfterRemoval(context);
         }
     }
 
     // This can happen when gaining/losing input focus with some devices.
     // Input devices that have a trackpad may gain/lose AXIS_RELATIVE_X/Y.
     @Override
-    public void onInputDeviceChanged(int deviceId) {
+    public synchronized void onInputDeviceChanged(int deviceId) {
         InputDevice device = InputDevice.getDevice(deviceId);
         if (device == null) {
             return;
@@ -579,14 +613,23 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         InputDeviceContext newContext = createInputDeviceContextForDevice(device);
         newContext.migrateContext(existingContext);
         inputDeviceContexts.put(deviceId, newContext);
+
+        // The replacement context intentionally starts neutral. Flush that state now so a
+        // button held by the old InputDevice cannot remain stuck after Android re-enumerates it.
+        if (newContext.assignedControllerNumber) {
+            sendControllerInputPacket(newContext);
+        }
     }
 
-    public void stop() {
+    public synchronized void stop() {
         if (stopped) {
             return;
         }
 
         // Stop new device contexts from being created or used
+        releaseMouseEmulationButtons();
+        mouseEmulationActive = false;
+        mainThreadHandler.removeCallbacks(mouseEmulationRunnable);
         stopped = true;
         optionalPcmHapticsBackend.stop();
         optionalPcmHapticsWasActive = false;
@@ -647,6 +690,126 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
 
     public static boolean isGamepadWithJoystickAxes(InputDevice device) {
         return device != null && hasGamepadButtons(device) && hasJoystickAxes(device);
+    }
+
+    public synchronized boolean hasConnectedGamepadForMouseEmulation() {
+        if (stopped) {
+            return false;
+        }
+
+        for (int deviceId : inputManager.getInputDeviceIds()) {
+            if (isGamepadWithJoystickAxes(inputManager.getInputDevice(deviceId))) {
+                return true;
+            }
+        }
+
+        return usbDeviceContexts.size() > 0;
+    }
+
+    public boolean isMouseEmulationActive() {
+        return mouseEmulationActive;
+    }
+
+    public synchronized boolean setMouseEmulationActive(boolean active) {
+        if (active == mouseEmulationActive) {
+            return true;
+        }
+        if (active && !hasConnectedGamepadForMouseEmulation()) {
+            return false;
+        }
+
+        releaseMouseEmulationButtons();
+        mouseEmulationActive = active;
+        mainThreadHandler.removeCallbacks(mouseEmulationRunnable);
+        if (active) {
+            mainThreadHandler.post(mouseEmulationRunnable);
+        }
+        return true;
+    }
+
+    public synchronized void setGameMenuVisible(boolean visible) {
+        if (gameMenuVisible == visible) {
+            return;
+        }
+
+        gameMenuVisible = visible;
+        suppressRemoteControllerUntilNeutral = true;
+        if (visible) {
+            releaseMouseEmulationButtons();
+            sendNeutralForAssignedMouseControllers();
+            clearSystemControllerStateForMenu();
+        }
+        else if (areMouseEmulationControllersNeutral()) {
+            suppressRemoteControllerUntilNeutral = false;
+        }
+    }
+
+    private boolean isMouseEmulationEligible(GenericControllerContext context) {
+        return context != null && context.mouseEmulationEligible;
+    }
+
+    private boolean isMouseEmulationContext(GenericControllerContext context) {
+        return mouseEmulationActive && isMouseEmulationEligible(context);
+    }
+
+    private boolean areMouseEmulationControllersNeutral() {
+        for (int i = 0; i < inputDeviceContexts.size(); i++) {
+            GenericControllerContext context = inputDeviceContexts.valueAt(i);
+            if (isMouseEmulationEligible(context) && !isControllerContextNeutral(context)) {
+                return false;
+            }
+        }
+        for (int i = 0; i < usbDeviceContexts.size(); i++) {
+            if (!isControllerContextNeutral(usbDeviceContexts.valueAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isControllerContextNeutral(GenericControllerContext context) {
+        return context.inputMap == 0 && context.leftTrigger == 0 && context.rightTrigger == 0 &&
+                context.leftStickX == 0 && context.leftStickY == 0 &&
+                context.rightStickX == 0 && context.rightStickY == 0;
+    }
+
+    private void clearSystemControllerStateForMenu() {
+        for (int i = 0; i < inputDeviceContexts.size(); i++) {
+            GenericControllerContext context = inputDeviceContexts.valueAt(i);
+            if (!isMouseEmulationEligible(context)) {
+                continue;
+            }
+            context.inputMap = 0;
+            context.leftTrigger = 0;
+            context.rightTrigger = 0;
+            context.leftStickX = 0;
+            context.leftStickY = 0;
+            context.rightStickX = 0;
+            context.rightStickY = 0;
+        }
+    }
+
+    private void sendNeutralForAssignedMouseControllers() {
+        boolean[] controllerNumbersSent = new boolean[MAX_GAMEPADS];
+        for (int i = 0; i < inputDeviceContexts.size(); i++) {
+            sendNeutralForAssignedMouseController(
+                    inputDeviceContexts.valueAt(i), controllerNumbersSent);
+        }
+        for (int i = 0; i < usbDeviceContexts.size(); i++) {
+            sendNeutralForAssignedMouseController(
+                    usbDeviceContexts.valueAt(i), controllerNumbersSent);
+        }
+    }
+
+    private void sendNeutralForAssignedMouseController(GenericControllerContext context,
+                                                         boolean[] controllerNumbersSent) {
+        if (!isMouseEmulationEligible(context) || !context.assignedControllerNumber ||
+                context.controllerNumber < 0 || context.controllerNumber >= controllerNumbersSent.length ||
+                controllerNumbersSent[context.controllerNumber]) {
+            return;
+        }
+        controllerNumbersSent[context.controllerNumber] = true;
+        sendNeutralControllerInput(context.controllerNumber);
     }
 
     public static boolean isGameControllerDevice(InputDevice device) {
@@ -745,6 +908,75 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                     (short) 0, (short) 0,
                     (short) 0, (short) 0);
         }
+    }
+
+    private void reconcileControllerStateAfterRemoval(GenericControllerContext removedContext) {
+        if (!removedContext.assignedControllerNumber) {
+            return;
+        }
+
+        short controllerNumber = removedContext.controllerNumber;
+        boolean removedMouseEmulationContext = isMouseEmulationContext(removedContext);
+
+        if (removedMouseEmulationContext) {
+            int remainingInputMap = getAggregatedInputMap(controllerNumber, true);
+            int mapIndex = getMouseEmulationMapIndex(controllerNumber);
+            sendMouseEmulationButtonChanges(mouseEmulationLastInputMaps[mapIndex], remainingInputMap);
+            mouseEmulationLastInputMaps[mapIndex] = remainingInputMap;
+            sendNeutralControllerInput(controllerNumber);
+        }
+        else {
+            GenericControllerContext remainingContext = findAssignedControllerContext(
+                    controllerNumber, false);
+            if (remainingContext != null) {
+                // releaseControllerNumber() sends a neutral packet. If another input path still
+                // contributes to the same player, immediately restore its aggregated state.
+                sendControllerInputPacket(remainingContext);
+            }
+        }
+
+        if (!gameMenuVisible && suppressRemoteControllerUntilNeutral &&
+                areMouseEmulationControllersNeutral()) {
+            suppressRemoteControllerUntilNeutral = false;
+        }
+    }
+
+    private int getAggregatedInputMap(short controllerNumber, boolean mouseEmulationContext) {
+        int inputMap = 0;
+        for (int i = 0; i < inputDeviceContexts.size(); i++) {
+            GenericControllerContext context = inputDeviceContexts.valueAt(i);
+            if (context.assignedControllerNumber && context.controllerNumber == controllerNumber &&
+                    isMouseEmulationContext(context) == mouseEmulationContext) {
+                inputMap |= context.inputMap;
+            }
+        }
+        for (int i = 0; i < usbDeviceContexts.size(); i++) {
+            GenericControllerContext context = usbDeviceContexts.valueAt(i);
+            if (context.assignedControllerNumber && context.controllerNumber == controllerNumber &&
+                    isMouseEmulationContext(context) == mouseEmulationContext) {
+                inputMap |= context.inputMap;
+            }
+        }
+        return inputMap;
+    }
+
+    private GenericControllerContext findAssignedControllerContext(short controllerNumber,
+                                                                     boolean mouseEmulationContext) {
+        for (int i = 0; i < inputDeviceContexts.size(); i++) {
+            GenericControllerContext context = inputDeviceContexts.valueAt(i);
+            if (context.assignedControllerNumber && context.controllerNumber == controllerNumber &&
+                    isMouseEmulationContext(context) == mouseEmulationContext) {
+                return context;
+            }
+        }
+        for (int i = 0; i < usbDeviceContexts.size(); i++) {
+            GenericControllerContext context = usbDeviceContexts.valueAt(i);
+            if (context.assignedControllerNumber && context.controllerNumber == controllerNumber &&
+                    isMouseEmulationContext(context) == mouseEmulationContext) {
+                return context;
+            }
+        }
+        return null;
     }
 
     private boolean isAssociatedJoystick(InputDevice originalDevice, InputDevice possibleAssociatedJoystick) {
@@ -891,6 +1123,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         context.id = device.getControllerId();
         context.device = device;
         context.external = true;
+        context.mouseEmulationEligible = true;
 
         context.vendorId = device.getVendorId();
         context.productId = device.getProductId();
@@ -1046,6 +1279,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         context.name = devName;
         context.id = dev.getId();
         context.external = isExternal(dev);
+        context.mouseEmulationEligible = isGamepadWithJoystickAxes(dev);
 
         context.vendorId = dev.getVendorId();
         context.productId = dev.getProductId();
@@ -1526,11 +1760,12 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         }
     }
 
-    private void sendControllerInputPacket(GenericControllerContext originalContext) {
+    private synchronized void sendControllerInputPacket(GenericControllerContext originalContext) {
         assignControllerNumberIfNeeded(originalContext);
 
         // Take the context's controller number and fuse all inputs with the same number
         short controllerNumber = originalContext.controllerNumber;
+        boolean mouseEmulationContext = isMouseEmulationContext(originalContext);
         int inputMap = 0;
         byte leftTrigger = 0;
         byte rightTrigger = 0;
@@ -1546,7 +1781,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             GenericControllerContext context = inputDeviceContexts.valueAt(i);
             if (context.assignedControllerNumber &&
                     context.controllerNumber == controllerNumber &&
-                    context.mouseEmulationActive == originalContext.mouseEmulationActive) {
+                    isMouseEmulationContext(context) == mouseEmulationContext) {
                 inputMap |= context.inputMap;
                 leftTrigger |= maxByMagnitude(leftTrigger, context.leftTrigger);
                 rightTrigger |= maxByMagnitude(rightTrigger, context.rightTrigger);
@@ -1560,7 +1795,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             GenericControllerContext context = usbDeviceContexts.valueAt(i);
             if (context.assignedControllerNumber &&
                     context.controllerNumber == controllerNumber &&
-                    context.mouseEmulationActive == originalContext.mouseEmulationActive) {
+                    isMouseEmulationContext(context) == mouseEmulationContext) {
                 inputMap |= context.inputMap;
                 leftTrigger |= maxByMagnitude(leftTrigger, context.leftTrigger);
                 rightTrigger |= maxByMagnitude(rightTrigger, context.rightTrigger);
@@ -1570,7 +1805,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                 rightStickY |= maxByMagnitude(rightStickY, context.rightStickY);
             }
         }
-        if (defaultContext.controllerNumber == controllerNumber) {
+        if (!mouseEmulationContext && defaultContext.controllerNumber == controllerNumber) {
             inputMap |= defaultContext.inputMap;
             leftTrigger |= maxByMagnitude(leftTrigger, defaultContext.leftTrigger);
             rightTrigger |= maxByMagnitude(rightTrigger, defaultContext.rightTrigger);
@@ -1580,151 +1815,22 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             rightStickY |= maxByMagnitude(rightStickY, defaultContext.rightStickY);
         }
 
-        if (originalContext.mouseEmulationActive) {
-            int changedMask = inputMap ^  originalContext.mouseEmulationLastInputMap;
-            boolean aDown = (inputMap & ControllerPacket.A_FLAG) != 0;
-            boolean bDown = (inputMap & ControllerPacket.B_FLAG) != 0;
-            originalContext.mouseEmulationLastInputMap = inputMap;
+        if (isMouseEmulationEligible(originalContext) &&
+                (gameMenuVisible || suppressRemoteControllerUntilNeutral)) {
+            if (!gameMenuVisible && areMouseEmulationControllersNeutral()) {
+                suppressRemoteControllerUntilNeutral = false;
+            }
+            else {
+                sendNeutralControllerInput(controllerNumber);
+                return;
+            }
+        }
 
-            if ((changedMask & ControllerPacket.A_FLAG) != 0) {
-                if (aDown) {
-                    conn.sendMouseButtonDown(MouseButtonPacket.BUTTON_LEFT);
-                }
-                else {
-                    conn.sendMouseButtonUp(MouseButtonPacket.BUTTON_LEFT);
-                }
-            }
-            if ((changedMask & ControllerPacket.B_FLAG) != 0) {
-                if (bDown) {
-                    conn.sendMouseButtonDown(MouseButtonPacket.BUTTON_RIGHT);
-                }
-                else {
-                    conn.sendMouseButtonUp(MouseButtonPacket.BUTTON_RIGHT);
-                }
-            }
-            //上下左右
-            if ((changedMask & ControllerPacket.UP_FLAG) != 0) {
-//                if ((inputMap & ControllerPacket.UP_FLAG) != 0) {
-//                    conn.sendMouseScroll((byte) 1);
-//                }
-                if ((inputMap & ControllerPacket.UP_FLAG) != 0) {
-                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_UP, KeyboardPacket.KEY_DOWN, (byte) 0, (byte) 0);
-                }else{
-                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_UP, KeyboardPacket.KEY_UP, (byte) 0, (byte) 0);
-                }
-            }
-            if ((changedMask & ControllerPacket.DOWN_FLAG) != 0) {
-//                if ((inputMap & ControllerPacket.DOWN_FLAG) != 0) {
-//                    conn.sendMouseScroll((byte) -1);
-//                }
-                if ((inputMap & ControllerPacket.DOWN_FLAG) != 0) {
-                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_DOWN, KeyboardPacket.KEY_DOWN, (byte) 0, (byte) 0);
-                }else{
-                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_DOWN, KeyboardPacket.KEY_UP, (byte) 0, (byte) 0);
-                }
-            }
-            if ((changedMask & ControllerPacket.RIGHT_FLAG) != 0) {
-//                if ((inputMap & ControllerPacket.RIGHT_FLAG) != 0) {
-//                    conn.sendMouseHScroll((byte) 1);
-//                }
-                if ((inputMap & ControllerPacket.RIGHT_FLAG) != 0) {
-                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_RIGHT, KeyboardPacket.KEY_DOWN, (byte) 0, (byte) 0);
-                }else{
-                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_RIGHT, KeyboardPacket.KEY_UP, (byte) 0, (byte) 0);
-                }
-            }
-            if ((changedMask & ControllerPacket.LEFT_FLAG) != 0) {
-//                if ((inputMap & ControllerPacket.LEFT_FLAG) != 0) {
-//                    conn.sendMouseHScroll((byte) -1);
-//                }
-                if ((inputMap & ControllerPacket.LEFT_FLAG) != 0) {
-                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_LEFT, KeyboardPacket.KEY_DOWN, (byte) 0, (byte) 0);
-                }else{
-                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_LEFT, KeyboardPacket.KEY_UP, (byte) 0, (byte) 0);
-                }
-            }
-
-            //显示左摇杆 显示软键盘
-            if ((changedMask & ControllerPacket.LS_CLK_FLAG) != 0) {
-                if ((inputMap & ControllerPacket.LS_CLK_FLAG) != 0) {
-                    //Win+CTRL+O
-//                    if(activityContext instanceof Game){
-//                        ((Game)activityContext).toggleKeyboard();
-//                    }
-                    GameMenuFragment.sendKeys(conn,new short[]{KeyboardTranslator.VK_LWIN, KeyboardTranslator.VK_LCONTROL,KeyboardTranslator.VK_O});
-                }
-            }
-
-            //下压右摇杆 WIN+D 显示桌面
-            if ((changedMask & ControllerPacket.RS_CLK_FLAG) != 0) {
-                if ((inputMap & ControllerPacket.RS_CLK_FLAG) != 0) {
-                    GameMenuFragment.sendKeys(conn,new short[]{KeyboardTranslator.VK_LWIN, KeyboardTranslator.VK_D});
-                }
-            }
-
-            //X=esc
-            if ((changedMask & ControllerPacket.X_FLAG) != 0) {
-                if ((inputMap & ControllerPacket.X_FLAG) != 0) {
-                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_ESCAPE, KeyboardPacket.KEY_DOWN, (byte) 0, (byte) 0);
-                }else{
-                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_ESCAPE, KeyboardPacket.KEY_UP, (byte) 0, (byte) 0);
-                }
-            }
-
-            //Y=回车
-            if ((changedMask & ControllerPacket.Y_FLAG) != 0) {
-                if ((inputMap & ControllerPacket.Y_FLAG) != 0) {
-                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_RETURN, KeyboardPacket.KEY_DOWN, (byte) 0, (byte) 0);
-                }else{
-                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_RETURN, KeyboardPacket.KEY_UP, (byte) 0, (byte) 0);
-                }
-            }
-            //xbox键 windows键
-            if ((changedMask & ControllerPacket.SPECIAL_BUTTON_FLAG) != 0) {
-                if ((inputMap & ControllerPacket.SPECIAL_BUTTON_FLAG) != 0) {
-                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_LWIN, KeyboardPacket.KEY_DOWN, (byte) 0, (byte) 0);
-                }else{
-                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_LWIN, KeyboardPacket.KEY_UP, (byte) 0, (byte) 0);
-                }
-            }
-            //LB alt
-            if ((changedMask & ControllerPacket.LB_FLAG) != 0) {
-                if ((inputMap & ControllerPacket.LB_FLAG) != 0) {
-                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_LMENU, KeyboardPacket.KEY_DOWN, (byte) 0, (byte) 0);
-                }else{
-                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_LMENU, KeyboardPacket.KEY_UP, (byte) 0, (byte) 0);
-                }
-            }
-
-            //RB tab
-            if ((changedMask & ControllerPacket.RB_FLAG) != 0) {
-                if ((inputMap & ControllerPacket.RB_FLAG) != 0) {
-                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_TAB, KeyboardPacket.KEY_DOWN, (byte) 0, (byte) 0);
-                }else{
-                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_TAB, KeyboardPacket.KEY_UP, (byte) 0, (byte) 0);
-                }
-            }
-
-            //start
-            if ((changedMask & ControllerPacket.PLAY_FLAG) != 0) {
-                if ((inputMap & ControllerPacket.PLAY_FLAG) != 0) {
-                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_BACK_SPACE, KeyboardPacket.KEY_DOWN, (byte) 0, (byte) 0);
-                }else{
-                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_BACK_SPACE, KeyboardPacket.KEY_UP, (byte) 0, (byte) 0);
-                }
-            }
-
-            //select
-            if ((changedMask & ControllerPacket.BACK_FLAG) != 0) {
-                if ((inputMap & ControllerPacket.BACK_FLAG) != 0) {
-                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_SPACE, KeyboardPacket.KEY_DOWN, (byte) 0, (byte) 0);
-                }else{
-                    conn.sendKeyboardInput((short)KeyboardTranslator.VK_SPACE, KeyboardPacket.KEY_UP, (byte) 0, (byte) 0);
-                }
-            }
-
-            conn.sendControllerInput(controllerNumber, getActiveControllerMask(),
-                    (short)0, (byte)0, (byte)0, (short)0, (short)0, (short)0, (short)0);
+        if (mouseEmulationContext) {
+            int mapIndex = getMouseEmulationMapIndex(controllerNumber);
+            sendMouseEmulationButtonChanges(mouseEmulationLastInputMaps[mapIndex], inputMap);
+            mouseEmulationLastInputMaps[mapIndex] = inputMap;
+            sendNeutralControllerInput(controllerNumber);
         }
         else {
             //强制体感模拟右摇杆
@@ -2286,7 +2392,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         }
     }
 
-    public boolean handleMotionEvent(MotionEvent event) {
+    public synchronized boolean handleMotionEvent(MotionEvent event) {
         InputDeviceContext context = getContextForEvent(event);
         if (context == null) {
             return true;
@@ -2349,33 +2455,26 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         }
     }
 
-    boolean wasLeftTriggerPressed = false;
-    boolean wasRightTriggerPressed = false;
+    private void sendEmulatedMouseMotion(GenericControllerContext context) {
+        if (prefConfig.analogStickForScrolling == PreferenceConfiguration.AnalogStickForScrolling.RIGHT) {
+            sendEmulatedMouseMove(context.leftStickX, context.leftStickY);
+            sendEmulatedMouseScroll(context.rightStickX, context.rightStickY);
+        }
+        else if (prefConfig.analogStickForScrolling == PreferenceConfiguration.AnalogStickForScrolling.LEFT) {
+            sendEmulatedMouseMove(context.rightStickX, context.rightStickY);
+            sendEmulatedMouseScroll(context.leftStickX, context.leftStickY);
+        }
+        else {
+            sendEmulatedMouseMove(context.leftStickX, context.leftStickY);
+            sendEmulatedMouseMove(context.rightStickX, context.rightStickY);
+        }
 
-    private void checkTriggerState(float leftTrigger, float rightTrigger) {
-        final float TRIGGER_THRESHOLD = 0.1f;
-
-        // 左扳机状态变化
-        boolean isLeftTriggerPressed = leftTrigger > TRIGGER_THRESHOLD;
-        if (isLeftTriggerPressed && !wasLeftTriggerPressed) {
-//            System.out.println("左扳机刚刚按下");
+        if ((context.leftTrigger & 0xFF) > 25) {
             conn.sendMouseScroll((byte) 1);
-        } else if (!isLeftTriggerPressed && wasLeftTriggerPressed) {
-//            System.out.println("左扳机刚刚抬起");
-            wasLeftTriggerPressed = isLeftTriggerPressed;
         }
-
-
-        // 右扳机状态变化
-        boolean isRightTriggerPressed = rightTrigger > TRIGGER_THRESHOLD;
-        if (isRightTriggerPressed && !wasRightTriggerPressed) {
-//            System.out.println("右扳机刚刚按下");
+        if ((context.rightTrigger & 0xFF) > 25) {
             conn.sendMouseScroll((byte) -1);
-        } else if (!isRightTriggerPressed && wasRightTriggerPressed) {
-//            System.out.println("右扳机刚刚抬起");
-            wasRightTriggerPressed = isRightTriggerPressed;
         }
-
     }
 
     @TargetApi(31)
@@ -2575,7 +2674,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         }
     }
 
-    public void handleRumble(short controllerNumber, short lowFreqMotor, short highFreqMotor) {
+    public synchronized void handleRumble(short controllerNumber, short lowFreqMotor, short highFreqMotor) {
         boolean foundMatchingDevice = false;
         boolean vibrated = false;
         boolean optionalRumbleSubmitted = false;
@@ -2680,7 +2779,80 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         }
     }
 
-    public void handleRumbleTriggers(short controllerNumber, short leftTrigger, short rightTrigger) {
+    private int getMouseEmulationMapIndex(short controllerNumber) {
+        return controllerNumber >= 0 && controllerNumber < mouseEmulationLastInputMaps.length
+                ? controllerNumber : 0;
+    }
+
+    private void sendNeutralControllerInput(short controllerNumber) {
+        conn.sendControllerInput(controllerNumber, getActiveControllerMask(),
+                (short) 0, (byte) 0, (byte) 0,
+                (short) 0, (short) 0, (short) 0, (short) 0);
+    }
+
+    private void sendMouseEmulationButtonChanges(int previousInputMap, int inputMap) {
+        int changedMask = previousInputMap ^ inputMap;
+
+        if ((changedMask & ControllerPacket.A_FLAG) != 0) {
+            if ((inputMap & ControllerPacket.A_FLAG) != 0) {
+                conn.sendMouseButtonDown(MouseButtonPacket.BUTTON_LEFT);
+            }
+            else {
+                conn.sendMouseButtonUp(MouseButtonPacket.BUTTON_LEFT);
+            }
+        }
+        if ((changedMask & ControllerPacket.B_FLAG) != 0) {
+            if ((inputMap & ControllerPacket.B_FLAG) != 0) {
+                conn.sendMouseButtonDown(MouseButtonPacket.BUTTON_RIGHT);
+            }
+            else {
+                conn.sendMouseButtonUp(MouseButtonPacket.BUTTON_RIGHT);
+            }
+        }
+
+        sendMouseEmulationKeyChange(changedMask, inputMap, ControllerPacket.UP_FLAG, KeyboardTranslator.VK_UP);
+        sendMouseEmulationKeyChange(changedMask, inputMap, ControllerPacket.DOWN_FLAG, KeyboardTranslator.VK_DOWN);
+        sendMouseEmulationKeyChange(changedMask, inputMap, ControllerPacket.RIGHT_FLAG, KeyboardTranslator.VK_RIGHT);
+        sendMouseEmulationKeyChange(changedMask, inputMap, ControllerPacket.LEFT_FLAG, KeyboardTranslator.VK_LEFT);
+        sendMouseEmulationKeyChange(changedMask, inputMap, ControllerPacket.X_FLAG, KeyboardTranslator.VK_ESCAPE);
+        sendMouseEmulationKeyChange(changedMask, inputMap, ControllerPacket.Y_FLAG, KeyboardTranslator.VK_RETURN);
+        sendMouseEmulationKeyChange(changedMask, inputMap, ControllerPacket.SPECIAL_BUTTON_FLAG, KeyboardTranslator.VK_LWIN);
+        sendMouseEmulationKeyChange(changedMask, inputMap, ControllerPacket.LB_FLAG, KeyboardTranslator.VK_LMENU);
+        sendMouseEmulationKeyChange(changedMask, inputMap, ControllerPacket.RB_FLAG, KeyboardTranslator.VK_TAB);
+        sendMouseEmulationKeyChange(changedMask, inputMap, ControllerPacket.PLAY_FLAG, KeyboardTranslator.VK_BACK_SPACE);
+        sendMouseEmulationKeyChange(changedMask, inputMap, ControllerPacket.BACK_FLAG, KeyboardTranslator.VK_SPACE);
+
+        if ((changedMask & ControllerPacket.LS_CLK_FLAG) != 0 &&
+                (inputMap & ControllerPacket.LS_CLK_FLAG) != 0) {
+            GameMenuFragment.sendKeys(conn, new short[]{KeyboardTranslator.VK_LWIN,
+                    KeyboardTranslator.VK_LCONTROL, KeyboardTranslator.VK_O});
+        }
+        if ((changedMask & ControllerPacket.RS_CLK_FLAG) != 0 &&
+                (inputMap & ControllerPacket.RS_CLK_FLAG) != 0) {
+            GameMenuFragment.sendKeys(conn, new short[]{KeyboardTranslator.VK_LWIN, KeyboardTranslator.VK_D});
+        }
+    }
+
+    private void sendMouseEmulationKeyChange(int changedMask, int inputMap, int buttonFlag, int keyCode) {
+        if ((changedMask & buttonFlag) == 0) {
+            return;
+        }
+        conn.sendKeyboardInput((short) keyCode,
+                (inputMap & buttonFlag) != 0 ? KeyboardPacket.KEY_DOWN : KeyboardPacket.KEY_UP,
+                (byte) 0, (byte) 0);
+    }
+
+    private void releaseMouseEmulationButtons() {
+        for (int i = 0; i < mouseEmulationLastInputMaps.length; i++) {
+            int inputMap = mouseEmulationLastInputMaps[i];
+            if (inputMap != 0) {
+                sendMouseEmulationButtonChanges(inputMap, 0);
+                mouseEmulationLastInputMaps[i] = 0;
+            }
+        }
+    }
+
+    public synchronized void handleRumbleTriggers(short controllerNumber, short leftTrigger, short rightTrigger) {
         if (stopped) {
             return;
         }
@@ -2879,7 +3051,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
     }
 
 
-    public void handleSetMotionEventState(final short controllerNumber, final byte motionType, short reportRateHz) {
+    public synchronized void handleSetMotionEventState(final short controllerNumber, final byte motionType, short reportRateHz) {
         if (stopped) {
             return;
         }
@@ -2949,7 +3121,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         }
     }
 
-    public void handleSetControllerLED(short controllerNumber, byte r, byte g, byte b) {
+    public synchronized void handleSetControllerLED(short controllerNumber, byte r, byte g, byte b) {
         if (stopped) {
             return;
         }
@@ -2984,7 +3156,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         }
     }
 
-    public boolean handleButtonUp(KeyEvent event) {
+    public synchronized boolean handleButtonUp(KeyEvent event) {
         InputDeviceContext context = getContextForEvent(event);
         if (context == null) {
             return true;
@@ -3023,12 +3195,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         case KeyEvent.KEYCODE_BUTTON_MODE:
             if(prefConfig.mouseEmulation&&prefConfig.mouseEmulationGameMenu==1){
                 if ((context.inputMap & ControllerPacket.SPECIAL_BUTTON_FLAG) != 0) {
-                    if(prefConfig.enableQtDialog){
-                        //todo 展示快捷菜单
-                        gestures.showGameMenu(context);
-                    }else{
-                        context.toggleMouseEmulation();
-                    }
+                    gestures.showGameMenu();
                 }
             }
             context.inputMap &= ~ControllerPacket.SPECIAL_BUTTON_FLAG;
@@ -3041,12 +3208,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             if(prefConfig.mouseEmulation&&prefConfig.mouseEmulationGameMenu==0){
                 if ((context.inputMap & ControllerPacket.PLAY_FLAG) != 0 &&
                         event.getEventTime() - context.startDownTime > ControllerHandler.START_DOWN_TIME_MOUSE_MODE_MS) {
-                    if(prefConfig.enableQtDialog){
-                        //todo 展示快捷菜单
-                        gestures.showGameMenu(context);
-                    }else{
-                        context.toggleMouseEmulation();
-                    }
+                    gestures.showGameMenu();
                 }
             }
             context.inputMap &= ~ControllerPacket.PLAY_FLAG;
@@ -3056,24 +3218,14 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             if(prefConfig.mouseEmulation&&prefConfig.mouseEmulationGameMenu==2){
                 if ((context.inputMap & ControllerPacket.BACK_FLAG) != 0 &&
                         event.getEventTime() - context.startDownTime > ControllerHandler.START_DOWN_TIME_MOUSE_MODE_MS) {
-                    if(prefConfig.enableQtDialog){
-                        //todo 展示快捷菜单
-                        gestures.showGameMenu(context);
-                    }else{
-                        context.toggleMouseEmulation();
-                    }
+                    gestures.showGameMenu();
                 }
             }
             context.inputMap &= ~ControllerPacket.BACK_FLAG;
             break;
         case KeyEvent.KEYCODE_BUTTON_Z:
             if (prefConfig.mouseEmulation && prefConfig.mouseEmulationGameMenu == 3) {
-                if (prefConfig.enableQtDialog) {
-                    gestures.showGameMenu(context);
-                }
-                else {
-                    context.toggleMouseEmulation();
-                }
+                gestures.showGameMenu();
                 return true;
             }
             return false;
@@ -3259,7 +3411,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         return true;
     }
 
-    public boolean handleButtonDown(KeyEvent event) {
+    public synchronized boolean handleButtonDown(KeyEvent event) {
         InputDeviceContext context = getContextForEvent(event);
         if (context == null) {
             return true;
@@ -3489,7 +3641,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         return true;
     }
 
-    public void reportOscState(int buttonFlags,
+    public synchronized void reportOscState(int buttonFlags,
                                short leftStickX, short leftStickY,
                                short rightStickX, short rightStickY,
                                byte leftTrigger, byte rightTrigger) {
@@ -3508,14 +3660,16 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
     }
 
     @Override
-    public void reportControllerState(int controllerId, int buttonFlags,
+    public synchronized void reportControllerState(int controllerId, int buttonFlags,
                                       float leftStickX, float leftStickY,
                                       float rightStickX, float rightStickY,
                                       float leftTrigger, float rightTrigger) {
-        GenericControllerContext context = usbDeviceContexts.get(controllerId);
+        UsbDeviceContext context = usbDeviceContexts.get(controllerId);
         if (context == null) {
             return;
         }
+
+        int previousInputMap = context.inputMap;
 
         Vector2d leftStickVector = populateCachedVector(leftStickX, leftStickY);
 
@@ -3543,7 +3697,66 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
 
         context.inputMap = buttonFlags;
 
+        if (gameMenuVisible) {
+            handleUsbGameMenuInput(context, previousInputMap);
+        }
         sendControllerInputPacket(context);
+    }
+
+    private void handleUsbGameMenuInput(UsbDeviceContext context, int previousInputMap) {
+        int changedMask = previousInputMap ^ context.inputMap;
+        dispatchGameMenuButtonChange(changedMask, context.inputMap,
+                ControllerPacket.UP_FLAG, KeyEvent.KEYCODE_DPAD_UP);
+        dispatchGameMenuButtonChange(changedMask, context.inputMap,
+                ControllerPacket.DOWN_FLAG, KeyEvent.KEYCODE_DPAD_DOWN);
+        dispatchGameMenuButtonChange(changedMask, context.inputMap,
+                ControllerPacket.LEFT_FLAG, KeyEvent.KEYCODE_DPAD_LEFT);
+        dispatchGameMenuButtonChange(changedMask, context.inputMap,
+                ControllerPacket.RIGHT_FLAG, KeyEvent.KEYCODE_DPAD_RIGHT);
+        dispatchGameMenuButtonChange(changedMask, context.inputMap,
+                ControllerPacket.A_FLAG, KeyEvent.KEYCODE_DPAD_CENTER);
+        dispatchGameMenuButtonChange(changedMask, context.inputMap,
+                ControllerPacket.B_FLAG, KeyEvent.KEYCODE_BACK);
+
+        int stickDirection = getMenuStickDirection(context.leftStickX, context.leftStickY);
+        long now = SystemClock.uptimeMillis();
+        if (stickDirection == 0) {
+            context.menuStickDirection = 0;
+            context.menuStickNextRepeatTime = 0;
+        }
+        else if (stickDirection != context.menuStickDirection) {
+            context.menuStickDirection = stickDirection;
+            context.menuStickNextRepeatTime = now + MENU_STICK_INITIAL_REPEAT_MS;
+            dispatchGameMenuKeyClick(stickDirection);
+        }
+        else if (now >= context.menuStickNextRepeatTime) {
+            context.menuStickNextRepeatTime = now + MENU_STICK_REPEAT_MS;
+            dispatchGameMenuKeyClick(stickDirection);
+        }
+    }
+
+    private void dispatchGameMenuButtonChange(int changedMask, int inputMap,
+                                              int buttonFlag, int keyCode) {
+        if ((changedMask & buttonFlag) != 0) {
+            gestures.dispatchGameMenuKeyEvent(keyCode, (inputMap & buttonFlag) != 0);
+        }
+    }
+
+    private void dispatchGameMenuKeyClick(int keyCode) {
+        gestures.dispatchGameMenuKeyEvent(keyCode, true);
+        gestures.dispatchGameMenuKeyEvent(keyCode, false);
+    }
+
+    private int getMenuStickDirection(short stickX, short stickY) {
+        float x = stickX / 32766.0f;
+        float y = stickY / 32766.0f;
+        if (Math.abs(x) < MENU_STICK_THRESHOLD && Math.abs(y) < MENU_STICK_THRESHOLD) {
+            return 0;
+        }
+        if (Math.abs(x) > Math.abs(y)) {
+            return x > 0 ? KeyEvent.KEYCODE_DPAD_RIGHT : KeyEvent.KEYCODE_DPAD_LEFT;
+        }
+        return y > 0 ? KeyEvent.KEYCODE_DPAD_UP : KeyEvent.KEYCODE_DPAD_DOWN;
     }
 
     private float clampUnitRange(float value) {
@@ -3560,7 +3773,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
     }
 
     @Override
-    public void reportControllerMotion(int controllerId, byte motionType, float motionX, float motionY, float motionZ) {
+    public synchronized void reportControllerMotion(int controllerId, byte motionType, float motionX, float motionY, float motionZ) {
         GenericControllerContext context = usbDeviceContexts.get(controllerId);
         if (context == null) {
             return;
@@ -3572,7 +3785,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
     }
 
     @Override
-    public void reportControllerTouchpadEvent(int controllerId, byte eventType, int pointerId,
+    public synchronized void reportControllerTouchpadEvent(int controllerId, byte eventType, int pointerId,
                                               float x, float y, float pressure) {
         UsbDeviceContext context = usbDeviceContexts.get(controllerId);
         if (context == null) {
@@ -3586,20 +3799,34 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
     }
 
     @Override
-    public void deviceRemoved(AbstractController controller) {
+    public synchronized void deviceRemoved(AbstractController controller) {
         UsbDeviceContext context = usbDeviceContexts.get(controller.getControllerId());
         if (context != null) {
             controller.stopAdvancedAudioHaptics();
+            usbDeviceContexts.remove(controller.getControllerId());
             releaseControllerNumber(context);
             context.destroy();
-            usbDeviceContexts.remove(controller.getControllerId());
+            reconcileControllerStateAfterRemoval(context);
         }
     }
 
     @Override
-    public void deviceAdded(AbstractController controller) {
+    public synchronized void deviceAdded(AbstractController controller) {
         if (stopped) {
             return;
+        }
+
+        UsbDeviceContext existingContext = usbDeviceContexts.get(controller.getControllerId());
+        if (existingContext != null) {
+            if (existingContext.device == controller) {
+                return;
+            }
+
+            LimeLog.warning("Replacing stale USB controller context: " + controller.getControllerId());
+            usbDeviceContexts.remove(controller.getControllerId());
+            releaseControllerNumber(existingContext);
+            existingContext.destroy();
+            reconcileControllerStateAfterRemoval(existingContext);
         }
 
         if (shouldUseControllerAudioHaptics() && controller.hasAdvancedAudioHapticsSupport()) {
@@ -3610,11 +3837,11 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         usbDeviceContexts.put(controller.getControllerId(), context);
     }
 
-    public boolean hasActiveUsbController() {
+    public synchronized boolean hasActiveUsbController() {
         return optionalPcmHapticsBackend.isActive() || usbDeviceContexts.size() > 0;
     }
 
-    public String getActiveUsbControllerTypeDisplayName() {
+    public synchronized String getActiveUsbControllerTypeDisplayName() {
         if (optionalPcmHapticsBackend.isActive()) {
             return optionalPcmHapticsBackend.getActiveDeviceDisplayName();
         }
@@ -3635,7 +3862,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         return controllerType;
     }
 
-    public String getActiveUsbControllerProtocolDisplayName() {
+    public synchronized String getActiveUsbControllerProtocolDisplayName() {
         if (optionalPcmHapticsBackend.isActive()) {
             return optionalPcmHapticsBackend.getActiveProtocolDisplayName();
         }
@@ -3659,9 +3886,10 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         return getRecentHapticsRoute(audioHapticsOutputRoute, audioHapticsOutputTimeMs);
     }
 
-    class GenericControllerContext implements GameInputDevice{
+    class GenericControllerContext {
         public int id;
         public boolean external;
+        public boolean mouseEmulationEligible;
 
         public int vendorId;
         public int productId;
@@ -3684,58 +3912,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
 
         public byte sensorLeftTrigger =  0x00;
 
-        public boolean mouseEmulationActive;
-        public int mouseEmulationLastInputMap;
-        public final int mouseEmulationReportPeriod = 50;
-
-        public final Runnable mouseEmulationRunnable = new Runnable() {
-            @Override
-            public void run() {
-                if (!mouseEmulationActive) {
-                    return;
-                }
-                // Send mouse events from analog sticks
-                if (prefConfig.analogStickForScrolling == PreferenceConfiguration.AnalogStickForScrolling.RIGHT) {
-                    sendEmulatedMouseMove(leftStickX, leftStickY);
-                    sendEmulatedMouseScroll(rightStickX, rightStickY);
-                }
-                else if (prefConfig.analogStickForScrolling == PreferenceConfiguration.AnalogStickForScrolling.LEFT) {
-                    sendEmulatedMouseMove(rightStickX, rightStickY);
-                    sendEmulatedMouseScroll(leftStickX, leftStickY);
-                }
-                else {
-                    sendEmulatedMouseMove(leftStickX, leftStickY);
-                    sendEmulatedMouseMove(rightStickX, rightStickY);
-                }
-
-                checkTriggerState(leftTrigger& 0xFF,rightTrigger& 0xFF);
-                // Requeue the callback
-                mainThreadHandler.postDelayed(this, mouseEmulationReportPeriod);
-            }
-        };
-
-        @Override
-        public List<GameMenuOption> getGameMenuOptions() {
-            List<GameMenuOption> options = new ArrayList<>();
-            options.add(new GameMenuOption(activityContext.getString(mouseEmulationActive ?
-                    R.string.game_menu_toggle_mouse_off : R.string.game_menu_toggle_mouse_on),
-                    true, () -> toggleMouseEmulation()));
-
-            return options;
-        }
-
-        public void toggleMouseEmulation() {
-            mainThreadHandler.removeCallbacks(mouseEmulationRunnable);
-            mouseEmulationActive = !mouseEmulationActive;
-            Toast.makeText(activityContext, "手柄键鼠模式: " + (mouseEmulationActive ? "开启" : "关闭"), Toast.LENGTH_SHORT).show();
-            if (mouseEmulationActive) {
-                mainThreadHandler.postDelayed(mouseEmulationRunnable, mouseEmulationReportPeriod);
-            }
-        }
-
         public void destroy() {
-            mouseEmulationActive = false;
-            mainThreadHandler.removeCallbacks(mouseEmulationRunnable);
         }
 
         public void sendControllerArrival() {}
@@ -4003,8 +4180,6 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             }
             this.gyroReportRateHz = oldContext.gyroReportRateHz;
             this.accelReportRateHz = oldContext.accelReportRateHz;
-            //todo 键鼠模式标记 ds手柄打开菜单失去焦点走onInputDeviceChanged回调，初始化了键鼠标记和摇杆线程
-            this.mouseEmulationActive = oldContext.mouseEmulationActive;
             // Don't release the controller number, because we will carry it over if it is present.
             // We also want to make sure the change is invisible to the host PC to avoid an add/remove
             // cycle for the gamepad which may break some games.
@@ -4062,6 +4237,8 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
 
     class UsbDeviceContext extends GenericControllerContext {
         public AbstractController device;
+        public int menuStickDirection;
+        public long menuStickNextRepeatTime;
 
         @Override
         public void destroy() {
@@ -4136,7 +4313,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
      * @param end 结束位置
      * @return
      */
-    public void setDualSenseTrigger(int mode,int strength,int frequency,int start,int end) {
+    public synchronized void setDualSenseTrigger(int mode,int strength,int frequency,int start,int end) {
         if (stopped) {
             return;
         }

@@ -377,8 +377,10 @@
     <string name="game_menu_switch_touch_sensitivity_update_y">触控灵敏度修改Y轴</string>
 
 
-    <string name="game_menu_toggle_mouse_on">开启手柄键鼠模式</string>
-    <string name="game_menu_toggle_mouse_off">关闭手柄键鼠模式</string>
+    <string name="game_menu_gamepad_mouse">手柄键鼠</string>
+    <string name="game_menu_connect_gamepad">请连接手柄后使用</string>
+    <string name="game_menu_gamepad_mouse_enabled">手柄键鼠模式：已开启</string>
+    <string name="game_menu_gamepad_mouse_disabled">手柄键鼠模式：已关闭</string>
     <string name="game_menu_disconnect">断开连接</string>
     <string name="game_menu_quit_steaming">退出串流</string>
     <string name="game_menu_cancel">取消</string>

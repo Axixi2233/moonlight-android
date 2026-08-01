@@ -336,7 +336,7 @@
                 android:gravity="center"
                 android:padding="4dp"
                 android:id="@+id/btn_gamepad_mouse"
-                android:text="手柄键鼠"
+                android:text="@string/game_menu_gamepad_mouse"
                 android:textSize="11dp" />
 
         </LinearLayout>

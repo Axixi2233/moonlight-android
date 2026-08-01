@@ -93,7 +93,6 @@ public class PreferenceConfiguration {
     private static final String GAMEPAD_MOTION_FALLBACK_PREF_STRING = "checkbox_gamepad_motion_fallback";
 
     //是否弹出软键盘
-    private static final String CHECKBOX_ENABLE_QUIT_DIALOG = "checkbox_enable_quit_dialog";
 
     //VR模式
     private static final String LEGACY_ENABLE_SBS_PREF_STRING = "checkbox_enable_sbs";
@@ -203,7 +202,6 @@ public class PreferenceConfiguration {
 
     public boolean enableLatencyToast;
     //软键盘
-    public boolean enableQtDialog;
     //竖屏模式
     public boolean enablePortrait;
     //虚拟屏幕键盘按键
@@ -917,7 +915,6 @@ public class PreferenceConfiguration {
         config.touchscreenTrackpad = prefs.getBoolean(TOUCHSCREEN_TRACKPAD_PREF_STRING, DEFAULT_TOUCHSCREEN_TRACKPAD);
         config.enableLatencyToast = prefs.getBoolean(LATENCY_TOAST_PREF_STRING, DEFAULT_LATENCY_TOAST);
         //软键盘
-        config.enableQtDialog = prefs.getBoolean(CHECKBOX_ENABLE_QUIT_DIALOG,false);
         config.enablePortrait = prefs.getBoolean(CHECKBOX_ENABLE_PORTRAIT,false);
 
         config.enableKeyboard = prefs.getBoolean(CHECKBOX_ENABLE_KEYBOARD,false);
