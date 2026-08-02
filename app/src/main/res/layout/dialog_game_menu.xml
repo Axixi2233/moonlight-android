@@ -347,7 +347,7 @@
             android:layout_margin="5dp"
             android:textStyle="bold"
             android:textColor="@android:color/white"
-            android:text="特色功能 月光·阿西西"
+            android:text="特色功能"
             android:textSize="11dp" />
 
         <LinearLayout
@@ -423,6 +423,20 @@
                 android:padding="10dp"
                 android:id="@+id/bt_device"
                 android:text="外设"
+                android:textSize="11dp" />
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:background="@drawable/ic_game_menu_btn_selector"
+                android:drawableLeft="@drawable/ic_axi_audio_rumble"
+                android:drawablePadding="4dp"
+                android:drawableRight="@drawable/ic_axi_arrow"
+                android:gravity="left|center_vertical"
+                android:padding="10dp"
+                android:id="@+id/bt_audio_rumble"
+                android:text="音频震动"
                 android:textSize="11dp" />
 
             <Button

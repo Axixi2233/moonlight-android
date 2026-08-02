@@ -115,6 +115,7 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
         v.findViewById(R.id.bt_virtual_view).setOnClickListener(this);
         v.findViewById(R.id.bt_display).setOnClickListener(this);
         v.findViewById(R.id.bt_device).setOnClickListener(this);
+        v.findViewById(R.id.bt_audio_rumble).setOnClickListener(this);
         v.findViewById(R.id.bt_other_setting).setOnClickListener(this);
         v.findViewById(R.id.btn_soft_function).setOnClickListener(this);
         btn_virtual_mouse.setOnClickListener(this);
@@ -444,6 +445,20 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
             return;
         }
 
+        if(v.getId() == R.id.bt_audio_rumble){
+            GameAudioHapticsFragment fragment = new GameAudioHapticsFragment();
+            fragment.setWidth(UiHelper.dpToPx(getActivity(),364));
+            fragment.setTitle("音频震动");
+            fragment.setOnSettingsChangedListener(() -> {
+                if (game != null) {
+                    game.setAudioHapticsSettings();
+                }
+            });
+            fragment.setPrefConfig(game == null ? new PreferenceConfiguration() : game.prefConfig);
+            fragment.show(getFragmentManager());
+            return;
+        }
+
         if(v.getId() == R.id.bt_other_setting){
             GameDisplaySettingFragment fragment=new GameDisplaySettingFragment();
             fragment.setWidth(UiHelper.dpToPx(getActivity(),364));
@@ -488,11 +503,11 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
                         game.setPerformanceOverlayLiteMagin();
                         return;
                     }
+                    //完整/精简性能信息
                     if(index==6){
-                        game.setAudioHapticsSettings();
+                        game.setPerformanceOverlayMode();
                         return;
                     }
-
                 }
             });
             fragment.setPrefConfig(game==null?new PreferenceConfiguration():game.prefConfig);
