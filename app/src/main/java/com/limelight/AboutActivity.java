@@ -81,6 +81,11 @@ public class AboutActivity extends BaseActivity implements View.OnClickListener 
             return;
         }
 
+        if (v.getId() == R.id.lv_other_app) {
+            UpdateChecker.openUrl(this,"https://www.axixi.top/");
+            return;
+        }
+
         if (v.getId() == R.id.lv_credits) {
             startActivity(new Intent(this, CreditsActivity.class));
         }

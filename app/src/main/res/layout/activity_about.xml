@@ -195,75 +195,49 @@
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/lv_other_app"
                 android:layout_marginLeft="15dp"
                 android:layout_marginRight="15dp"
                 android:layout_marginBottom="15dp"
                 android:background="@drawable/axi_gameplay_gamepad_item_bg"
-                android:orientation="vertical"
+                android:orientation="horizontal"
                 android:padding="12dp"
-                android:gravity="center_horizontal"
+                android:onClick="onClick"
+                android:gravity="center_vertical"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
-                <TextView
+                <ImageView
+                    android:layout_marginLeft="10dp"
+                    android:src="@drawable/ic_axi_app_more"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"/>
+
+                <LinearLayout
+                    android:layout_marginLeft="12dp"
+                    android:orientation="vertical"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="常见问题"
-                    android:textStyle="bold"
-                    android:layout_gravity="center_horizontal"
-                    android:textColor="@android:color/white"
-                    android:textSize="11sp"/>
+                    android:layout_height="wrap_content">
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/axi_question_1"
-                    android:layout_gravity="center_horizontal"
-                    android:textColor="@android:color/white"
-                    android:layout_marginTop="3dp"
-                    android:textStyle="bold"
-                    android:textSize="9sp"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="更多应用"
+                        android:textStyle="bold"
+                        android:textColor="@android:color/white"
+                        android:textSize="13sp"/>
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:paddingLeft="15dp"
-                    android:layout_marginTop="3dp"
-                    android:text="@string/axi_question_answer_1"
-                    android:layout_gravity="center_horizontal"
-                    android:textColor="@android:color/white"
-                    android:textSize="9sp"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="前往开发者个人空间，发现更多应用与作品"
+                        android:textColor="@android:color/white"
+                        android:textSize="10sp"/>
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/axi_question_2"
-                    android:layout_gravity="center_horizontal"
-                    android:textColor="@android:color/white"
-                    android:layout_marginTop="3dp"
-                    android:textStyle="bold"
-                    android:textSize="9sp"/>
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:paddingLeft="15dp"
-                    android:layout_marginTop="3dp"
-                    android:text="@string/axi_question_answer_2"
-                    android:layout_gravity="center_horizontal"
-                    android:textColor="@android:color/white"
-                    android:textSize="9sp"/>
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="未完待续......."
-                    android:layout_gravity="center_horizontal"
-                    android:textColor="@android:color/white"
-                    android:layout_marginTop="3dp"
-                    android:textStyle="bold"
-                    android:textSize="9sp"/>
+                </LinearLayout>
 
             </LinearLayout>
+
 
             <TextView
                 android:layout_width="wrap_content"
