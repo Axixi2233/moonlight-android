@@ -323,6 +323,62 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     private boolean backgroundReconnectCleanupComplete;
     private volatile boolean restartingForBackgroundReconnect;
     private int pendingBackgroundReconnectErrorCode;
+    private DisplayManager externalDisplayManager;
+    private boolean externalDisplayListenerRegistered;
+    private boolean externalDisplayRoutingDestroyed;
+    private int activeExternalDisplayId = Display.INVALID_DISPLAY;
+    private ViewGroup handsetRenderParent;
+    private int handsetRenderIndex = -1;
+    private ViewGroup.LayoutParams handsetRenderLayoutParams;
+    private SecondaryDisplayPresentation presentation;
+    private final Handler externalDisplayHandler = new Handler(Looper.getMainLooper());
+    private final Runnable delayedExternalDisplayAttach = new Runnable() {
+        @Override
+        public void run() {
+            if (externalDisplayRoutingDestroyed || prefConfig == null || !prefConfig.enableExDisplay
+                    || activeExternalDisplayId != Display.INVALID_DISPLAY) {
+                return;
+            }
+            Display display = findPreferredExternalDisplay();
+            if (display != null) {
+                routeRenderViewToExternalDisplay(display);
+            }
+        }
+    };
+    private final DisplayManager.DisplayListener externalDisplayListener =
+            new DisplayManager.DisplayListener() {
+                @Override
+                public void onDisplayAdded(int displayId) {
+                    if (displayId == Display.DEFAULT_DISPLAY || externalDisplayRoutingDestroyed) {
+                        return;
+                    }
+                    logSessionInfo("DISPLAY", "检测到外接显示器接入，displayId=" + displayId);
+                    scheduleExternalDisplayAttach();
+                }
+
+                @Override
+                public void onDisplayRemoved(int displayId) {
+                    if (displayId == activeExternalDisplayId) {
+                        restoreRenderViewToHandset("外接显示器已拔出，displayId=" + displayId);
+                        scheduleExternalDisplayAttach();
+                    }
+                }
+
+                @Override
+                public void onDisplayChanged(int displayId) {
+                    if (displayId == activeExternalDisplayId) {
+                        Display display = externalDisplayManager != null
+                                ? externalDisplayManager.getDisplay(displayId) : null;
+                        if (display != null) {
+                            logSessionInfo("DISPLAY", "外接显示器状态变化："
+                                    + describeDisplay(display));
+                        }
+                    }
+                    else if (activeExternalDisplayId == Display.INVALID_DISPLAY) {
+                        scheduleExternalDisplayAttach();
+                    }
+                }
+            };
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -1572,6 +1628,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     protected void onDestroy() {
         logSessionInfo("LIFECYCLE", "串流页面正在销毁");
         backgroundReconnectHandler.removeCallbacksAndMessages(null);
+        releaseExternalDisplayRouting();
 
         if (virtualMouseOverlay != null) {
             virtualMouseOverlay.destroy();
@@ -1588,10 +1645,6 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
         instance = null;
         UiHelper.notifyHdrWindowStatus(this, false);
-
-        if(presentation!=null){
-            presentation.dismiss();
-        }
 
         releaseBackgroundStreamWakeLock();
         if (connecting || connected) {
@@ -4736,76 +4789,275 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             BaseGameMenuFragmentDialog.dispatchKeyEventToTopDialog(event);
         });
     }
+    public void showSecondScreen() {
+        registerExternalDisplayListener();
+        Display display = findPreferredExternalDisplay();
+        if (display != null) {
+            routeRenderViewToExternalDisplay(display);
+        }
+        else {
+            logSessionInfo("DISPLAY", "当前未检测到可用的外接显示器，等待热插拔事件");
+        }
+    }
 
+    private void registerExternalDisplayListener() {
+        if (externalDisplayListenerRegistered || externalDisplayRoutingDestroyed) {
+            return;
+        }
 
-    private SecondaryDisplayPresentation presentation;
-    public void showSecondScreen(){
-        DisplayManager displayManager = (DisplayManager) getSystemService(Context.DISPLAY_SERVICE);
-        Display[] displays = displayManager.getDisplays();
-        int mainDisplayId = Display.DEFAULT_DISPLAY;
-        int secondaryDisplayId = -1;
+        externalDisplayManager = (DisplayManager) getSystemService(Context.DISPLAY_SERVICE);
+        if (externalDisplayManager != null) {
+            externalDisplayManager.registerDisplayListener(
+                    externalDisplayListener, externalDisplayHandler);
+            externalDisplayListenerRegistered = true;
+        }
+    }
+
+    private void unregisterExternalDisplayListener() {
+        if (externalDisplayListenerRegistered && externalDisplayManager != null) {
+            externalDisplayManager.unregisterDisplayListener(externalDisplayListener);
+        }
+        externalDisplayListenerRegistered = false;
+    }
+
+    private void scheduleExternalDisplayAttach() {
+        externalDisplayHandler.removeCallbacks(delayedExternalDisplayAttach);
+        externalDisplayHandler.postDelayed(delayedExternalDisplayAttach, 250);
+    }
+
+    private Display findPreferredExternalDisplay() {
+        if (externalDisplayManager == null) {
+            externalDisplayManager = (DisplayManager) getSystemService(Context.DISPLAY_SERVICE);
+        }
+        if (externalDisplayManager == null) {
+            return null;
+        }
+
+        Display display = findUsableExternalDisplay(
+                externalDisplayManager.getDisplays(DisplayManager.DISPLAY_CATEGORY_PRESENTATION));
+        return display != null
+                ? display
+                : findUsableExternalDisplay(externalDisplayManager.getDisplays());
+    }
+
+    private Display findUsableExternalDisplay(Display[] displays) {
         for (Display display : displays) {
-//            LimeLog.info(display.toString());
-            if (display.getDisplayId() != mainDisplayId) {
-                secondaryDisplayId = display.getDisplayId();
-                break;
+            if (display != null && display.getDisplayId() != Display.DEFAULT_DISPLAY
+                    && display.isValid()) {
+                return display;
             }
         }
-        if (secondaryDisplayId != -1) {
-            Display secondaryDisplay = displayManager.getDisplay(secondaryDisplayId);
-            presentation = new SecondaryDisplayPresentation(this, secondaryDisplay);
-            presentation.show();
-            if (stereo3dEnabled) {
-                int preferredHeight = getPreferredStereoOutputHeight(secondaryDisplay);
-                int alternateHeight = preferredHeight == STEREO_FULL_SBS_HEIGHT_1200
-                        ? STEREO_FULL_SBS_HEIGHT_1080
-                        : STEREO_FULL_SBS_HEIGHT_1200;
-                float targetFps = Math.min(prefConfig.fps, 60.0f);
-                boolean exactModeSelected = presentation.selectPreferredDisplayMode(
-                        STEREO_FULL_SBS_WIDTH, preferredHeight, targetFps);
-                int selectedHeight = preferredHeight;
-                if (!exactModeSelected) {
-                    exactModeSelected = presentation.selectPreferredDisplayMode(
-                            STEREO_FULL_SBS_WIDTH, alternateHeight, targetFps);
-                    if (exactModeSelected) {
-                        selectedHeight = alternateHeight;
-                    }
-                }
-                configureStereoOutputSize(STEREO_FULL_SBS_WIDTH, selectedHeight);
-                logSessionInfo("DISPLAY", exactModeSelected
-                        ? "外接显示器已请求 " + getStereoOutputSizeLabel() + " SBS 模式"
-                        : "外接显示器未暴露 3840x1080/1200 模式，SBS 将适配实际显示尺寸");
-            }
-            View renderView = glesRenderingEnabled ? fsrView : streamView;
-            if (renderView != null && renderView.getParent() instanceof ViewGroup) {
-                ((ViewGroup) renderView.getParent()).removeView(renderView);
-                if (stereo3dEnabled && renderView == fsrView) {
-                    // Some Android vendors expose the physical Full-SBS mode through Display.Mode,
-                    // but keep the Presentation layer stack at a 16:9 logical size (for example,
-                    // 3840x2160 mapped to a physical 3840x1200 panel). Fill that logical window and
-                    // let SurfaceFlinger scale a native Full-SBS buffer across it. Keeping the view
-                    // itself at 3840x1200 would apply the aspect correction twice and letterbox or
-                    // vertically shrink the image on the glasses.
-                    fsrView.setDesiredAspectRatio(0.0);
-                    fsrView.setFixedSurfacePixelSize(stereoOutputWidth, stereoOutputHeight);
-                    FrameLayout.LayoutParams externalLayoutParams = new FrameLayout.LayoutParams(
-                            FrameLayout.LayoutParams.MATCH_PARENT,
-                            FrameLayout.LayoutParams.MATCH_PARENT);
-                    externalLayoutParams.gravity = Gravity.FILL;
-                    fsrView.setLayoutParams(externalLayoutParams);
-                    LimeLog.info("SBS external presentation: layout=fill-parent, fixedSurface="
-                            + getStereoOutputSizeLabel());
-                }
-                presentation.addView(renderView);
-                if (stereo3dEnabled && renderView == fsrView) {
-                    fsrView.post(() -> LimeLog.info(
-                            "SBS external presentation measuredLayout="
-                                    + fsrView.getWidth() + "x" + fsrView.getHeight()
-                                    + ", fixedSurface=" + getStereoOutputSizeLabel()));
-                }
-            }
+        return null;
+    }
 
+    private String describeDisplay(Display display) {
+        if (display == null) {
+            return "display=null";
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Display.Mode mode = display.getMode();
+            return "displayId=" + display.getDisplayId() + ", name=" + display.getName()
+                    + ", mode=" + mode.getPhysicalWidth() + "x" + mode.getPhysicalHeight()
+                    + "@" + String.format(Locale.US, "%.2f", mode.getRefreshRate());
+        }
+        Point size = new Point();
+        display.getSize(size);
+        return "displayId=" + display.getDisplayId() + ", name=" + display.getName()
+                + ", size=" + size.x + "x" + size.y;
+    }
+
+    private View getDisplayRenderView() {
+        return glesRenderingEnabled ? fsrView : streamView;
+    }
+
+    private void rememberHandsetRenderHost(View renderView) {
+        if (handsetRenderParent != null || renderView == null) {
+            return;
+        }
+
+        ViewParent parent = renderView.getParent();
+        if (parent instanceof ViewGroup) {
+            handsetRenderParent = (ViewGroup) parent;
+            handsetRenderIndex = handsetRenderParent.indexOfChild(renderView);
+            handsetRenderLayoutParams = renderView.getLayoutParams();
+        }
+    }
+
+    private void routeRenderViewToExternalDisplay(Display display) {
+        if (externalDisplayRoutingDestroyed || display == null || !display.isValid()
+                || activeExternalDisplayId != Display.INVALID_DISPLAY) {
+            return;
+        }
+
+        View renderView = getDisplayRenderView();
+        if (renderView == null) {
+            return;
+        }
+        rememberHandsetRenderHost(renderView);
+        if (handsetRenderParent == null) {
+            logSessionInfo("DISPLAY", "外屏切换失败：无法确定手机端渲染容器");
+            return;
+        }
+
+        final SecondaryDisplayPresentation newPresentation =
+                new SecondaryDisplayPresentation(this, display);
+        newPresentation.setOnDismissListener(dialog -> {
+            if (!externalDisplayRoutingDestroyed && presentation == newPresentation) {
+                restoreRenderViewToHandset("外接显示窗口已关闭，displayId="
+                        + display.getDisplayId());
+                scheduleExternalDisplayAttach();
+            }
+        });
+
+        try {
+            newPresentation.show();
+        }
+        catch (RuntimeException e) {
+            newPresentation.setOnDismissListener(null);
+            if (newPresentation.isShowing()) {
+                newPresentation.dismiss();
+            }
+            logSessionInfo("DISPLAY", "外屏切换失败：" + e.getMessage());
+            return;
+        }
+
+        presentation = newPresentation;
+        activeExternalDisplayId = display.getDisplayId();
+        logSessionInfo("DISPLAY", "渲染画面正在迁移到外接显示器：" + describeDisplay(display));
+
+        configureExternalRenderView(renderView, display, newPresentation);
+        ViewParent parent = renderView.getParent();
+        if (parent instanceof ViewGroup) {
+            ((ViewGroup) parent).removeView(renderView);
+        }
+        newPresentation.addView(renderView);
+
+        if (stereo3dEnabled && renderView == fsrView) {
+            fsrView.post(() -> LimeLog.info(
+                    "SBS external presentation measuredLayout="
+                            + fsrView.getWidth() + "x" + fsrView.getHeight()
+                            + ", fixedSurface=" + getStereoOutputSizeLabel()));
+        }
+    }
+
+    private void configureExternalRenderView(View renderView, Display display,
+                                             SecondaryDisplayPresentation targetPresentation) {
+        if (!stereo3dEnabled || renderView != fsrView) {
+            return;
+        }
+
+        int preferredHeight = getPreferredStereoOutputHeight(display);
+        int alternateHeight = preferredHeight == STEREO_FULL_SBS_HEIGHT_1200
+                ? STEREO_FULL_SBS_HEIGHT_1080
+                : STEREO_FULL_SBS_HEIGHT_1200;
+        float targetFps = Math.min(prefConfig.fps, 60.0f);
+        boolean exactModeSelected = targetPresentation.selectPreferredDisplayMode(
+                STEREO_FULL_SBS_WIDTH, preferredHeight, targetFps);
+        int selectedHeight = preferredHeight;
+        if (!exactModeSelected) {
+            exactModeSelected = targetPresentation.selectPreferredDisplayMode(
+                    STEREO_FULL_SBS_WIDTH, alternateHeight, targetFps);
+            if (exactModeSelected) {
+                selectedHeight = alternateHeight;
+            }
+        }
+        configureStereoOutputSize(STEREO_FULL_SBS_WIDTH, selectedHeight);
+        logSessionInfo("DISPLAY", exactModeSelected
+                ? "外接显示器已请求 " + getStereoOutputSizeLabel() + " SBS 模式"
+                : "外接显示器未暴露 3840x1080/1200 模式，SBS 将适配实际显示尺寸");
+
+        // Some Android vendors expose the physical Full-SBS mode through Display.Mode,
+        // but keep the Presentation layer stack at a 16:9 logical size. Fill that logical
+        // window and let SurfaceFlinger scale a native Full-SBS buffer across it.
+        fsrView.setDesiredAspectRatio(0.0);
+        fsrView.setFixedSurfacePixelSize(stereoOutputWidth, stereoOutputHeight);
+        FrameLayout.LayoutParams externalLayoutParams = new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT);
+        externalLayoutParams.gravity = Gravity.FILL;
+        fsrView.setLayoutParams(externalLayoutParams);
+        LimeLog.info("SBS external presentation: layout=fill-parent, fixedSurface="
+                + getStereoOutputSizeLabel());
+    }
+
+    private void restoreRenderViewToHandset(String reason) {
+        if (activeExternalDisplayId == Display.INVALID_DISPLAY && presentation == null) {
+            return;
+        }
+
+        externalDisplayHandler.removeCallbacks(delayedExternalDisplayAttach);
+        SecondaryDisplayPresentation oldPresentation = presentation;
+        presentation = null;
+        activeExternalDisplayId = Display.INVALID_DISPLAY;
+
+        View renderView = getDisplayRenderView();
+        if (renderView != null && renderView.getParent() instanceof ViewGroup) {
+            ((ViewGroup) renderView.getParent()).removeView(renderView);
+        }
+        if (oldPresentation != null) {
+            oldPresentation.setOnDismissListener(null);
+            if (oldPresentation.isShowing()) {
+                oldPresentation.dismiss();
+            }
+        }
+
+        if (externalDisplayRoutingDestroyed || isFinishing() || renderView == null
+                || handsetRenderParent == null) {
+            return;
+        }
+
+        restoreHandsetRenderConfiguration(renderView);
+        if (handsetRenderLayoutParams != null) {
+            renderView.setLayoutParams(handsetRenderLayoutParams);
+        }
+        int insertIndex = handsetRenderIndex < 0
+                ? handsetRenderParent.getChildCount()
+                : Math.min(handsetRenderIndex, handsetRenderParent.getChildCount());
+        handsetRenderParent.addView(renderView, insertIndex);
+        logSessionInfo("DISPLAY", reason + "；渲染画面已恢复到手机屏幕");
+    }
+
+    private void restoreHandsetRenderConfiguration(View renderView) {
+        if (renderView != fsrView) {
+            return;
+        }
+
+        if (stereo3dEnabled) {
+            fsrView.setFixedSurfacePixelSize(0, 0);
+            fsrView.setDesiredAspectRatio(getStereoOutputAspectRatio());
+            fsrView.setMaxRenderFps(60);
+        }
+        else {
+            if (fsrEnabled) {
+                int[] fsrOutputSize = getFsrOutputSize();
+                fsrView.setFixedSurfacePixelSize(fsrOutputSize[0], fsrOutputSize[1]);
+            }
+            else {
+                fsrView.setFixedSurfacePixelSize(0, 0);
+            }
+            fsrView.setDesiredAspectRatio(prefConfig.stretchVideo
+                    ? 0.0
+                    : (double) prefConfig.width / (double) prefConfig.height);
+        }
+    }
+
+    private void releaseExternalDisplayRouting() {
+        externalDisplayRoutingDestroyed = true;
+        externalDisplayHandler.removeCallbacksAndMessages(null);
+        unregisterExternalDisplayListener();
+
+        SecondaryDisplayPresentation oldPresentation = presentation;
+        presentation = null;
+        activeExternalDisplayId = Display.INVALID_DISPLAY;
+        if (oldPresentation != null) {
+            oldPresentation.setOnDismissListener(null);
+            if (oldPresentation.isShowing()) {
+                oldPresentation.dismiss();
+            }
+        }
+        handsetRenderParent = null;
+        handsetRenderLayoutParams = null;
+        handsetRenderIndex = -1;
     }
 
 
