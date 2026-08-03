@@ -24,6 +24,11 @@ import java.util.List;
 public final class HomeHostCarouselView extends RecyclerView
         implements HomeHostAdapter.InteractionListener {
 
+    private static final float JOYSTICK_RELEASE_THRESHOLD = 0.35f;
+    private static final float JOYSTICK_TRIGGER_THRESHOLD = 0.65f;
+    private static final float HAT_TRIGGER_THRESHOLD = 0.5f;
+    private static final long JOYSTICK_MOVE_INTERVAL_MS = 180L;
+
     public interface Listener {
         void onSelectionChanged(String selectionKey, int position, int hostCount,
                                 PcView.ComputerObject computer, boolean addCard,
@@ -371,26 +376,58 @@ public final class HomeHostCarouselView extends RecyclerView
         if (event.getAction() == MotionEvent.ACTION_MOVE
                 && (event.getSource() & android.view.InputDevice.SOURCE_JOYSTICK)
                 == android.view.InputDevice.SOURCE_JOYSTICK) {
-            float direction = event.getAxisValue(listMode
-                    ? MotionEvent.AXIS_HAT_Y : MotionEvent.AXIS_HAT_X);
-            if (Math.abs(direction) < 0.01f) {
-                direction = event.getAxisValue(listMode
-                        ? MotionEvent.AXIS_Y : MotionEvent.AXIS_X);
+            float direction = getJoystickDirection(event,
+                    listMode ? MotionEvent.AXIS_HAT_Y : MotionEvent.AXIS_HAT_X,
+                    listMode ? MotionEvent.AXIS_Y : MotionEvent.AXIS_X);
+            float perpendicularDirection = getJoystickDirection(event,
+                    listMode ? MotionEvent.AXIS_HAT_X : MotionEvent.AXIS_HAT_Y,
+                    listMode ? MotionEvent.AXIS_X : MotionEvent.AXIS_Y);
+            float magnitude = Math.abs(direction);
+
+            if (magnitude < JOYSTICK_RELEASE_THRESHOLD) {
+                joystickArmed = true;
+                return super.onGenericMotionEvent(event);
             }
 
-            if (Math.abs(direction) < 0.35f) {
-                joystickArmed = true;
+            // Keep consuming the selected axis until it returns to center. If these
+            // held ACTION_MOVE events fall through, Android can synthesize repeating
+            // DPAD keys and advance several cards from a single stick deflection.
+            if (!joystickArmed) {
+                return true;
             }
-            else if (Math.abs(direction) >= 0.65f && joystickArmed
-                    && event.getEventTime() - lastJoystickMoveMs >= 180) {
+
+            // Preserve perpendicular focus navigation when the user clearly intends
+            // to leave the carousel rather than page it.
+            if (Math.abs(perpendicularDirection) > magnitude * 1.1f) {
+                return super.onGenericMotionEvent(event);
+            }
+
+            if (magnitude >= JOYSTICK_TRIGGER_THRESHOLD) {
                 joystickArmed = false;
-                lastJoystickMoveMs = event.getEventTime();
-                if (moveSelection(direction > 0 ? 1 : -1, true)) {
-                    return true;
+                if (event.getEventTime() - lastJoystickMoveMs >= JOYSTICK_MOVE_INTERVAL_MS) {
+                    lastJoystickMoveMs = event.getEventTime();
+                    if (!moveSelection(direction > 0 ? 1 : -1, true)) {
+                        // At the first/last card, allow one normal focus-navigation
+                        // event to leave the carousel. The remaining held events are
+                        // still consumed by the latch above.
+                        return super.onGenericMotionEvent(event);
+                    }
                 }
             }
+
+            // Consume the whole horizontal/vertical paging gesture, including the
+            // interval between release and trigger thresholds, to avoid platform
+            // joystick-to-DPAD fallback.
+            return true;
         }
         return super.onGenericMotionEvent(event);
+    }
+
+    private float getJoystickDirection(MotionEvent event, int hatAxis, int stickAxis) {
+        float hatDirection = event.getAxisValue(hatAxis);
+        return Math.abs(hatDirection) >= HAT_TRIGGER_THRESHOLD
+                ? hatDirection
+                : event.getAxisValue(stickAxis);
     }
 
     @Override

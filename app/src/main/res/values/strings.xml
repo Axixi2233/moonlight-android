@@ -458,7 +458,7 @@
     <string name="home_action_gamepad">Gamepad tools</string>
     <string name="home_select_host">Controllable devices</string>
     <string name="home_select_host_hint">Swipe left or right, then activate the centered device</string>
-    <string name="home_select_host_list_hint">Swipe up or down, then activate the focused device</string>
+    <string name="home_select_host_list_hint">Swipe up or down, then tap the device to enter.</string>
     <string name="home_switch_to_list">Switch to host list</string>
     <string name="home_switch_to_cards">Switch to host cards</string>
     <string name="home_host_count_format">%1$d / %2$d</string>

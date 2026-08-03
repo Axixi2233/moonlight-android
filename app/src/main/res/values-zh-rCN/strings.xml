@@ -354,7 +354,7 @@
     <string name="home_action_gamepad">手柄工具</string>
     <string name="home_select_host">可控设备</string>
     <string name="home_select_host_hint">左右滑动，确认中间设备进入</string>
-    <string name="home_select_host_list_hint">上下滑动，确认焦点设备进入</string>
+    <string name="home_select_host_list_hint">上下滑动，点击设备进入</string>
     <string name="home_switch_to_list">切换为主机列表</string>
     <string name="home_switch_to_cards">切换为主机卡片</string>
     <string name="home_host_count_format">%1$d / %2$d</string>
