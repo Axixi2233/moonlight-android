@@ -41,10 +41,30 @@ public class PreferenceConfiguration {
     public static final String STEREO_3D_MODE_PREF_STRING = "list_stereo_3d_mode";
     public static final String STEREO_3D_MODE_OFF = "off";
     public static final String STEREO_3D_MODE_SBS = "sbs";
+    public static final String STEREO_3D_MODE_SBS_HALF = "sbs_half";
     public static final String STEREO_3D_DEPTH_PREF_STRING = "list_stereo_3d_depth";
     public static final String STEREO_3D_CONVERGENCE_PREF_STRING = "list_stereo_3d_convergence";
     public static final String STEREO_3D_SWAP_EYES_PREF_STRING = "checkbox_stereo_3d_swap_eyes";
     public static final String FSR_TARGET_PREF_STRING = "list_fsr_target";
+
+    public static boolean isStereo3dModeEnabled(String mode) {
+        return STEREO_3D_MODE_SBS.equalsIgnoreCase(mode)
+                || STEREO_3D_MODE_SBS_HALF.equalsIgnoreCase(mode);
+    }
+
+    public static boolean isStereo3dHalfWidthMode(String mode) {
+        return STEREO_3D_MODE_SBS_HALF.equalsIgnoreCase(mode);
+    }
+
+    public static String normalizeStereo3dMode(String mode) {
+        if (STEREO_3D_MODE_SBS_HALF.equalsIgnoreCase(mode)) {
+            return STEREO_3D_MODE_SBS_HALF;
+        }
+        if (STEREO_3D_MODE_SBS.equalsIgnoreCase(mode)) {
+            return STEREO_3D_MODE_SBS;
+        }
+        return STEREO_3D_MODE_OFF;
+    }
     private static final String STRETCH_PREF_STRING = "checkbox_stretch_video";
     private static final String SOPS_PREF_STRING = "checkbox_enable_sops";
     private static final String DISABLE_TOASTS_PREF_STRING = "checkbox_disable_warnings";
@@ -754,7 +774,8 @@ public class PreferenceConfiguration {
             }
             migrationEditor.apply();
         }
-        if (STEREO_3D_MODE_SBS.equalsIgnoreCase(stereo3dMode)
+        stereo3dMode = normalizeStereo3dMode(stereo3dMode);
+        if (isStereo3dModeEnabled(stereo3dMode)
                 && !VIDEO_RENDER_MODE_GLES.equalsIgnoreCase(videoRenderMode)) {
             videoRenderMode = VIDEO_RENDER_MODE_GLES;
             prefs.edit()
@@ -765,9 +786,7 @@ public class PreferenceConfiguration {
         config.videoRenderMode = VIDEO_RENDER_MODE_GLES.equalsIgnoreCase(videoRenderMode)
                 ? VideoRenderMode.GLES
                 : VideoRenderMode.SYSTEM;
-        config.stereo3dMode = STEREO_3D_MODE_SBS.equalsIgnoreCase(stereo3dMode)
-                ? STEREO_3D_MODE_SBS
-                : STEREO_3D_MODE_OFF;
+        config.stereo3dMode = stereo3dMode;
         config.stereo3dDepth = prefs.getString(STEREO_3D_DEPTH_PREF_STRING, "standard");
         config.stereo3dConvergence = prefs.getString(STEREO_3D_CONVERGENCE_PREF_STRING, "standard");
         config.stereo3dSwapEyes = prefs.getBoolean(STEREO_3D_SWAP_EYES_PREF_STRING, false);

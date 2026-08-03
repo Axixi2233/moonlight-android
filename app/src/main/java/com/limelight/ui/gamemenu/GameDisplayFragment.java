@@ -178,9 +178,10 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
         }
         fsrTargetPending = PreferenceManager.getDefaultSharedPreferences(getActivity())
                 .getString("list_fsr_target", "off");
-        stereo3dModePending = PreferenceManager.getDefaultSharedPreferences(getActivity())
-                .getString(PreferenceConfiguration.STEREO_3D_MODE_PREF_STRING,
-                        PreferenceConfiguration.STEREO_3D_MODE_OFF);
+        stereo3dModePending = PreferenceConfiguration.normalizeStereo3dMode(
+                PreferenceManager.getDefaultSharedPreferences(getActivity())
+                        .getString(PreferenceConfiguration.STEREO_3D_MODE_PREF_STRING,
+                                PreferenceConfiguration.STEREO_3D_MODE_OFF));
         stereo3dDepthPending = PreferenceManager.getDefaultSharedPreferences(getActivity())
                 .getString(PreferenceConfiguration.STEREO_3D_DEPTH_PREF_STRING, "standard");
         stereo3dConvergencePending = PreferenceManager.getDefaultSharedPreferences(getActivity())
@@ -345,9 +346,15 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
         });
 
         rg_game_display_stereo_3d.setOnCheckedChangeListener((group, checkedId) -> {
-            stereo3dModePending = checkedId == R.id.rbt_game_display_stereo_3d_sbs
-                    ? PreferenceConfiguration.STEREO_3D_MODE_SBS
-                    : PreferenceConfiguration.STEREO_3D_MODE_OFF;
+            if (checkedId == R.id.rbt_game_display_stereo_3d_sbs) {
+                stereo3dModePending = PreferenceConfiguration.STEREO_3D_MODE_SBS;
+            }
+            else if (checkedId == R.id.rbt_game_display_stereo_3d_sbs_half) {
+                stereo3dModePending = PreferenceConfiguration.STEREO_3D_MODE_SBS_HALF;
+            }
+            else {
+                stereo3dModePending = PreferenceConfiguration.STEREO_3D_MODE_OFF;
+            }
             updateStereo3dDetailState();
         });
 
@@ -543,10 +550,17 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
     }
 
     private void initStereo3d() {
-        rg_game_display_stereo_3d.check(
-                PreferenceConfiguration.STEREO_3D_MODE_SBS.equalsIgnoreCase(stereo3dModePending)
-                        ? R.id.rbt_game_display_stereo_3d_sbs
-                        : R.id.rbt_game_display_stereo_3d_off);
+        if (PreferenceConfiguration.STEREO_3D_MODE_SBS_HALF.equalsIgnoreCase(
+                stereo3dModePending)) {
+            rg_game_display_stereo_3d.check(R.id.rbt_game_display_stereo_3d_sbs_half);
+        }
+        else if (PreferenceConfiguration.STEREO_3D_MODE_SBS.equalsIgnoreCase(
+                stereo3dModePending)) {
+            rg_game_display_stereo_3d.check(R.id.rbt_game_display_stereo_3d_sbs);
+        }
+        else {
+            rg_game_display_stereo_3d.check(R.id.rbt_game_display_stereo_3d_off);
+        }
         updateStereo3dDetailState();
     }
 
@@ -622,7 +636,7 @@ public class GameDisplayFragment extends BaseGameMenuDialog implements View.OnCl
         v_game_display_stereo_3d_header.setVisibility(sectionVisibility);
         rg_game_display_stereo_3d.setVisibility(sectionVisibility);
         boolean stereo3dEnabledPending = glesRendering
-                && PreferenceConfiguration.STEREO_3D_MODE_SBS.equalsIgnoreCase(stereo3dModePending);
+                && PreferenceConfiguration.isStereo3dModeEnabled(stereo3dModePending);
         v_game_display_stereo_3d_details.setVisibility(
                 stereo3dEnabledPending ? View.VISIBLE : View.GONE);
     }

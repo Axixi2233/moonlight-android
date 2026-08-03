@@ -8,6 +8,7 @@ import android.util.Log;
 
 import com.limelight.stereo3d.NoOpStereo3dBackend;
 import com.limelight.stereo3d.Stereo3dBackend;
+import com.limelight.stereo3d.Stereo3dOutputLayout;
 
 import java.io.IOException;
 import java.nio.FloatBuffer;
@@ -61,6 +62,7 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
     private boolean fsrEnabled;
     private boolean stereo3dEnabled;
     private boolean stereo3dSwapEyes;
+    private int stereo3dOutputLayout = Stereo3dOutputLayout.FULL_SBS;
     private boolean optionalStereo3dReady;
     private volatile boolean optionalStereo3dRendering;
     private boolean optionalStereo3dFailureLogged;
@@ -172,7 +174,10 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
         if (stereo3dEnabled) {
             Log.i(TAG, "SBS display surface=" + width + "x" + height
                     + ", targetOutput=" + stereoOutputWidth + "x" + stereoOutputHeight
-                    + ", eyeViewport=" + (width / 2) + "x" + height);
+                    + ", storedEye=" + (width / 2) + "x" + height
+                    + ", viewedEyeAspect="
+                    + Stereo3dOutputLayout.calculateEyeAspect(
+                            width, height, stereo3dOutputLayout));
         }
         updateOutputSize();
     }
@@ -263,6 +268,10 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
 
     public void setStereo3dSwapEyes(boolean swapEyes) {
         stereo3dSwapEyes = swapEyes;
+    }
+
+    public void setStereo3dOutputLayout(int outputLayout) {
+        stereo3dOutputLayout = Stereo3dOutputLayout.normalize(outputLayout);
     }
 
     public void setStereoSceneSize(int width, int height) {
@@ -472,6 +481,7 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
                     textureTransform,
                     Math.max(surfaceWidth, 1),
                     Math.max(surfaceHeight, 1),
+                    stereo3dOutputLayout,
                     stereo3dDepthStrength,
                     stereo3dConvergence,
                     stereo3dSwapEyes);
@@ -668,7 +678,8 @@ public final class FsrVideoProcessor implements VideoProcessingGLSurfaceView.Vid
         float safeWidth = Math.max(sourceWidth, 1);
         float safeHeight = Math.max(sourceHeight, 1);
         float eyeAspect = surfaceWidth > 0 && surfaceHeight > 0
-                ? (surfaceWidth * 0.5f) / surfaceHeight
+                ? Stereo3dOutputLayout.calculateEyeAspect(
+                        surfaceWidth, surfaceHeight, stereo3dOutputLayout)
                 : (16.0f / 9.0f);
         program.setFloatUniform("uSourceAspect", safeWidth / safeHeight);
         program.setFloatUniform("uEyeAspect", eyeAspect);

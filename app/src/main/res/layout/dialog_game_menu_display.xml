@@ -627,7 +627,7 @@
                     android:layout_marginLeft="5dp"
                     android:ellipsize="end"
                     android:singleLine="true"
-                    android:text="为AR眼镜自动输出3840×1080或3840×1200左右格式。"
+                    android:text="支持全宽3840×1080/1200和半宽1920×1080/1200。"
                     android:textColor="#FFC107"
                     android:textSize="6dp"
                     android:textStyle="italic|bold" />
@@ -666,7 +666,20 @@
                     android:button="@null"
                     android:gravity="center"
                     android:padding="4dp"
-                    android:text="左右格式"
+                    android:text="左右全宽"
+                    android:textSize="10dp" />
+
+                <RadioButton
+                    android:id="@+id/rbt_game_display_stereo_3d_sbs_half"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginRight="5dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/ic_game_menu_btn_selector"
+                    android:button="@null"
+                    android:gravity="center"
+                    android:padding="4dp"
+                    android:text="左右半宽"
                     android:textSize="10dp" />
             </RadioGroup>
 

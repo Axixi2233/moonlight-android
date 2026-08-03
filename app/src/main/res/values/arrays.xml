@@ -43,11 +43,13 @@
 
     <string-array name="stereo_3d_mode_names">
         <item>关闭</item>
-        <item>左右格式</item>
+        <item>左右全宽</item>
+        <item>左右半宽</item>
     </string-array>
     <string-array name="stereo_3d_mode_values" translatable="false">
         <item>off</item>
         <item>sbs</item>
+        <item>sbs_half</item>
     </string-array>
 
     <string-array name="stereo_3d_depth_names">

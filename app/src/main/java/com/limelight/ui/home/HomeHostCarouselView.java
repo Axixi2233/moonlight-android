@@ -18,6 +18,7 @@ import android.view.VelocityTracker;
 
 import com.limelight.PcView;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -55,8 +56,11 @@ public final class HomeHostCarouselView extends RecyclerView
     private VelocityTracker touchVelocityTracker;
     private boolean horizontalDragLocked;
     private boolean userScrollPending;
+    private boolean replacingTouchSettling;
     private boolean listMode;
     private boolean headerAddAvailable;
+    private List<PcView.ComputerObject> pendingComputers;
+    private String pendingSelectionKey;
 
     public HomeHostCarouselView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -89,12 +93,9 @@ public final class HomeHostCarouselView extends RecyclerView
                     userScrollPending = true;
                 }
                 if (newState == SCROLL_STATE_IDLE) {
-                    View snapView = snapHelper.findSnapView(layoutManager);
-                    if (snapView != null) {
-                        int position = layoutManager.getPosition(snapView);
-                        setSelectionInternal(position, false, false, userScrollPending);
+                    if (!replacingTouchSettling) {
+                        completeCarouselScroll();
                     }
-                    userScrollPending = false;
                 }
             }
         });
@@ -168,7 +169,20 @@ public final class HomeHostCarouselView extends RecyclerView
         List<PcView.ComputerObject> safeComputers = computers == null
                 ? Collections.emptyList()
                 : computers;
-        hostAdapter.setComputers(safeComputers);
+        if (!listMode && isCarouselInteractionInProgress()) {
+            pendingComputers = new ArrayList<>(safeComputers);
+            pendingSelectionKey = preferredSelectionKey;
+            return;
+        }
+
+        applyComputers(safeComputers, preferredSelectionKey);
+    }
+
+    private void applyComputers(List<PcView.ComputerObject> computers,
+                                String preferredSelectionKey) {
+        String previousSelectionKey = getSelectedKey();
+        int previousPosition = hostAdapter.getSelectedPosition();
+        hostAdapter.setComputers(computers);
         int position = hostAdapter.findPositionForKey(preferredSelectionKey);
         if (listMode) {
             hostAdapter.setSelectedPosition(position);
@@ -176,8 +190,18 @@ public final class HomeHostCarouselView extends RecyclerView
             notifySelectionChanged(false);
             return;
         }
-        setSelectionInternal(position, false, false, false);
-        post(() -> centerPosition(position, false));
+
+        hostAdapter.setSelectedPosition(position);
+        applyCardTransforms();
+        notifySelectionChanged(false);
+
+        String selectedKey = hostAdapter.getSelectionKey(position);
+        boolean selectionMoved = previousPosition != position
+                || (previousSelectionKey == null
+                ? selectedKey != null : !previousSelectionKey.equals(selectedKey));
+        if (selectionMoved || findCardView(position) == null) {
+            post(() -> centerPosition(position, false));
+        }
     }
 
     public String getSelectedKey() {
@@ -279,6 +303,7 @@ public final class HomeHostCarouselView extends RecyclerView
         }
         else if (event.getActionMasked() == MotionEvent.ACTION_CANCEL) {
             resetTouchGesture();
+            post(this::completeCarouselScrollIfIdle);
         }
         return handled;
     }
@@ -513,11 +538,14 @@ public final class HomeHostCarouselView extends RecyclerView
                     touchStartPosition + direction,
                     hostAdapter.getItemCount() - 1));
             if (target != touchStartPosition) {
+                replacingTouchSettling = true;
                 stopScroll();
                 setSelectionInternal(target, true, false, true);
+                replacingTouchSettling = false;
             }
         }
         resetTouchGesture();
+        post(this::completeCarouselScrollIfIdle);
     }
 
     private void resetTouchGesture() {
@@ -556,16 +584,82 @@ public final class HomeHostCarouselView extends RecyclerView
         }
     }
 
+    private void updateSelectionFromSnap(int position, boolean userInitiated) {
+        if (hostAdapter.getItemCount() == 0) {
+            hostAdapter.setSelectedPosition(0);
+            notifySelectionChanged(userInitiated);
+            return;
+        }
+
+        int boundedPosition = Math.max(0, Math.min(position, hostAdapter.getItemCount() - 1));
+        boolean changed = boundedPosition != hostAdapter.getSelectedPosition();
+        hostAdapter.setSelectedPosition(boundedPosition);
+        applyCardTransforms();
+        if (changed) {
+            performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+        }
+        notifySelectionChanged(userInitiated);
+    }
+
+    private void completeCarouselScroll() {
+        if (listMode) {
+            return;
+        }
+
+        boolean userInitiated = userScrollPending;
+        View snapView = snapHelper.findSnapView(layoutManager);
+        if (snapView != null) {
+            int position = layoutManager.getPosition(snapView);
+            updateSelectionFromSnap(position, userInitiated);
+        }
+        userScrollPending = false;
+        applyPendingComputers(userInitiated);
+    }
+
+    private void completeCarouselScrollIfIdle() {
+        if (!listMode
+                && !replacingTouchSettling
+                && getScrollState() == SCROLL_STATE_IDLE
+                && (userScrollPending || pendingComputers != null)) {
+            completeCarouselScroll();
+        }
+    }
+
     private void centerPosition(int position, boolean smooth) {
         if (position < 0 || position >= hostAdapter.getItemCount()) {
             return;
         }
         if (smooth) {
-            smoothScrollToPosition(position);
+            View targetView = findCardView(position);
+            if (!listMode && targetView != null) {
+                int targetCenter = (targetView.getLeft() + targetView.getRight()) / 2;
+                smoothScrollBy(targetCenter - getWidth() / 2, 0);
+            }
+            else {
+                smoothScrollToPosition(position);
+            }
         }
         else {
             layoutManager.scrollToPositionWithOffset(position, listMode ? dp(6) : 0);
         }
+    }
+
+    private boolean isCarouselInteractionInProgress() {
+        return touchPointerId != MotionEvent.INVALID_POINTER_ID
+                || userScrollPending
+                || getScrollState() != SCROLL_STATE_IDLE;
+    }
+
+    private void applyPendingComputers(boolean keepSnappedSelection) {
+        if (pendingComputers == null) {
+            return;
+        }
+
+        List<PcView.ComputerObject> computers = pendingComputers;
+        String selectionKey = keepSnappedSelection ? getSelectedKey() : pendingSelectionKey;
+        pendingComputers = null;
+        pendingSelectionKey = null;
+        applyComputers(computers, selectionKey);
     }
 
     private void notifySelectionChanged(boolean userInitiated) {

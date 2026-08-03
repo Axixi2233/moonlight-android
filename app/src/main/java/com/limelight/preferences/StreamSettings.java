@@ -217,7 +217,7 @@ public class StreamSettings extends Activity {
             boolean glesRendering = PreferenceConfiguration.VIDEO_RENDER_MODE_GLES
                     .equalsIgnoreCase(renderMode);
             if (!glesRendering
-                    && !PreferenceConfiguration.STEREO_3D_MODE_OFF.equalsIgnoreCase(stereo3dMode)) {
+                    && PreferenceConfiguration.isStereo3dModeEnabled(stereo3dMode)) {
                 stereo3dMode = PreferenceConfiguration.STEREO_3D_MODE_OFF;
                 stereo3dModePreference.setValue(stereo3dMode);
             }
@@ -227,7 +227,7 @@ public class StreamSettings extends Activity {
             }
 
             boolean stereo3dEnabled = glesRendering
-                    && PreferenceConfiguration.STEREO_3D_MODE_SBS.equalsIgnoreCase(stereo3dMode);
+                    && PreferenceConfiguration.isStereo3dModeEnabled(stereo3dMode);
             setBasicPreferenceVisible(stereo3dModePreference, glesRendering);
             setBasicPreferenceVisible(stereo3dDepthPreference, stereo3dEnabled);
             setBasicPreferenceVisible(stereo3dConvergencePreference, stereo3dEnabled);

@@ -34,12 +34,14 @@ public interface Stereo3dBackend {
                            float[] textureTransform);
 
     /**
-     * Attempts to draw a complete full-SBS frame into the current output framebuffer.
+     * Attempts to draw a complete SBS frame into the current output framebuffer.
      *
      * <p>The color source may be the decoded external texture or a 2D texture produced
      * by FSR. Returning false tells the host to immediately use its built-in stereo
      * shader for this frame. Implementations should return false before drawing when
-     * no valid depth result is available.</p>
+     * no valid depth result is available. {@code outputLayout} describes whether each
+     * eye keeps full horizontal resolution or is stored at half width for anamorphic
+     * expansion by the target display.</p>
      */
     boolean renderStereo(int colorTextureId,
                          int colorTextureTarget,
@@ -48,6 +50,7 @@ public interface Stereo3dBackend {
                          float[] textureTransform,
                          int outputWidth,
                          int outputHeight,
+                         int outputLayout,
                          float depthStrength,
                          float convergence,
                          boolean swapEyes);

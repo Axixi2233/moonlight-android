@@ -37,7 +37,7 @@ bool mapEyeUv(vec2 eyeUv, out vec2 sourceUv) {
     }
 
     // Horizontal headroom avoids parallax edge artifacts. Keep Y untouched so
-    // full-SBS output preserves the source frame's vertical geometry exactly.
+    // SBS output preserves the source frame's vertical geometry exactly.
     sourceUv.x = (sourceUv.x - 0.5) * 0.965 + 0.5;
     return true;
 }

@@ -26,6 +26,7 @@ import com.limelight.binding.video.PerfOverlayListener;
 import com.limelight.binding.video.PerfOverlayStats;
 import com.limelight.fsr.FsrVideoProcessor;
 import com.limelight.fsr.VideoProcessingGLSurfaceView;
+import com.limelight.stereo3d.Stereo3dOutputLayout;
 import com.limelight.nvstream.MicUplinkConnection;
 import com.limelight.nvstream.NvConnection;
 import com.limelight.nvstream.NvConnectionListener;
@@ -148,6 +149,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     private static final int MAX_BACKGROUND_RECONNECT_ATTEMPTS = 3;
     private static final long BACKGROUND_RECONNECT_GRACE_MS = 10_000L;
     private static final int STEREO_FULL_SBS_WIDTH = 3840;
+    private static final int STEREO_HALF_SBS_WIDTH = 1920;
     private static final int STEREO_FULL_SBS_HEIGHT_1080 = 1080;
     private static final int STEREO_FULL_SBS_HEIGHT_1200 = 1200;
     public static Game instance;
@@ -304,6 +306,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     private boolean glesRenderingEnabled;
     private boolean fsrEnabled;
     private boolean stereo3dEnabled;
+    private int stereo3dOutputLayout = Stereo3dOutputLayout.FULL_SBS;
     private int stereoOutputWidth = STEREO_FULL_SBS_WIDTH;
     private int stereoOutputHeight = STEREO_FULL_SBS_HEIGHT_1080;
     private boolean fsrInputSurfaceReady;
@@ -466,6 +469,8 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         streamView.setInputCallbacks(this);
 
         stereo3dEnabled = isStereo3dEnabled();
+        stereo3dOutputLayout = getStereo3dOutputLayout();
+        stereoOutputWidth = getStereoTargetWidth();
         glesRenderingEnabled = isGlesRenderingEnabled();
         fsrEnabled = isFsrEnabled();
         configureGlesWindowColorMode();
@@ -507,6 +512,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             fsrVideoProcessor.setSharpness(getFsrSharpness());
             fsrVideoProcessor.setFsrEnabled(fsrEnabled);
             fsrVideoProcessor.setStereo3dEnabled(stereo3dEnabled);
+            fsrVideoProcessor.setStereo3dOutputLayout(stereo3dOutputLayout);
             fsrVideoProcessor.setStereo3dDepthStrength(getStereo3dDepthStrength());
             fsrVideoProcessor.setStereo3dConvergence(getStereo3dConvergence());
             fsrVideoProcessor.setStereo3dSwapEyes(prefConfig.stereo3dSwapEyes);
@@ -563,9 +569,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             fsrView.getHolder().addCallback(this);
             fsrView.setFrameInputSize(prefConfig.width, prefConfig.height);
             if (stereo3dEnabled) {
-                // Keep full-SBS as the logical layout, but let the actual display window own
-                // the buffer size. A native Full-SBS AR display will still produce a native surface,
-                // while handset previews no longer allocate an oversized off-screen buffer.
+                // Let the actual display window own the SBS buffer size. A native Full-SBS or
+                // Half-SBS AR display will produce its selected surface without forcing the
+                // handset preview to allocate an oversized off-screen buffer.
                 fsrView.setFixedSurfacePixelSize(0, 0);
                 fsrView.setMaxRenderFps(60);
             }
@@ -3800,7 +3806,8 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         addPerfRow("累计音频流量", formatBytes(stats.audioBytes));
         addPerfRow("渲染方式", glesRenderingEnabled ? "GLES渲染" : "系统渲染");
         addPerfRow("3D输出", stereo3dEnabled
-                ? "SBS " + getStereoOutputSizeLabel() + getStereo3dAiSuffix()
+                ? getStereo3dPackingDisplayName() + " "
+                + getStereoOutputSizeLabel() + getStereo3dAiSuffix()
                 + " / 景深" + getStereo3dDepthDisplayName()
                 : "关闭");
         addPerfRow("超分状态", buildUpscaleStatusText());
@@ -3873,7 +3880,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     }
 
     private String buildStereo3dPerfLabel() {
-        return "SBS 3D" + getStereo3dAiSuffix();
+        return getStereo3dPackingDisplayName() + getStereo3dAiSuffix();
     }
 
     private String getStereo3dAiSuffix() {
@@ -4950,25 +4957,29 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         int alternateHeight = preferredHeight == STEREO_FULL_SBS_HEIGHT_1200
                 ? STEREO_FULL_SBS_HEIGHT_1080
                 : STEREO_FULL_SBS_HEIGHT_1200;
+        int targetWidth = getStereoTargetWidth();
         float targetFps = Math.min(prefConfig.fps, 60.0f);
         boolean exactModeSelected = targetPresentation.selectPreferredDisplayMode(
-                STEREO_FULL_SBS_WIDTH, preferredHeight, targetFps);
+                targetWidth, preferredHeight, targetFps);
         int selectedHeight = preferredHeight;
         if (!exactModeSelected) {
             exactModeSelected = targetPresentation.selectPreferredDisplayMode(
-                    STEREO_FULL_SBS_WIDTH, alternateHeight, targetFps);
+                    targetWidth, alternateHeight, targetFps);
             if (exactModeSelected) {
                 selectedHeight = alternateHeight;
             }
         }
-        configureStereoOutputSize(STEREO_FULL_SBS_WIDTH, selectedHeight);
+        configureStereoOutputSize(targetWidth, selectedHeight);
         logSessionInfo("DISPLAY", exactModeSelected
-                ? "外接显示器已请求 " + getStereoOutputSizeLabel() + " SBS 模式"
-                : "外接显示器未暴露 3840x1080/1200 模式，SBS 将适配实际显示尺寸");
+                ? "外接显示器已请求 " + getStereoOutputSizeLabel() + " "
+                + getStereo3dPackingDisplayName() + "模式"
+                : "外接显示器未暴露 " + targetWidth
+                + "x1080/1200 模式，" + getStereo3dPackingDisplayName()
+                + "将适配实际显示尺寸");
 
-        // Some Android vendors expose the physical Full-SBS mode through Display.Mode,
-        // but keep the Presentation layer stack at a 16:9 logical size. Fill that logical
-        // window and let SurfaceFlinger scale a native Full-SBS buffer across it.
+        // Some Android vendors expose the physical SBS mode through Display.Mode, but keep
+        // the Presentation layer stack at a different logical size. Fill that logical window
+        // and let SurfaceFlinger present the selected native SBS buffer across it.
         fsrView.setDesiredAspectRatio(0.0);
         fsrView.setFixedSurfacePixelSize(stereoOutputWidth, stereoOutputHeight);
         FrameLayout.LayoutParams externalLayoutParams = new FrameLayout.LayoutParams(
@@ -5084,8 +5095,25 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     }
 
     private boolean isStereo3dEnabled() {
-        return PreferenceConfiguration.STEREO_3D_MODE_SBS
-                .equalsIgnoreCase(prefConfig.stereo3dMode);
+        return PreferenceConfiguration.isStereo3dModeEnabled(prefConfig.stereo3dMode);
+    }
+
+    private int getStereo3dOutputLayout() {
+        return PreferenceConfiguration.isStereo3dHalfWidthMode(prefConfig.stereo3dMode)
+                ? Stereo3dOutputLayout.HALF_SBS
+                : Stereo3dOutputLayout.FULL_SBS;
+    }
+
+    private int getStereoTargetWidth() {
+        return stereo3dOutputLayout == Stereo3dOutputLayout.HALF_SBS
+                ? STEREO_HALF_SBS_WIDTH
+                : STEREO_FULL_SBS_WIDTH;
+    }
+
+    private String getStereo3dPackingDisplayName() {
+        return stereo3dOutputLayout == Stereo3dOutputLayout.HALF_SBS
+                ? "SBS 半宽"
+                : "SBS 全宽";
     }
 
     private boolean isFsrEnabled() {
@@ -5160,7 +5188,11 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     private int[] getStereoSceneSize() {
         return fsrEnabled
                 ? getFsrOutputSize()
-                : new int[] {stereoOutputWidth / 2, stereoOutputHeight};
+                : new int[] {
+                        Stereo3dOutputLayout.calculateViewedEyeWidth(
+                                stereoOutputWidth, stereo3dOutputLayout),
+                        stereoOutputHeight
+                };
     }
 
     private double getStereoOutputAspectRatio() {
@@ -5203,7 +5235,11 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             fsrView.setDesiredAspectRatio(getStereoOutputAspectRatio());
         }
         LimeLog.info("SBS output target=" + getStereoOutputSizeLabel()
-                + ", eye=" + (stereoOutputWidth / 2) + "x" + stereoOutputHeight);
+                + ", packing=" + getStereo3dPackingDisplayName()
+                + ", storedEye=" + (stereoOutputWidth / 2) + "x" + stereoOutputHeight
+                + ", viewedEyeAspect="
+                + Stereo3dOutputLayout.calculateEyeAspect(
+                        stereoOutputWidth, stereoOutputHeight, stereo3dOutputLayout));
     }
 
     private int getPreferredStereoOutputHeight(Display display) {

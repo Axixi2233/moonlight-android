@@ -23,7 +23,8 @@ public final class NoOpStereo3dBackend implements Stereo3dBackend {
     @Override
     public boolean renderStereo(int colorTextureId, int colorTextureTarget,
                                 int sourceWidth, int sourceHeight, float[] textureTransform,
-                                int outputWidth, int outputHeight, float depthStrength,
+                                int outputWidth, int outputHeight, int outputLayout,
+                                float depthStrength,
                                 float convergence, boolean swapEyes) {
         return false;
     }
