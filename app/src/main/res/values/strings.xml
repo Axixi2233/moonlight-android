@@ -475,8 +475,10 @@
     <string name="home_controller_connected">Connected</string>
     <string name="home_controller_disconnected">Not connected</string>
     <string name="home_controller_count_format">%1$d gamepads detected</string>
+    <string name="home_controller_page_format">%1$d / %2$d</string>
     <string name="home_controller_system_input">Android system input</string>
     <string name="home_controller_device_detail">VID %1$s · PID %2$s · %3$s</string>
+    <string name="home_controller_vibration_supported">Rumble</string>
     <string name="home_host_checking">Checking</string>
     <string name="home_host_offline">Offline</string>
     <string name="home_host_wake_available">Wake-on-LAN available</string>

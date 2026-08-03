@@ -371,8 +371,10 @@
     <string name="home_controller_connected">已连接</string>
     <string name="home_controller_disconnected">未连接</string>
     <string name="home_controller_count_format">检测到 %1$d 个手柄</string>
+    <string name="home_controller_page_format">%1$d / %2$d</string>
     <string name="home_controller_system_input">Android 系统输入</string>
     <string name="home_controller_device_detail">VID %1$s · PID %2$s · %3$s</string>
+    <string name="home_controller_vibration_supported">震动</string>
     <string name="home_host_checking">正在检测</string>
     <string name="home_host_offline">已离线</string>
     <string name="home_host_wake_available">支持网络唤醒</string>

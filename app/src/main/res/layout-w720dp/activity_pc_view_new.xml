@@ -39,11 +39,13 @@
                 android:layout_height="76dp"
                 android:layout_marginTop="10dp" />
 
-            <include
-                layout="@layout/view_home_controller_card"
+            <com.limelight.ui.home.HomeControllerCarouselView
+                android:id="@+id/homeControllerCarousel"
                 android:layout_width="match_parent"
                 android:layout_height="76dp"
-                android:layout_marginTop="10dp" />
+                android:layout_marginTop="10dp"
+                android:nextFocusDown="@id/hostCarousel"
+                android:nextFocusUp="@id/axiButton" />
 
             <include
                 layout="@layout/view_home_host_header"
@@ -79,7 +81,7 @@
                 android:clipToPadding="false"
                 android:descendantFocusability="afterDescendants"
                 android:focusable="true"
-                android:nextFocusUp="@id/axiButton"
+                android:nextFocusUp="@id/homeControllerCarousel"
                 android:overScrollMode="never" />
 
             <com.limelight.ui.home.HomePageIndicatorView

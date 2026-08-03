@@ -34,6 +34,7 @@ import com.limelight.preferences.PreferenceConfiguration;
 import com.limelight.preferences.StreamSettings;
 import com.limelight.ui.AppDialog;
 import com.limelight.ui.PcActionsDialog;
+import com.limelight.ui.home.HomeControllerCarouselView;
 import com.limelight.ui.home.HomeHostCarouselView;
 import com.limelight.ui.home.HomePageIndicatorView;
 import com.limelight.utils.DeviceUtils;
@@ -55,7 +56,6 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Color;
-import android.graphics.drawable.GradientDrawable;
 import android.graphics.RenderEffect;
 import android.graphics.Shader;
 import android.hardware.input.InputManager;
@@ -66,6 +66,7 @@ import android.opengl.GLSurfaceView;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.VibratorManager;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.view.InputDevice;
@@ -87,6 +88,7 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 import cn.axi.gamepad.an.AxiGamePadIndexActivity;
+import cn.axi.gamepad.an.GamePadUIActivity;
 
 import static android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
 import static android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE;
@@ -106,12 +108,10 @@ public class PcView extends Activity {
     private ImageButton hostLayoutToggle;
     private ImageButton hostAddButton;
     private TextView selectedHostSummary;
-    private TextView controllerTitle;
-    private TextView controllerSubtitle;
-    private TextView controllerStatus;
-    private View controllerDot;
+    private HomeControllerCarouselView controllerCarousel;
     private InputManager inputManager;
     private boolean inputListenerRegistered;
+    private String selectedControllerKey;
     private String selectedHostKey = ADD_HOST_SELECTION;
     private boolean hostSelectionExplicit;
     private boolean hostListMode;
@@ -254,10 +254,11 @@ public class PcView extends Activity {
         hostLayoutToggle = findViewById(R.id.homeHostLayoutToggle);
         hostAddButton = findViewById(R.id.homeHostAddButton);
         selectedHostSummary = findViewById(R.id.homeSelectedSummary);
-        controllerTitle = findViewById(R.id.homeControllerTitle);
-        controllerSubtitle = findViewById(R.id.homeControllerSubtitle);
-        controllerStatus = findViewById(R.id.homeControllerStatus);
-        controllerDot = findViewById(R.id.homeControllerDot);
+        controllerCarousel = findViewById(R.id.homeControllerCarousel);
+        controllerCarousel.setOnSelectionChangedListener(
+                controllerKey -> selectedControllerKey = controllerKey);
+        controllerCarousel.setOnControllerClickListener(() ->
+                startActivity(new Intent(PcView.this, GamePadUIActivity.class)));
 
         hostLayoutToggle.setOnClickListener(view -> {
             hostListMode = !hostListMode;
@@ -1237,12 +1238,11 @@ public class PcView extends Activity {
     }
 
     private void updateControllerCard() {
-        if (controllerTitle == null || controllerSubtitle == null
-                || controllerStatus == null || controllerDot == null) {
+        if (controllerCarousel == null) {
             return;
         }
 
-        List<InputDevice> controllers = new ArrayList<>();
+        List<HomeControllerCarouselView.ControllerItem> controllers = new ArrayList<>();
         Set<String> descriptors = new HashSet<>();
         for (int deviceId : InputDevice.getDeviceIds()) {
             InputDevice device = InputDevice.getDevice(deviceId);
@@ -1253,29 +1253,45 @@ public class PcView extends Activity {
             String descriptor = device.getDescriptor();
             String key = descriptor == null ? String.valueOf(deviceId) : descriptor;
             if (descriptors.add(key)) {
-                controllers.add(device);
+                controllers.add(new HomeControllerCarouselView.ControllerItem(
+                        key,
+                        getControllerDisplayName(device),
+                        getString(
+                                R.string.home_controller_device_detail,
+                                formatUsbId(device.getVendorId()),
+                                formatUsbId(device.getProductId()),
+                                getControllerTypeDisplayName(device)),
+                        supportsControllerVibration(device)));
             }
         }
+        controllerCarousel.setControllers(controllers, selectedControllerKey);
+    }
 
-        boolean connected = !controllers.isEmpty();
-        if (connected) {
-            InputDevice primaryController = controllers.get(0);
-            controllerTitle.setText(getControllerDisplayName(primaryController));
-            controllerSubtitle.setText(getString(
-                    R.string.home_controller_device_detail,
-                    formatUsbId(primaryController.getVendorId()),
-                    formatUsbId(primaryController.getProductId()),
-                    getControllerTypeDisplayName(primaryController)));
-            controllerStatus.setText(R.string.home_controller_connected);
-            controllerStatus.setTextColor(getResources().getColor(R.color.home_connected));
-            setStatusDot(controllerDot, getResources().getColor(R.color.home_connected));
+    private static boolean supportsControllerVibration(InputDevice device) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                VibratorManager vibratorManager = device.getVibratorManager();
+                int[] vibratorIds = vibratorManager == null
+                        ? new int[0] : vibratorManager.getVibratorIds();
+                if (vibratorManager != null
+                        && (vibratorIds.length == 2 || vibratorIds.length == 4)) {
+                    boolean amplitudeControlled = true;
+                    for (int vibratorId : vibratorIds) {
+                        if (!vibratorManager.getVibrator(vibratorId).hasAmplitudeControl()) {
+                            amplitudeControlled = false;
+                            break;
+                        }
+                    }
+                    if (amplitudeControlled) {
+                        return true;
+                    }
+                }
+            }
+            return device.getVibrator() != null && device.getVibrator().hasVibrator();
         }
-        else {
-            controllerTitle.setText(R.string.home_controller_waiting);
-            controllerSubtitle.setText(R.string.home_controller_waiting_detail);
-            controllerStatus.setText(R.string.home_controller_disconnected);
-            controllerStatus.setTextColor(getResources().getColor(R.color.home_secondary_text));
-            setStatusDot(controllerDot, getResources().getColor(R.color.home_secondary_text));
+        catch (RuntimeException ignored) {
+            // Some vendor input services throw while querying vibrator capabilities.
+            return false;
         }
     }
 
@@ -1371,13 +1387,6 @@ public class PcView extends Activity {
             return "NS";
         }
         return "HID";
-    }
-
-    private static void setStatusDot(View view, int color) {
-        GradientDrawable drawable = new GradientDrawable();
-        drawable.setShape(GradientDrawable.OVAL);
-        drawable.setColor(color);
-        view.setBackground(drawable);
     }
 
     private void dismissPairingDialog() {

@@ -3,7 +3,7 @@
     android:id="@+id/homeControllerCard"
     android:layout_width="match_parent"
     android:layout_height="@dimen/home_info_card_height"
-    android:background="@drawable/bg_home_status_card"
+    android:background="@drawable/bg_home_controller_card"
     android:gravity="center_vertical"
     android:orientation="horizontal"
     android:padding="@dimen/home_info_card_padding">
