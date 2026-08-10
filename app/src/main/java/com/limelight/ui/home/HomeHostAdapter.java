@@ -209,7 +209,8 @@ final class HomeHostAdapter extends RecyclerView.Adapter<HomeHostAdapter.HostVie
         RecyclerView.LayoutParams layoutParams = new RecyclerView.LayoutParams(
                 cardWidth > 0 ? cardWidth : dp(parent, 300),
                 viewType == 1
-                        ? ViewGroup.LayoutParams.WRAP_CONTENT
+                        ? parent.getResources().getDimensionPixelSize(
+                                R.dimen.home_info_card_height)
                         : ViewGroup.LayoutParams.MATCH_PARENT);
         view.setLayoutParams(layoutParams);
         return new HostViewHolder(view);
@@ -220,7 +221,8 @@ final class HomeHostAdapter extends RecyclerView.Adapter<HomeHostAdapter.HostVie
         RecyclerView.LayoutParams layoutParams = (RecyclerView.LayoutParams) holder.itemView.getLayoutParams();
         layoutParams.width = cardWidth > 0 ? cardWidth : dp(holder.itemView, 300);
         layoutParams.height = listMode
-                ? ViewGroup.LayoutParams.WRAP_CONTENT
+                ? holder.itemView.getResources().getDimensionPixelSize(
+                        R.dimen.home_info_card_height)
                 : ViewGroup.LayoutParams.MATCH_PARENT;
         holder.itemView.setLayoutParams(layoutParams);
         // The vertical list has no persistent visual selection. Its highlight is

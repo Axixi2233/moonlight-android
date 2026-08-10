@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Match the fixed 76dp information cards in layout-w720dp-land. -->
+    <dimen name="home_info_card_height">76dp</dimen>
+    <dimen name="home_land_info_gap">10dp</dimen>
+</resources>

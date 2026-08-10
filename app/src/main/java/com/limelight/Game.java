@@ -232,6 +232,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     private InputCaptureProvider inputCaptureProvider;
     private int modifierFlags = 0;
     private boolean grabbedInput = true;
+    private boolean keyboardEscapeMenuPending;
     private boolean cursorVisible = false;
     private boolean waitingForAllModifiersUp = false;
     private int specialKeyCode = KeyEvent.KEYCODE_UNKNOWN;
@@ -242,6 +243,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     private VideoZoomController videoZoomController;
     private VideoZoomGestureOverlay videoZoomGestureOverlay;
     private final PointF videoZoomTapPoint = new PointF();
+    private final PointF videoZoomInputPoint = new PointF();
     private final RectF videoZoomBaseRect = new RectF();
     private long lastAbsTouchUpTime = 0;
     private long lastAbsTouchDownTime = 0;
@@ -2020,6 +2022,34 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         return (byte) modifierFlags;
     }
 
+    private boolean isPhysicalKeyboardEscapeMenuEvent(KeyEvent event) {
+        if (!prefConfig.keyboardEscOpensGameMenu || !connected
+                || event.getKeyCode() != KeyEvent.KEYCODE_ESCAPE
+                || getModifierState(event) != 0) {
+            return false;
+        }
+
+        if (event.getDeviceId() == KeyCharacterMap.VIRTUAL_KEYBOARD) {
+            return false;
+        }
+
+        InputDevice device = event.getDevice();
+        if (device == null) {
+            return false;
+        }
+
+        boolean keyboardSource = (event.getSource() & InputDevice.SOURCE_KEYBOARD)
+                == InputDevice.SOURCE_KEYBOARD
+                || (device.getSources() & InputDevice.SOURCE_KEYBOARD)
+                == InputDevice.SOURCE_KEYBOARD;
+        if (!keyboardSource) {
+            return false;
+        }
+
+        return !ControllerHandler.isGameControllerDevice(device)
+                || device.getKeyboardType() == InputDevice.KEYBOARD_TYPE_ALPHABETIC;
+    }
+
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         return handleKeyDown(event) || super.onKeyDown(keyCode, event);
@@ -2049,6 +2079,11 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
             // Always return true, otherwise the back press will be propagated
             // up to the parent and finish the activity.
+            return true;
+        }
+
+        if (isPhysicalKeyboardEscapeMenuEvent(event)) {
+            keyboardEscapeMenuPending = true;
             return true;
         }
 
@@ -2130,6 +2165,14 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
             // Always return true, otherwise the back press will be propagated
             // up to the parent and finish the activity.
+            return true;
+        }
+
+        if (event.getKeyCode() == KeyEvent.KEYCODE_ESCAPE && keyboardEscapeMenuPending) {
+            keyboardEscapeMenuPending = false;
+            if (prefConfig.keyboardEscOpensGameMenu && connected) {
+                runOnUiThread(this::showGameMenu);
+            }
             return true;
         }
 
@@ -2310,6 +2353,33 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     }
 
 
+    private boolean mapPointThroughVideoZoom(View sourceView, float x, float y, PointF outPoint) {
+        if (sourceView == null || sourceView == streamView || videoZoomController == null
+                || videoZoomController.isAtRest()) {
+            return false;
+        }
+        return videoZoomController.mapPointToNormalizedVideo(x, y, outPoint);
+    }
+
+    private boolean mapPointThroughVideoZoomToStreamPixels(View sourceView, float x, float y,
+                                                            PointF outPoint) {
+        if (!mapPointThroughVideoZoom(sourceView, x, y, outPoint)) {
+            return false;
+        }
+        outPoint.set(outPoint.x * Math.max(streamView.getWidth(), 1),
+                outPoint.y * Math.max(streamView.getHeight(), 1));
+        return true;
+    }
+
+    private void getTouchContextCoordinates(View sourceView, float x, float y,
+                                            float xOffset, float yOffset, PointF outPoint) {
+        if (!prefConfig.touchscreenTrackpad
+                && mapPointThroughVideoZoomToStreamPixels(sourceView, x, y, outPoint)) {
+            return;
+        }
+        outPoint.set(x + xOffset, y + yOffset);
+    }
+
     private float[] getStreamViewRelativeNormalizedXY(View view, MotionEvent event, int pointerIndex,boolean isTouch) {
         float normalizedX = event.getX(pointerIndex);
         float normalizedY = event.getY(pointerIndex);
@@ -2318,6 +2388,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             float[] normalized=getStreamViewRelativeSensitivityXY(event,normalizedX,normalizedY,pointerIndex);
             normalizedX=normalized[0];
             normalizedY=normalized[1];
+        }
+        if (mapPointThroughVideoZoom(view, normalizedX, normalizedY, videoZoomInputPoint)) {
+            return new float[] { videoZoomInputPoint.x, videoZoomInputPoint.y };
         }
         // For the containing background view, we must subtract the origin
         // of the StreamView to get video-relative coordinates.
@@ -2906,8 +2979,10 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
                 int actionIndex = event.getActionIndex();
 
-                int eventX = (int)(event.getX(actionIndex) + xOffset);
-                int eventY = (int)(event.getY(actionIndex) + yOffset);
+                getTouchContextCoordinates(view, event.getX(actionIndex), event.getY(actionIndex),
+                        xOffset, yOffset, videoZoomInputPoint);
+                int eventX = (int) videoZoomInputPoint.x;
+                int eventY = (int) videoZoomInputPoint.y;
 
                 // Special handling for 3 finger gesture
                 if (event.getActionMasked() == MotionEvent.ACTION_POINTER_DOWN &&
@@ -2964,9 +3039,11 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                     }
                     if (actionIndex == 0 && event.getPointerCount() > 1 && !context.isCancelled()) {
                         // The original secondary touch now becomes primary
+                        getTouchContextCoordinates(view, event.getX(1), event.getY(1),
+                                xOffset, yOffset, videoZoomInputPoint);
                         context.touchDownEvent(
-                                (int)(event.getX(1) + xOffset),
-                                (int)(event.getY(1) + yOffset),
+                                (int) videoZoomInputPoint.x,
+                                (int) videoZoomInputPoint.y,
                                 event.getEventTime(), false);
                     }
                     break;
@@ -2979,9 +3056,13 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                         for (TouchContext aTouchContextMap : touchContextMap) {
                             if (aTouchContextMap.getActionIndex() < event.getPointerCount())
                             {
+                                getTouchContextCoordinates(view,
+                                        event.getHistoricalX(aTouchContextMap.getActionIndex(), i),
+                                        event.getHistoricalY(aTouchContextMap.getActionIndex(), i),
+                                        xOffset, yOffset, videoZoomInputPoint);
                                 aTouchContextMap.touchMoveEvent(
-                                        (int)(event.getHistoricalX(aTouchContextMap.getActionIndex(), i) + xOffset),
-                                        (int)(event.getHistoricalY(aTouchContextMap.getActionIndex(), i) + yOffset),
+                                        (int) videoZoomInputPoint.x,
+                                        (int) videoZoomInputPoint.y,
                                         event.getHistoricalEventTime(i));
                             }
                         }
@@ -2991,9 +3072,13 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                     for (TouchContext aTouchContextMap : touchContextMap) {
                         if (aTouchContextMap.getActionIndex() < event.getPointerCount())
                         {
+                            getTouchContextCoordinates(view,
+                                    event.getX(aTouchContextMap.getActionIndex()),
+                                    event.getY(aTouchContextMap.getActionIndex()),
+                                    xOffset, yOffset, videoZoomInputPoint);
                             aTouchContextMap.touchMoveEvent(
-                                    (int)(event.getX(aTouchContextMap.getActionIndex()) + xOffset),
-                                    (int)(event.getY(aTouchContextMap.getActionIndex()) + yOffset),
+                                    (int) videoZoomInputPoint.x,
+                                    (int) videoZoomInputPoint.y,
                                     event.getEventTime());
                         }
                     }
@@ -3027,8 +3112,13 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         // X and Y are already relative to the provided view object
         float eventX, eventY;
 
+        if (mapPointThroughVideoZoomToStreamPixels(touchedView, event.getX(0), event.getY(0),
+                videoZoomInputPoint)) {
+            eventX = videoZoomInputPoint.x;
+            eventY = videoZoomInputPoint.y;
+        }
         // For our StreamView itself, we can use the coordinates unmodified.
-        if (touchedView == streamView) {
+        else if (touchedView == streamView) {
             eventX = event.getX(0);
             eventY = event.getY(0);
         }
@@ -4286,13 +4376,15 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         }
 
         boolean enabled = !videoZoomGestureOverlay.isModeEnabled();
-        videoZoomGestureOverlay.setModeEnabled(enabled);
+        boolean keepCurrentTransform = !enabled && prefConfig.keepVideoZoomOnDisable;
+        videoZoomGestureOverlay.setModeEnabled(enabled, !keepCurrentTransform);
         setVideoZoomInputSuppressed(false);
         setVirtualMouseInputSuppressed(false);
         if (enabled) {
             refreshVideoZoomOverlayZOrder();
         }
         Toast.makeText(this, enabled ? R.string.video_zoom_enabled_hint
+                : keepCurrentTransform ? R.string.video_zoom_disabled_retained
                 : R.string.video_zoom_disabled, Toast.LENGTH_SHORT).show();
     }
 

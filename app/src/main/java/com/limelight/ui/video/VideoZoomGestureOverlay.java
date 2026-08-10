@@ -53,14 +53,21 @@ public final class VideoZoomGestureOverlay extends View {
     }
 
     public void setModeEnabled(boolean enabled) {
+        setModeEnabled(enabled, true);
+    }
+
+    public void setModeEnabled(boolean enabled, boolean resetTransformOnDisable) {
         if (modeEnabled == enabled) {
+            if (!enabled && resetTransformOnDisable && controller != null) {
+                controller.resetUserTransform();
+            }
             updateVisibility();
             return;
         }
 
         modeEnabled = enabled;
         scaling = false;
-        if (!enabled && controller != null) {
+        if (!enabled && resetTransformOnDisable && controller != null) {
             controller.resetUserTransform();
         }
         updateVisibility();

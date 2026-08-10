@@ -96,7 +96,10 @@ import static android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE;
 public class PcView extends Activity {
     private static final String STATE_SELECTED_HOST = "selectedHost";
     private static final String STATE_HOST_LIST_MODE = "hostListMode";
+    private static final String STATE_HOST_LANDSCAPE_LIST_MODE = "hostLandscapeListMode";
     private static final String PREF_HOST_LIST_MODE = "home_host_list_mode";
+    private static final String PREF_HOST_LANDSCAPE_LIST_MODE =
+            "home_host_landscape_list_mode";
     private static final String ADD_HOST_SELECTION = "__moonlight_add_host__";
 
     private AlertDialog pairingDialog;
@@ -115,6 +118,7 @@ public class PcView extends Activity {
     private String selectedHostKey = ADD_HOST_SELECTION;
     private boolean hostSelectionExplicit;
     private boolean hostListMode;
+    private boolean hostLandscapeListMode;
     private ShortcutHelper shortcutHelper;
     private ComputerManagerService.ComputerManagerBinder managerBinder;
     private boolean freezeUpdates, runningPolling, inForeground, completeOnCreateCalled;
@@ -261,11 +265,21 @@ public class PcView extends Activity {
                 startActivity(new Intent(PcView.this, GamePadUIActivity.class)));
 
         hostLayoutToggle.setOnClickListener(view -> {
-            hostListMode = !hostListMode;
-            PreferenceManager.getDefaultSharedPreferences(PcView.this)
-                    .edit()
-                    .putBoolean(PREF_HOST_LIST_MODE, hostListMode)
-                    .apply();
+            boolean portrait = getResources().getConfiguration().orientation
+                    == Configuration.ORIENTATION_PORTRAIT;
+            SharedPreferences.Editor editor = PreferenceManager
+                    .getDefaultSharedPreferences(PcView.this)
+                    .edit();
+            if (portrait) {
+                hostListMode = !hostListMode;
+                editor.putBoolean(PREF_HOST_LIST_MODE, hostListMode);
+            }
+            else if (hostCarousel.getHostCount() > 2) {
+                hostLandscapeListMode = !hostLandscapeListMode;
+                editor.putBoolean(
+                        PREF_HOST_LANDSCAPE_LIST_MODE, hostLandscapeListMode);
+            }
+            editor.apply();
             applyHostLayoutMode();
             configureHomeLayout();
         });
@@ -327,11 +341,16 @@ public class PcView extends Activity {
             selectedHostKey = savedInstanceState.getString(
                     STATE_SELECTED_HOST, ADD_HOST_SELECTION);
             hostListMode = savedInstanceState.getBoolean(STATE_HOST_LIST_MODE, false);
+            hostLandscapeListMode = savedInstanceState.getBoolean(
+                    STATE_HOST_LANDSCAPE_LIST_MODE, false);
             hostSelectionExplicit = true;
         }
         else {
-            hostListMode = PreferenceManager.getDefaultSharedPreferences(this)
-                    .getBoolean(PREF_HOST_LIST_MODE, false);
+            SharedPreferences preferences = PreferenceManager
+                    .getDefaultSharedPreferences(this);
+            hostListMode = preferences.getBoolean(PREF_HOST_LIST_MODE, false);
+            hostLandscapeListMode = preferences.getBoolean(
+                    PREF_HOST_LANDSCAPE_LIST_MODE, false);
         }
 
         // Assume we're in the foreground when created to avoid a race
@@ -490,6 +509,8 @@ public class PcView extends Activity {
         }
         outState.putString(STATE_SELECTED_HOST, selectedHostKey);
         outState.putBoolean(STATE_HOST_LIST_MODE, hostListMode);
+        outState.putBoolean(
+                STATE_HOST_LANDSCAPE_LIST_MODE, hostLandscapeListMode);
         super.onSaveInstanceState(outState);
     }
 
@@ -934,6 +955,7 @@ public class PcView extends Activity {
             selectedHostKey = computers.get(0).details.uuid;
         }
         hostCarousel.setComputers(computers, selectedHostKey);
+        applyHostLayoutMode();
         configureHomeLayout();
     }
 
@@ -956,9 +978,17 @@ public class PcView extends Activity {
 
         boolean portrait = getResources().getConfiguration().orientation
                 == Configuration.ORIENTATION_PORTRAIT;
-        boolean activeListMode = portrait && hostListMode;
-        hostLayoutToggle.setVisibility(portrait ? View.VISIBLE : View.GONE);
-        hostCarousel.setHeaderAddAvailable(portrait);
+        boolean landscapeLayoutAvailable = !portrait && hostCarousel.getHostCount() > 2;
+        boolean activeListMode = portrait
+                ? hostListMode
+                : landscapeLayoutAvailable && hostLandscapeListMode;
+        View hostSectionTitle = findViewById(R.id.homeHostSectionTitle);
+        if (hostSectionTitle != null) {
+            hostSectionTitle.setVisibility(portrait ? View.VISIBLE : View.GONE);
+        }
+        hostLayoutToggle.setVisibility(
+                portrait || landscapeLayoutAvailable ? View.VISIBLE : View.GONE);
+        hostCarousel.setHeaderAddAvailable(portrait || landscapeLayoutAvailable);
         hostCarousel.setListMode(activeListMode);
         hostLayoutToggle.setImageResource(activeListMode
                 ? R.drawable.ic_home_layout_cards
@@ -967,12 +997,22 @@ public class PcView extends Activity {
                 ? R.string.home_switch_to_cards
                 : R.string.home_switch_to_list));
         if (hostHint != null) {
-            hostHint.setText(activeListMode
-                    ? R.string.home_select_host_list_hint
-                    : R.string.home_select_host_hint);
+            hostHint.setVisibility(portrait ? View.VISIBLE : View.GONE);
+            if (portrait) {
+                hostHint.setText(activeListMode
+                        ? R.string.home_select_host_list_hint
+                        : R.string.home_select_host_hint);
+            }
         }
         if (hostCounter != null) {
-            hostCounter.setVisibility(activeListMode ? View.GONE : View.VISIBLE);
+            int counterVisibility;
+            if (portrait) {
+                counterVisibility = activeListMode ? View.GONE : View.VISIBLE;
+            }
+            else {
+                counterVisibility = landscapeLayoutAvailable ? View.VISIBLE : View.GONE;
+            }
+            hostCounter.setVisibility(counterVisibility);
         }
         if (pageIndicator != null) {
             pageIndicator.setVisibility(activeListMode ? View.GONE : View.VISIBLE);
@@ -1054,15 +1094,20 @@ public class PcView extends Activity {
             ViewGroup.LayoutParams sidebarParams = sidebar.getLayoutParams();
             sidebarParams.width = UiHelper.dpToPx(this, sidebarWidthDp);
             sidebar.setLayoutParams(sidebarParams);
-            int carouselHeightDp = compactPhoneLandscape
-                    ? Math.min(270, Math.max(230, heightDp - 112))
-                    : Math.min(312, Math.max(250, heightDp - 50));
-            carouselParams.height = UiHelper.dpToPx(this, carouselHeightDp);
+            if (hostCarousel.isListMode()) {
+                carouselParams.height = ViewGroup.LayoutParams.MATCH_PARENT;
+            }
+            else {
+                int headerAndGapPx = getResources().getDimensionPixelSize(
+                        R.dimen.home_top_bar_height)
+                        + getResources().getDimensionPixelSize(R.dimen.home_land_info_gap);
+                int contentHeightDp = heightDp - Math.round(headerAndGapPx / density);
+                int carouselHeightDp = compactPhoneLandscape
+                        ? Math.min(240, Math.max(210, contentHeightDp - 112))
+                        : Math.min(286, Math.max(230, contentHeightDp - 50));
+                carouselParams.height = UiHelper.dpToPx(this, carouselHeightDp);
+            }
             if (compactPhoneLandscape) {
-                View hostHint = findViewById(R.id.homeHostHint);
-                if (hostHint != null) {
-                    hostHint.setVisibility(View.VISIBLE);
-                }
                 if (selectedHostSummary != null) {
                     selectedHostSummary.setVisibility(View.GONE);
                 }

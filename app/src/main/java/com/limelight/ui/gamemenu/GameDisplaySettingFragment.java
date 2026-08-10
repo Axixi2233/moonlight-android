@@ -33,6 +33,8 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
     private CheckBox btn_game_full_performance;
     private CheckBox btn_game_float_ball;
     private CheckBox btn_game_audio_mute;
+    private CheckBox btn_keep_video_zoom;
+    private CheckBox btn_keyboard_esc_menu;
     private CheckBox btn_game_lite_ext;
     private CheckBox btn_game_lite_click;
     private CheckBox btn_game_rumble_force;
@@ -73,6 +75,8 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
         btn_game_full_performance=v.findViewById(R.id.btn_game_full_performance);
         btn_game_float_ball=v.findViewById(R.id.btn_game_float_ball);
         btn_game_audio_mute=v.findViewById(R.id.btn_game_audio_mute);
+        btn_keep_video_zoom=v.findViewById(R.id.btn_keep_video_zoom);
+        btn_keyboard_esc_menu=v.findViewById(R.id.btn_keyboard_esc_menu);
         btn_game_lite_ext=v.findViewById(R.id.btn_game_lite_ext);
         btn_game_lite_click=v.findViewById(R.id.btn_game_lite_click);
         btn_game_float_ball_postion=v.findViewById(R.id.btn_game_float_ball_postion);
@@ -141,6 +145,14 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
         btn_game_audio_mute.setOnCheckedChangeListener((buttonView, isChecked) -> {
             prefConfig.audioMute=isChecked;
             setSetting("ax_audio_mute",isChecked);
+        });
+        btn_keep_video_zoom.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            prefConfig.keepVideoZoomOnDisable = isChecked;
+            setSetting(PreferenceConfiguration.KEEP_VIDEO_ZOOM_ON_DISABLE_PREF_STRING, isChecked);
+        });
+        btn_keyboard_esc_menu.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            prefConfig.keyboardEscOpensGameMenu = isChecked;
+            setSetting(PreferenceConfiguration.KEYBOARD_ESC_OPENS_GAME_MENU_PREF_STRING, isChecked);
         });
         btn_game_lite_ext.setOnCheckedChangeListener((buttonView, isChecked) -> {
             prefConfig.enablePerfOverlayLiteExt=isChecked;
@@ -466,6 +478,8 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
         btn_game_float_ball.setChecked(prefConfig.enableAXFloating);
         btn_game_float_ball_postion.setChecked(prefConfig.axFloatingPostionAuto);
         btn_game_audio_mute.setChecked(prefConfig.audioMute);
+        btn_keep_video_zoom.setChecked(prefConfig.keepVideoZoomOnDisable);
+        btn_keyboard_esc_menu.setChecked(prefConfig.keyboardEscOpensGameMenu);
         btn_game_lite_ext.setChecked(prefConfig.enablePerfOverlayLiteExt);
         btn_game_lite_click.setChecked(prefConfig.enablePerfOverlayLiteDialog);
         btn_game_rumble_force.setChecked(prefConfig.enableForceStrongVibrations);

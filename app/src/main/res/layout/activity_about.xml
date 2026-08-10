@@ -73,8 +73,8 @@
                 <ImageView
                     android:id="@+id/iv_logo"
                     android:src="@mipmap/ic_app_axi"
-                    android:layout_width="65dp"
-                    android:layout_height="65dp"/>
+                    android:layout_width="75dp"
+                    android:layout_height="75dp"/>
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -84,7 +84,7 @@
                     android:textStyle="bold"
                     android:layout_marginTop="8dp"
                     android:textColor="@android:color/white"
-                    android:textSize="17sp"/>
+                    android:textSize="18sp"/>
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -92,7 +92,7 @@
                     android:text="随时随地，畅连你的电脑！"
                     android:layout_marginTop="5dp"
                     android:textColor="@android:color/white"
-                    android:textSize="8sp"/>
+                    android:textSize="10sp"/>
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -117,6 +117,7 @@
                         android:text="@string/about_help"
                         android:textStyle="bold"
                         android:padding="4dp"
+                        android:visibility="gone"
                         android:textColor="@android:color/white"
                         android:textSize="9sp"/>
 
@@ -143,6 +144,18 @@
                         android:padding="4dp"
                         android:textColor="@android:color/white"
                         android:textSize="9sp"/>
+
+                    <TextView
+                        android:id="@+id/tv_version_history"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:onClick="onClick"
+                        android:padding="4dp"
+                        android:text="@string/about_version_history"
+                        android:textColor="@android:color/white"
+                        android:textSize="9sp"
+                        android:textStyle="bold" />
 
                 </LinearLayout>
 

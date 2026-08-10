@@ -39,7 +39,7 @@ public class AboutActivity extends BaseActivity implements View.OnClickListener 
         ivLogo.setOutlineProvider(new ViewOutlineProvider() {
             @Override
             public void getOutline(View view, Outline outline) {
-                outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), 30f);
+                outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), 35f);
             }
         });
     }
@@ -48,6 +48,11 @@ public class AboutActivity extends BaseActivity implements View.OnClickListener 
     public void onClick(View v) {
         if (v.getId() == R.id.iv_get) {
             UpdateChecker.checkForUpdates(this, true);
+            return;
+        }
+
+        if (v.getId() == R.id.tv_version_history) {
+            startActivity(new Intent(this, VersionHistoryActivity.class));
             return;
         }
 

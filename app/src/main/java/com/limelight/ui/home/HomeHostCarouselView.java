@@ -17,6 +17,7 @@ import android.view.ViewConfiguration;
 import android.view.VelocityTracker;
 
 import com.limelight.PcView;
+import com.limelight.R;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -640,7 +641,8 @@ public final class HomeHostCarouselView extends RecyclerView
             }
         }
         else {
-            layoutManager.scrollToPositionWithOffset(position, listMode ? dp(6) : 0);
+            layoutManager.scrollToPositionWithOffset(
+                    position, listMode && !isLandscape() ? dp(6) : 0);
         }
     }
 
@@ -753,6 +755,11 @@ public final class HomeHostCarouselView extends RecyclerView
                 && configuration.smallestScreenWidthDp < 600;
     }
 
+    private boolean isLandscape() {
+        return getResources().getConfiguration().orientation
+                == android.content.res.Configuration.ORIENTATION_LANDSCAPE;
+    }
+
     private int dp(int value) {
         return Math.round(value * getResources().getDisplayMetrics().density);
     }
@@ -768,8 +775,16 @@ public final class HomeHostCarouselView extends RecyclerView
         public void getItemOffsets(@NonNull Rect outRect, @NonNull View view,
                                    @NonNull RecyclerView parent, @NonNull State state) {
             if (listMode) {
-                outRect.top = dp(6);
-                outRect.bottom = dp(6);
+                if (isLandscape()) {
+                    int position = parent.getChildAdapterPosition(view);
+                    outRect.top = position > 0
+                            ? getResources().getDimensionPixelSize(R.dimen.home_land_info_gap)
+                            : 0;
+                }
+                else {
+                    outRect.top = dp(6);
+                    outRect.bottom = dp(6);
+                }
             }
             else {
                 outRect.left = halfSpacing;

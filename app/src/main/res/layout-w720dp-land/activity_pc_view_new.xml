@@ -47,17 +47,11 @@
                 android:nextFocusDown="@id/hostCarousel"
                 android:nextFocusUp="@id/axiButton" />
 
-            <include
-                layout="@layout/view_home_host_header"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp" />
-
             <TextView
                 android:id="@+id/homeSelectedSummary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="20dp"
                 android:background="@drawable/bg_home_status_card"
                 android:ellipsize="end"
                 android:maxLines="2"
@@ -71,25 +65,39 @@
             android:layout_height="match_parent"
             android:layout_marginStart="20dp"
             android:layout_weight="1"
-            android:gravity="center"
             android:orientation="vertical">
 
-            <com.limelight.ui.home.HomeHostCarouselView
-                android:id="@+id/hostCarousel"
+            <include
+                layout="@layout/view_home_host_header"
                 android:layout_width="match_parent"
-                android:layout_height="312dp"
-                android:clipToPadding="false"
-                android:descendantFocusability="afterDescendants"
-                android:focusable="true"
-                android:nextFocusUp="@id/homeControllerCarousel"
-                android:overScrollMode="never" />
+                android:layout_height="@dimen/home_top_bar_height" />
 
-            <com.limelight.ui.home.HomePageIndicatorView
-                android:id="@+id/homePageIndicator"
+            <LinearLayout
+                android:id="@+id/homeHostContent"
                 android:layout_width="match_parent"
-                android:layout_height="8dp"
-                android:layout_marginTop="15dp"
-                android:importantForAccessibility="no" />
+                android:layout_height="0dp"
+                android:layout_marginTop="@dimen/home_land_info_gap"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <com.limelight.ui.home.HomeHostCarouselView
+                    android:id="@+id/hostCarousel"
+                    android:layout_width="match_parent"
+                    android:layout_height="312dp"
+                    android:clipToPadding="false"
+                    android:descendantFocusability="afterDescendants"
+                    android:focusable="true"
+                    android:nextFocusUp="@id/homeHostLayoutToggle"
+                    android:overScrollMode="never" />
+
+                <com.limelight.ui.home.HomePageIndicatorView
+                    android:id="@+id/homePageIndicator"
+                    android:layout_width="match_parent"
+                    android:layout_height="8dp"
+                    android:layout_marginTop="15dp"
+                    android:importantForAccessibility="no" />
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 </FrameLayout>

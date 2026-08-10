@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Build;
 import android.preference.PreferenceManager;
@@ -21,7 +22,9 @@ import com.limelight.ui.AppDialog;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -43,6 +46,48 @@ public final class UpdateChecker {
     private UpdateChecker() {
     }
 
+    public interface VersionHistoryCallback {
+        void onLoaded(List<VersionEntry> entries);
+
+        void onError();
+    }
+
+    public static final class VersionEntry {
+        private final int code;
+        private final String versionName;
+        private final String description;
+        private final boolean latest;
+
+        private VersionEntry(int code, String versionName, String description, boolean latest) {
+            this.code = code;
+            this.versionName = versionName;
+            this.description = description;
+            this.latest = latest;
+        }
+
+        public int getCode() {
+            return code;
+        }
+
+        public String getVersionName() {
+            return versionName;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public boolean isLatest() {
+            return latest;
+        }
+    }
+
+    private interface UpdateConfigCallback {
+        void onLoaded(UpdateResponse response);
+
+        void onError(boolean parseError);
+    }
+
     public static void checkForUpdates(Activity activity, boolean interactive) {
         SpinnerDialog spinner = null;
         if (interactive) {
@@ -50,52 +95,115 @@ public final class UpdateChecker {
         }
 
         SpinnerDialog finalSpinner = spinner;
+        fetchUpdateConfig(new UpdateConfigCallback() {
+            @Override
+            public void onLoaded(UpdateResponse updateResponse) {
+                runOnUiThreadSafely(activity, () -> {
+                    dismissSpinner(finalSpinner);
+                    handleUpdateResponse(activity, updateResponse, interactive);
+                });
+            }
+
+            @Override
+            public void onError(boolean parseError) {
+                runOnUiThreadSafely(activity, () -> {
+                    dismissSpinner(finalSpinner);
+                    if (interactive) {
+                        showToast(activity, parseError
+                                ? "更新信息解析失败，已打开默认下载链接"
+                                : "检查更新失败，已打开默认下载链接");
+                    }
+                });
+            }
+        });
+    }
+
+    public static void loadVersionHistory(Activity activity, VersionHistoryCallback callback) {
+        if (activity == null || callback == null) {
+            return;
+        }
+        fetchUpdateConfig(new UpdateConfigCallback() {
+            @Override
+            public void onLoaded(UpdateResponse response) {
+                runOnUiThreadSafely(activity, () -> {
+                    if (response == null || response.data == null) {
+                        callback.onLoaded(new ArrayList<>());
+                        return;
+                    }
+                    List<VersionEntry> entries;
+                    try {
+                        entries = buildVersionEntries(response.data);
+                    } catch (RuntimeException ignored) {
+                        callback.onError();
+                        return;
+                    }
+                    callback.onLoaded(entries);
+                });
+            }
+
+            @Override
+            public void onError(boolean parseError) {
+                runOnUiThreadSafely(activity, callback::onError);
+            }
+        });
+    }
+
+    private static void fetchUpdateConfig(UpdateConfigCallback callback) {
         Request request = new Request.Builder()
                 .url(UPDATE_CONFIG_URL)
                 .get()
                 .build();
-
         CLIENT.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
-                runOnUiThreadSafely(activity, () -> {
-                    dismissSpinner(finalSpinner);
-                    if (interactive) {
-                        showToast(activity, "检查更新失败，已打开默认下载链接");
-                    }
-                });
+                callback.onError(false);
             }
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 try (Response ignored = response) {
                     if (!response.isSuccessful() || response.body() == null) {
-                        runOnUiThreadSafely(activity, () -> {
-                            dismissSpinner(finalSpinner);
-                            if (interactive) {
-                                showToast(activity, "检查更新失败，已打开默认下载链接");
-                            }
-                        });
+                        callback.onError(false);
                         return;
                     }
-
-                    String responseBody = response.body().string();
-                    UpdateResponse updateResponse = parseUpdateResponse(responseBody);
-
-                    runOnUiThreadSafely(activity, () -> {
-                        dismissSpinner(finalSpinner);
-                        handleUpdateResponse(activity, updateResponse, interactive);
-                    });
+                    UpdateResponse updateResponse = parseUpdateResponse(response.body().string());
+                    if (updateResponse == null) {
+                        callback.onError(true);
+                        return;
+                    }
+                    callback.onLoaded(updateResponse);
                 } catch (Exception e) {
-                    runOnUiThreadSafely(activity, () -> {
-                        dismissSpinner(finalSpinner);
-                        if (interactive) {
-                            showToast(activity, "更新信息解析失败，已打开默认下载链接");
-                        }
-                    });
+                    callback.onError(true);
                 }
             }
         });
+    }
+
+    private static List<VersionEntry> buildVersionEntries(UpdateData data) {
+        List<VersionEntry> entries = new ArrayList<>();
+        Set<Integer> seenCodes = new HashSet<>();
+        addVersionEntry(entries, seenCodes, data.latest, true);
+        if (data.history != null) {
+            for (UpdateRelease release : data.history) {
+                addVersionEntry(entries, seenCodes, release, false);
+            }
+        }
+        entries.sort((left, right) -> Integer.compare(right.code, left.code));
+        return entries;
+    }
+
+    private static void addVersionEntry(List<VersionEntry> entries,
+                                        Set<Integer> seenCodes,
+                                        UpdateRelease release,
+                                        boolean latest) {
+        if (release == null || release.code <= 0 || !seenCodes.add(release.code)) {
+            return;
+        }
+        entries.add(new VersionEntry(
+                release.code,
+                safeText(release.versionName, ""),
+                normalizeDescription(release.desc),
+                latest));
     }
 
     private static void handleUpdateResponse(Activity activity, UpdateResponse updateResponse, boolean interactive) {
@@ -227,11 +335,13 @@ public final class UpdateChecker {
                                    View initialFocus,
                                    View dismissAction,
                                    View... actionViews) {
+        boolean portrait = activity.getResources().getConfiguration().orientation
+                == Configuration.ORIENTATION_PORTRAIT;
         AppDialog.showCustomDialog(
                 activity,
                 dialog,
-                0.68f,
-                440,
+                portrait ? 0.88f : 0.68f,
+                portrait ? 520 : 440,
                 initialFocus,
                 dismissAction,
                 actionViews);
@@ -425,6 +535,7 @@ public final class UpdateChecker {
 
     private static final class UpdateData {
         private UpdateRelease latest;
+        private UpdateRelease[] history;
     }
 
     private static final class UpdateRelease {

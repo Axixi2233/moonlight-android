@@ -150,6 +150,39 @@
 
                 </LinearLayout>
 
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="32dp"
+                    android:layout_marginTop="5dp"
+                    android:orientation="horizontal">
+
+                    <CheckBox
+                        android:id="@+id/btn_keep_video_zoom"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:padding="4dp"
+                        android:text="关闭缩放后\n保留画面"
+                        android:textSize="8dp" />
+
+                    <CheckBox
+                        android:id="@+id/btn_keyboard_esc_menu"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:padding="4dp"
+                        android:text="ESC 呼出\n游戏菜单"
+                        android:textSize="8dp" />
+
+                </LinearLayout>
+
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"

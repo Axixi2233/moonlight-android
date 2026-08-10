@@ -113,8 +113,8 @@ public class StreamLogFilesActivity extends BaseActivity {
         pendingExportFile = file;
         Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
-        intent.setType("text/plain");
-        intent.putExtra(Intent.EXTRA_TITLE, file.getName());
+        intent.setType(StreamLogStore.hasExitTrace(this, file) ? "application/zip" : "text/plain");
+        intent.putExtra(Intent.EXTRA_TITLE, StreamLogStore.getSuggestedExportName(this, file));
         startActivityForResult(intent, REQUEST_EXPORT_LOG);
     }
 

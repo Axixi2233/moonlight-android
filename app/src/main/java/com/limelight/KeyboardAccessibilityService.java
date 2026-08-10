@@ -33,7 +33,8 @@ public class KeyboardAccessibilityService extends AccessibilityService {
     @Override
     public boolean onKeyEvent(KeyEvent event) {
         //如果是手柄类型则忽略
-        int sources = event.getDevice().getSources();
+        InputDevice eventDevice = event.getDevice();
+        int sources = eventDevice != null ? eventDevice.getSources() : event.getSource();
         if (((sources & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD)) {
             return super.onKeyEvent(event);
         }
@@ -53,7 +54,7 @@ public class KeyboardAccessibilityService extends AccessibilityService {
             if (action == KeyEvent.ACTION_DOWN) {
                 //fix 小米平板esc键按钮映射错误 KEYCODE_BACK=4
                 if(event.getScanCode()==1){
-                    Game.instance.handleKeyDown(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ESCAPE));
+                    Game.instance.handleKeyDown(remapKeyCode(event, KeyEvent.KEYCODE_ESCAPE));
                     return true;
                 }
                 if(!TextUtils.isEmpty(result)){
@@ -63,7 +64,7 @@ public class KeyboardAccessibilityService extends AccessibilityService {
                         for (int i = 0; i < array.length(); i++) {
                             JSONObject jsonObject1=array.getJSONObject(i);
                             if(event.getScanCode()==jsonObject1.getInt("scancode")){
-                                Game.instance.handleKeyDown(new KeyEvent(KeyEvent.ACTION_DOWN, jsonObject1.getInt("code")));
+                                Game.instance.handleKeyDown(remapKeyCode(event, jsonObject1.getInt("code")));
                                 return true;
                             }
                         }
@@ -76,7 +77,7 @@ public class KeyboardAccessibilityService extends AccessibilityService {
             } else if (action == KeyEvent.ACTION_UP) {
                 //fix 小米平板esc键按钮映射错误 KEYCODE_BACK=4
                 if(event.getScanCode()==1){
-                    Game.instance.handleKeyUp(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ESCAPE));
+                    Game.instance.handleKeyUp(remapKeyCode(event, KeyEvent.KEYCODE_ESCAPE));
                     return true;
                 }
                 if(!TextUtils.isEmpty(result)){
@@ -86,7 +87,7 @@ public class KeyboardAccessibilityService extends AccessibilityService {
                         for (int i = 0; i < array.length(); i++) {
                             JSONObject jsonObject1=array.getJSONObject(i);
                             if(event.getScanCode()==jsonObject1.getInt("scancode")){
-                                Game.instance.handleKeyUp(new KeyEvent(KeyEvent.ACTION_UP, jsonObject1.getInt("code")));
+                                Game.instance.handleKeyUp(remapKeyCode(event, jsonObject1.getInt("code")));
                                 return true;
                             }
                         }
@@ -100,6 +101,12 @@ public class KeyboardAccessibilityService extends AccessibilityService {
         }
 
         return super.onKeyEvent(event);
+    }
+
+    private static KeyEvent remapKeyCode(KeyEvent event, int keyCode) {
+        return new KeyEvent(event.getDownTime(), event.getEventTime(), event.getAction(), keyCode,
+                event.getRepeatCount(), event.getMetaState(), event.getDeviceId(),
+                event.getScanCode(), event.getFlags(), event.getSource());
     }
 
     @Override

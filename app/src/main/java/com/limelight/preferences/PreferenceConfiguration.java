@@ -111,6 +111,8 @@ public class PreferenceConfiguration {
     private static final String GAMEPAD_TOUCHPAD_AS_MOUSE_PREF_STRING = "checkbox_gamepad_touchpad_as_mouse";
     private static final String GAMEPAD_MOTION_SENSORS_PREF_STRING = "checkbox_gamepad_motion_sensors";
     private static final String GAMEPAD_MOTION_FALLBACK_PREF_STRING = "checkbox_gamepad_motion_fallback";
+    public static final String KEEP_VIDEO_ZOOM_ON_DISABLE_PREF_STRING = "checkbox_keep_video_zoom_on_disable";
+    public static final String KEYBOARD_ESC_OPENS_GAME_MENU_PREF_STRING = "checkbox_keyboard_esc_opens_game_menu";
 
     //是否弹出软键盘
 
@@ -176,6 +178,8 @@ public class PreferenceConfiguration {
     private static final boolean DEFAULT_GAMEPAD_TOUCHPAD_AS_MOUSE = false;
     private static final boolean DEFAULT_GAMEPAD_MOTION_SENSORS = true;
     private static final boolean DEFAULT_GAMEPAD_MOTION_FALLBACK = false;
+    private static final boolean DEFAULT_KEEP_VIDEO_ZOOM_ON_DISABLE = false;
+    private static final boolean DEFAULT_KEYBOARD_ESC_OPENS_GAME_MENU = false;
 
     public static final int FRAME_PACING_MIN_LATENCY = 0;
     public static final int FRAME_PACING_BALANCED = 1;
@@ -448,6 +452,12 @@ public class PreferenceConfiguration {
 
     //记住全键盘 组合键模式
     public boolean keyboard_axi_combination;
+
+    //关闭画面缩放模式时保留当前缩放和平移位置
+    public boolean keepVideoZoomOnDisable;
+
+    //使用物理键盘 ESC 键呼出游戏菜单
+    public boolean keyboardEscOpensGameMenu;
 
     public static boolean isNativeResolution(int width, int height) {
         // It's not a native resolution if it matches an existing resolution option
@@ -1090,6 +1100,13 @@ public class PreferenceConfiguration {
         config.autoScreenOrientation=prefs.getBoolean("checkbox_auto_screen_orientation",false);
 
         config.keyboard_axi_combination=prefs.getBoolean("checkbox_enable_keyboard_axi_combination",false);
+
+        config.keepVideoZoomOnDisable = prefs.getBoolean(
+                KEEP_VIDEO_ZOOM_ON_DISABLE_PREF_STRING,
+                DEFAULT_KEEP_VIDEO_ZOOM_ON_DISABLE);
+        config.keyboardEscOpensGameMenu = prefs.getBoolean(
+                KEYBOARD_ESC_OPENS_GAME_MENU_PREF_STRING,
+                DEFAULT_KEYBOARD_ESC_OPENS_GAME_MENU);
 
         return config;
     }
