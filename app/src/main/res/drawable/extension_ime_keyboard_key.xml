@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  EXTENSION DEVELOPMENT [EXT-IME-ACCESSORY-BAR] [ADDED]
+  Pressed and latched states for IME extension keys.
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_selected="true">
+        <shape>
+            <solid android:color="#7C3AED" />
+            <stroke android:width="1dp" android:color="#C4B5FD" />
+            <corners android:radius="5dp" />
+        </shape>
+    </item>
+    <item android:state_pressed="true">
+        <shape>
+            <solid android:color="#5B21B6" />
+            <stroke android:width="1dp" android:color="#A78BFA" />
+            <corners android:radius="5dp" />
+        </shape>
+    </item>
+    <item>
+        <shape>
+            <solid android:color="#383838" />
+            <stroke android:width="1dp" android:color="#5A5A5A" />
+            <corners android:radius="5dp" />
+        </shape>
+    </item>
+</selector>

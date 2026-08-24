@@ -26,6 +26,12 @@ import com.limelight.binding.video.PerfOverlayListener;
 import com.limelight.binding.video.PerfOverlayStats;
 import com.limelight.fsr.FsrVideoProcessor;
 import com.limelight.fsr.VideoProcessingGLSurfaceView;
+// EXTENSION DEVELOPMENT [EXT-IME-ACCESSORY-BAR] [MODIFIED] BEGIN
+import com.limelight.extensions.keyboard.ImeKeyboardExtensionController;
+// EXTENSION DEVELOPMENT [EXT-IME-ACCESSORY-BAR] [MODIFIED] END
+// EXTENSION DEVELOPMENT [EXT-IME-AT-SIGN] [MODIFIED] BEGIN
+import com.limelight.extensions.keyboard.ImeTextInputCompatibilityExtension;
+// EXTENSION DEVELOPMENT [EXT-IME-AT-SIGN] [MODIFIED] END
 import com.limelight.stereo3d.Stereo3dOutputLayout;
 import com.limelight.nvstream.MicUplinkConnection;
 import com.limelight.nvstream.NvConnection;
@@ -205,6 +211,10 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     private KeyBoardController keyBoardController;
 
     private KeyBoardLayoutController keyBoardLayoutController;
+
+    // EXTENSION DEVELOPMENT [EXT-IME-ACCESSORY-BAR] [MODIFIED] BEGIN
+    private ImeKeyboardExtensionController imeKeyboardExtensionController;
+    // EXTENSION DEVELOPMENT [EXT-IME-ACCESSORY-BAR] [MODIFIED] END
 
     public PreferenceConfiguration prefConfig;
     private SharedPreferences tombstonePrefs;
@@ -933,6 +943,13 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         InputManager inputManager = (InputManager) getSystemService(Context.INPUT_SERVICE);
         inputManager.registerInputDeviceListener(keyboardTranslator, null);
 
+        // EXTENSION DEVELOPMENT [EXT-IME-ACCESSORY-BAR] [MODIFIED] BEGIN
+        imeKeyboardExtensionController = new ImeKeyboardExtensionController(
+                this,
+                (FrameLayout) rootView,
+                (keyCode, down) -> keyboardEvent(down, (short) keyCode));
+        // EXTENSION DEVELOPMENT [EXT-IME-ACCESSORY-BAR] [MODIFIED] END
+
         // Initialize touch contexts
 //        for (int i = 0; i < touchContextMap.length; i++) {
 //            if (!prefConfig.touchscreenTrackpad) {
@@ -1323,6 +1340,12 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
 
+        // EXTENSION DEVELOPMENT [EXT-IME-ACCESSORY-BAR] [MODIFIED] BEGIN
+        if (!hasFocus && imeKeyboardExtensionController != null) {
+            imeKeyboardExtensionController.releasePressedKeys();
+        }
+        // EXTENSION DEVELOPMENT [EXT-IME-ACCESSORY-BAR] [MODIFIED] END
+
         // We can't guarantee the state of modifiers keys which may have
         // lifted while focus was not on us. Clear the modifier state.
         this.modifierFlags = 0;
@@ -1637,6 +1660,13 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         logSessionInfo("LIFECYCLE", "串流页面正在销毁");
         backgroundReconnectHandler.removeCallbacksAndMessages(null);
         releaseExternalDisplayRouting();
+
+        // EXTENSION DEVELOPMENT [EXT-IME-ACCESSORY-BAR] [MODIFIED] BEGIN
+        if (imeKeyboardExtensionController != null) {
+            imeKeyboardExtensionController.destroy();
+            imeKeyboardExtensionController = null;
+        }
+        // EXTENSION DEVELOPMENT [EXT-IME-ACCESSORY-BAR] [MODIFIED] END
 
         if (virtualMouseOverlay != null) {
             virtualMouseOverlay.destroy();
@@ -2022,6 +2052,29 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         return (byte) modifierFlags;
     }
 
+    // EXTENSION DEVELOPMENT [EXT-IME-AT-SIGN] [MODIFIED] BEGIN
+    private void sendImeCommittedText(String text) {
+        boolean dispatchedAsKeyStroke = ImeTextInputCompatibilityExtension.dispatchIfCompatible(
+                text,
+                this::dispatchImeCompatibilityKeyStroke);
+        if (!dispatchedAsKeyStroke) {
+            conn.sendUtf8Text(text);
+        }
+    }
+
+    private boolean dispatchImeCompatibilityKeyStroke(int androidKeyCode, byte requiredModifiers) {
+        short keyMap = keyboardTranslator.translate(androidKeyCode, -1);
+        if (keyMap == 0) {
+            return false;
+        }
+
+        byte modifiers = (byte) (getModifierState() | requiredModifiers);
+        conn.sendKeyboardInput(keyMap, KeyboardPacket.KEY_DOWN, modifiers, (byte) 0);
+        conn.sendKeyboardInput(keyMap, KeyboardPacket.KEY_UP, modifiers, (byte) 0);
+        return true;
+    }
+    // EXTENSION DEVELOPMENT [EXT-IME-AT-SIGN] [MODIFIED] END
+
     private boolean isPhysicalKeyboardEscapeMenuEvent(KeyEvent event) {
         if (!prefConfig.keyboardEscOpensGameMenu || !connected
                 || event.getKeyCode() != KeyEvent.KEYCODE_ESCAPE
@@ -2118,7 +2171,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 // UTF-8 events don't auto-repeat on the host side.
                 int unicodeChar = event.getUnicodeChar();
                 if ((unicodeChar & KeyCharacterMap.COMBINING_ACCENT) == 0 && (unicodeChar & KeyCharacterMap.COMBINING_ACCENT_MASK) != 0) {
-                    conn.sendUtf8Text(""+(char)unicodeChar);
+                    // EXTENSION DEVELOPMENT [EXT-IME-AT-SIGN] [MODIFIED] BEGIN
+                    sendImeCommittedText(""+(char)unicodeChar);
+                    // EXTENSION DEVELOPMENT [EXT-IME-AT-SIGN] [MODIFIED] END
                     return true;
                 }
 
@@ -2227,7 +2282,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             return false;
         }
 
-        conn.sendUtf8Text(event.getCharacters());
+        // EXTENSION DEVELOPMENT [EXT-IME-AT-SIGN] [MODIFIED] BEGIN
+        sendImeCommittedText(event.getCharacters());
+        // EXTENSION DEVELOPMENT [EXT-IME-AT-SIGN] [MODIFIED] END
         return true;
     }
 

@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  EXTENSION DEVELOPMENT [EXT-IME-ACCESSORY-BAR] [ADDED]
+  Two-row PC shortcut bar displayed above a docked system IME.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="#F2212121"
+    android:clickable="true"
+    android:elevation="8dp"
+    android:focusable="false"
+    android:orientation="vertical"
+    android:padding="3dp"
+    tools:ignore="KeyboardInaccessibleWidget,Overdraw">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="38dp"
+        android:baselineAligned="false"
+        android:orientation="horizontal"
+        android:weightSum="7">
+
+        <TextView
+            android:id="@+id/extension_key_escape"
+            style="@style/ImeKeyboardExtensionKey"
+            android:text="@string/extension_ime_key_escape" />
+
+        <TextView
+            android:id="@+id/extension_key_tab"
+            style="@style/ImeKeyboardExtensionKey"
+            android:text="@string/extension_ime_key_tab" />
+
+        <TextView
+            android:id="@+id/extension_key_unknown"
+            style="@style/ImeKeyboardExtensionKey"
+            android:text="@string/extension_ime_key_unknown" />
+
+        <TextView
+            android:id="@+id/extension_key_home"
+            style="@style/ImeKeyboardExtensionKey"
+            android:text="@string/extension_ime_key_home" />
+
+        <TextView
+            android:id="@+id/extension_key_up"
+            style="@style/ImeKeyboardExtensionKey"
+            android:contentDescription="@string/extension_ime_key_up_description"
+            android:text="@string/extension_ime_key_up" />
+
+        <TextView
+            android:id="@+id/extension_key_end"
+            style="@style/ImeKeyboardExtensionKey"
+            android:text="@string/extension_ime_key_end" />
+
+        <TextView
+            android:id="@+id/extension_key_page_up"
+            style="@style/ImeKeyboardExtensionKey"
+            android:text="@string/extension_ime_key_page_up" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="38dp"
+        android:baselineAligned="false"
+        android:orientation="horizontal"
+        android:weightSum="7">
+
+        <TextView
+            android:id="@+id/extension_key_cmd"
+            style="@style/ImeKeyboardExtensionKey"
+            android:contentDescription="@string/extension_ime_key_cmd_description"
+            android:text="@string/extension_ime_key_cmd" />
+
+        <TextView
+            android:id="@+id/extension_key_ctrl"
+            style="@style/ImeKeyboardExtensionKey"
+            android:contentDescription="@string/extension_ime_key_ctrl_description"
+            android:text="@string/extension_ime_key_ctrl" />
+
+        <TextView
+            android:id="@+id/extension_key_alt"
+            style="@style/ImeKeyboardExtensionKey"
+            android:contentDescription="@string/extension_ime_key_alt_description"
+            android:text="@string/extension_ime_key_alt" />
+
+        <TextView
+            android:id="@+id/extension_key_left"
+            style="@style/ImeKeyboardExtensionKey"
+            android:contentDescription="@string/extension_ime_key_left_description"
+            android:text="@string/extension_ime_key_left" />
+
+        <TextView
+            android:id="@+id/extension_key_down"
+            style="@style/ImeKeyboardExtensionKey"
+            android:contentDescription="@string/extension_ime_key_down_description"
+            android:text="@string/extension_ime_key_down" />
+
+        <TextView
+            android:id="@+id/extension_key_right"
+            style="@style/ImeKeyboardExtensionKey"
+            android:contentDescription="@string/extension_ime_key_right_description"
+            android:text="@string/extension_ime_key_right" />
+
+        <TextView
+            android:id="@+id/extension_key_page_down"
+            style="@style/ImeKeyboardExtensionKey"
+            android:text="@string/extension_ime_key_page_down" />
+    </LinearLayout>
+</LinearLayout>

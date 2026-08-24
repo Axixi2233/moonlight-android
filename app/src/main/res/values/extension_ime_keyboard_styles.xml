@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  EXTENSION DEVELOPMENT [EXT-IME-ACCESSORY-BAR] [ADDED]
+  Resources owned by the docked IME shortcut-bar extension.
+-->
+<resources>
+    <string name="extension_ime_key_escape" translatable="false">ESC</string>
+    <string name="extension_ime_key_unknown" translatable="false">Unknown</string>
+    <string name="extension_ime_key_home" translatable="false">HOME</string>
+    <string name="extension_ime_key_up" translatable="false">↑</string>
+    <string name="extension_ime_key_up_description" translatable="false">UP</string>
+    <string name="extension_ime_key_end" translatable="false">END</string>
+    <string name="extension_ime_key_page_up" translatable="false">PGUP</string>
+    <string name="extension_ime_key_tab" translatable="false">TAB</string>
+    <string name="extension_ime_key_cmd" translatable="false">CMD</string>
+    <string name="extension_ime_key_cmd_description" translatable="false">CMD，可锁定</string>
+    <string name="extension_ime_key_ctrl" translatable="false">CTRL</string>
+    <string name="extension_ime_key_ctrl_description" translatable="false">CTRL，可锁定</string>
+    <string name="extension_ime_key_alt" translatable="false">ALT</string>
+    <string name="extension_ime_key_alt_description" translatable="false">ALT，可锁定</string>
+    <string name="extension_ime_key_left" translatable="false">←</string>
+    <string name="extension_ime_key_left_description" translatable="false">LEFT</string>
+    <string name="extension_ime_key_down" translatable="false">↓</string>
+    <string name="extension_ime_key_down_description" translatable="false">DOWN</string>
+    <string name="extension_ime_key_right" translatable="false">→</string>
+    <string name="extension_ime_key_right_description" translatable="false">RIGHT</string>
+    <string name="extension_ime_key_page_down" translatable="false">PGDN</string>
+
+    <style name="ImeKeyboardExtensionKey">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_margin">2dp</item>
+        <item name="android:background">@drawable/extension_ime_keyboard_key</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">false</item>
+        <item name="android:gravity">center</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+</resources>
