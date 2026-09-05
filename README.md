@@ -1,63 +1,105 @@
 # 月光·阿西西
-## 此项目实现对官方Moonlight安卓端功能修改<br>
-### 如果你有更好的想法或者功能实现也欢迎提交PR<br>
-### 如果喜欢数码和游戏，可以关注我的社交媒体账号
-### B站(https://space.bilibili.com/16893379) 、Youtube(https://www.youtube.com/@AxixiTV)
 
-此项目版本主要实现如下功能：<br>
-1、全新游戏菜单UI<br>
-2、自定义虚拟按键 支持导入导出<br>
-3、自定义分辨率<br>
-4、自定义码率<br>
-5、多种鼠标模式切换（普通鼠标、多点触控、触控板、禁用触屏操作、本地鼠标模式）<br>
-6、虚拟手柄皮肤优化、自由摇杆<br>
-7、外接显示器模式<br>
-8、适配ds4、ds5、nspro usb手柄驱动<br>
-9、精简的性能信息显示<br>
-10、自定义快捷指令<br>
-11、方便切换软键盘<br>
-12、竖屏模式<br>
-13、SBS娱乐模式<br>
-14、画面置顶显示 折叠屏有点用<br>
-15、虚拟触控板空间及灵敏度调节，游玩右键转视角游戏。例如魔兽<br>
-16、强制使用设备本身的震动马达（可能你的手柄震动效果不佳）<br>
-17、阿西西手柄调试页面 查看手柄震动及陀螺仪信息、安卓内核版本信息<br>
+基于 [Moonlight Android](https://github.com/moonlight-stream/moonlight-android) 持续开发的安卓游戏串流客户端，将电脑上的游戏和桌面串流到手机、平板等 Android 设备。在 Moonlight 的基础上，重新设计界面，并扩展触控操作、手柄支持、画面显示与性能信息。
 
-<img width="2560" height="1600" alt="Screenshot_20250409-180147" src="https://github.com/user-attachments/assets/25fc1ad2-c804-4597-a832-48ec1717cf9a" />
+## 下载与相关版本
 
+| 项目 | 下载入口 |
+| --- | --- |
+| 月光·阿西西 Android 版 | [GitHub Releases](https://github.com/Axixi2233/moonlight-android/releases) · [项目网盘（夸克）](https://pan.quark.cn/s/9a334d831290) |
+| Sunshine·阿西西（电脑串流服务端） | [GitHub Releases](https://github.com/Axixi2233/Sunshine/releases) |
+| iOS 版 · StarLight | [App Store](https://apps.apple.com/us/app/starlight-pc-streaming/id6761065654) |
+| 鸿蒙版 · 月光·阿西西 | [华为应用市场](https://appgallery.huawei.com/app/detail?id=cn.axi.moonlight.hw) |
 
-# Moonlight Android
+在电脑上安装并配置 Sunshine·阿西西或其他兼容服务端，在客户端添加电脑、完成配对，即可选择游戏或桌面开始串流。
 
-[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/232a8tadrrn8jv0k/branch/master?svg=true)](https://ci.appveyor.com/project/cgutman/moonlight-android/branch/master)
-[![Translation Status](https://hosted.weblate.org/widgets/moonlight/-/moonlight-android/svg-badge.svg)](https://hosted.weblate.org/projects/moonlight/moonlight-android/)
+以下功能介绍对应本仓库的 Android 版，其他平台以各自版本为准。
 
-[Moonlight for Android](https://moonlight-stream.org) is an open source client for NVIDIA GameStream and [Sunshine](https://github.com/LizardByte/Sunshine).
+## 主要功能
 
-Moonlight for Android will allow you to stream your full collection of games from your Windows PC to your Android device,
-whether in your own home or over the internet.
+### 串流与界面
 
-Moonlight also has a [PC client](https://github.com/moonlight-stream/moonlight-qt) and [iOS/tvOS client](https://github.com/moonlight-stream/moonlight-ios).
+- 全新首页与游戏菜单，支持主机卡片、列表切换，集中查看设备、手柄和连接状态。
+- 自定义分辨率、帧率与码率，按设备和网络环境调整串流参数。
+- 息屏、切换后台后恢复串流；后台连接中断时，返回应用可自动尝试回连。
+- 支持横竖屏切换、画面缩放与顶部对齐，适应手机、平板和折叠屏的操作习惯。
 
-You can follow development on our [Discord server](https://moonlight-stream.org/discord) and help translate Moonlight into your language on [Weblate](https://hosted.weblate.org/projects/moonlight/moonlight-android/).
+### 画面与外接显示
 
-## Downloads
-* [Google Play Store](https://play.google.com/store/apps/details?id=com.limelight)
-* [Amazon App Store](https://www.amazon.com/gp/product/B00JK4MFN2)
-* [F-Droid](https://f-droid.org/packages/com.limelight)
-* [APK](https://github.com/moonlight-stream/moonlight-android/releases)
+- 支持系统直出与 GLES 渲染，可在 GLES 模式下启用 FSR 超分辨率并调整锐度。
+- 支持 HDR 输出，以及 GLES 下的原生 HDR 与 SDR 色调映射选项。
+- 支持外接显示器，画面输出到外屏，手机保留输入和菜单操作。
+- 支持 SBS 2D 转 3D、Full-SBS / Half-SBS 显示及立体效果调节，可搭配兼容的 AR 眼镜使用。
 
-## Building
-* Install Android Studio and the Android NDK
-* Run ‘git submodule update --init --recursive’ from within moonlight-android/
-* In moonlight-android/, create a file called ‘local.properties’. Add an ‘ndk.dir=’ property to the local.properties file and set it equal to your NDK directory.
-* Build the APK using Android Studio or gradle
+HDR、外接显示和手柄高级反馈的可用性取决于设备、系统与服务端支持；SBS 模式使用 SDR 输出。
 
-## Authors
+### 触控、鼠标与键盘
 
-* [Cameron Gutman](https://github.com/cgutman)  
-* [Diego Waxemberg](https://github.com/dwaxemberg)  
-* [Aaron Neyer](https://github.com/Aaronneyer)  
-* [Andrew Hennessy](https://github.com/yetanothername)
+- 自定义虚拟手柄与按键布局，支持配置导入、导出，自由摇杆及设备陀螺仪输入。
+- 多种鼠标与触控模式：普通鼠标、多点触控、触控板、本地鼠标及禁用触屏操作。
+- 多手势触控板支持左右键、双指滚动、缩放和边缘移动，可调整触控区域与灵敏度。
+- 提供虚拟鼠标、手柄键鼠模式、自定义快捷指令，以及可移动、空闲自动隐藏的 DS 触控板。
+- 内置全键盘、数字键盘和组合键模式，支持切换手机软键盘及竖屏快捷键栏。
 
-Moonlight is the work of students at [Case Western](http://case.edu) and was
-started as a project at [MHacks](http://mhacks.org).
+### 手柄、震动与音频
+
+- 支持 USB、蓝牙及内置手柄，扩展适配 DualShock 4、DualSense、Switch Pro 等 USB 手柄驱动。
+- 支持兼容设备的震动、陀螺仪与 DualSense 自适应扳机等反馈。
+- 音频震动可调整输出目标、强度与人声过滤，也可选择使用设备自身的震动马达。
+- 集成全新改版的阿西西手柄测试组件，支持按键、摇杆、震动、陀螺仪及音频震动等测试。
+- 支持麦克风上行，可在游戏菜单中快捷开关。
+
+### 性能信息与诊断
+
+- 提供精简与完整两种性能信息，查看实时帧率、码率、网络延迟、解码耗时与丢包情况。
+- 完整性能信息展示渲染方式、超分状态、麦克风、音频震动及 USB 手柄状态。
+- HDR 串流时可查看系统 HDR 峰值亮度、HDR/SDR 比例和主机 HDR 母版峰值，具体项目以系统和主机提供的信息为准。
+- 支持串流日志采集，便于反馈连接、解码和外设问题。
+
+## 界面预览
+
+| 首页 · 主机卡片 | 首页 · 主机列表 |
+| --- | --- |
+| ![主机卡片与设备状态](store-assets/pic_1.png) | ![主机列表与连接状态](store-assets/pic_2.png) |
+
+| 串流游戏菜单 | 虚拟全键盘 |
+| --- | --- |
+| ![串流中的功能与操作菜单](store-assets/pic_4.jpg) | ![虚拟全键盘与精简性能信息](store-assets/pic_5.jpg) |
+
+### 完整性能信息
+
+查看 HDR 亮度、HDR/SDR 比例、实时帧率、码率、延迟与外设状态。
+
+![完整性能信息与 HDR 显示参数](store-assets/pic_3.jpg)
+
+## 构建
+
+使用 Android Studio 打开项目，通过 SDK Manager 安装 Android SDK 34 和 NDK `27.0.12077973`。Gradle 使用项目自带 Wrapper，并配置兼容的 JDK（本地验证使用 JDK 21）。
+
+初始化子模块：
+
+```shell
+git submodule update --init --recursive
+```
+
+由 Android Studio 配置 SDK 路径，或在本地 `local.properties` 中设置 `sdk.dir`。构建不包含可选私有模块的非 Root 调试版：
+
+```shell
+./gradlew -PincludeKishiHaptics=false -PincludeStereo3dAi=false :app:assembleNonRootDebug
+```
+
+Windows PowerShell 使用 `./gradlew.bat` 执行相同参数。APK 输出到 `app/build/outputs/apk/nonRoot/debug/`。可选私有模块未包含时，对应的专用触觉反馈或 AI 3D 能力不随构建提供。
+
+## 交流与贡献
+
+欢迎通过 [Issues](https://github.com/Axixi2233/moonlight-android/issues) 反馈问题，或提交 PR 分享功能与改进。反馈串流问题时，请附上设备型号、系统版本、服务端版本、串流设置及相关日志。
+
+喜欢数码和游戏，也欢迎关注：[B 站](https://space.bilibili.com/16893379) · [YouTube](https://www.youtube.com/@AxixiTV)。
+
+## 致谢与许可证
+
+感谢 [Moonlight Android](https://github.com/moonlight-stream/moonlight-android)、[Sunshine](https://github.com/LizardByte/Sunshine) 及相关开源项目，感谢所有参与贡献与测试的朋友。
+
+Moonlight 原作者包括 [Cameron Gutman](https://github.com/cgutman)、[Diego Waxemberg](https://github.com/dwaxemberg)、[Aaron Neyer](https://github.com/Aaronneyer) 和 [Andrew Hennessy](https://github.com/yetanothername)。
+
+本仓库许可证见 [GPL-3.0](LICENSE.txt)。
