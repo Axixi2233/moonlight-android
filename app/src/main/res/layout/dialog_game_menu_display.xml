@@ -417,7 +417,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="HDR满亮度"
+                        android:text="HDR窗口亮度最大"
                         android:textStyle="bold"
                         android:textColor="@android:color/white"
                         android:textSize="12dp" />
@@ -427,7 +427,7 @@
                         android:layout_marginLeft="5dp"
                         android:singleLine="true"
                         android:ellipsize="end"
-                        android:text="HDR模式下可拉满窗口亮度，默认关闭。"
+                        android:text="提高整体亮度，部分设备可能降低HDR高光对比度。"
                         android:textStyle="italic|bold"
                         android:textColor="#FFC107"
                         android:textSize="8dp" />

@@ -168,6 +168,8 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     private static final int STEREO_HALF_SBS_WIDTH = 1920;
     private static final int STEREO_FULL_SBS_HEIGHT_1080 = 1080;
     private static final int STEREO_FULL_SBS_HEIGHT_1200 = 1200;
+    private static final int HDR_METADATA_MASTERING_PEAK_OFFSET = 16;
+    private static final int HDR_METADATA_MASTERING_PEAK_REQUIRED_LENGTH = 18;
     public static Game instance;
 
     public static boolean resumeBackgroundStreamIfPresent(Activity launcherActivity) {
@@ -253,6 +255,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     private StreamTelemetryReporter streamTelemetryReporter;
     private volatile PerfOverlayStats latestSessionPerfStats;
     private volatile long latestSessionPerfStatsElapsedMs;
+    private volatile int currentHdrMasteringPeakLuminanceNits;
     private int lastLoggedConnectionStatus = Integer.MIN_VALUE;
     private NvApp app;
     private float desiredRefreshRate;
@@ -4191,6 +4194,8 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     @Override
     public void setHdrMode(boolean enabled, byte[] hdrMetadata) {
         LimeLog.info("Display HDR mode: " + (enabled ? "enabled" : "disabled"));
+        currentHdrMasteringPeakLuminanceNits = enabled
+                ? parseHdrMasteringPeakLuminance(hdrMetadata) : 0;
         decoderRenderer.setHdrMode(enabled, hdrMetadata);
         if (fsrVideoProcessor != null) {
             fsrVideoProcessor.setHdrToneMappingEnabled(enabled);
@@ -4623,6 +4628,16 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 ? stats.width + "x" + stats.height + (stats.hdr ? " HDR" : "")
                 : prefConfig.width + "x" + prefConfig.height
                 + (prefConfig.enableHdr && !stereo3dEnabled ? " HDR" : ""));
+        if (stats.hdr) {
+            Display hdrDisplay = getActiveRenderDisplay();
+            addPerfRow("系统HDR峰值亮度", buildHdrTargetPeakLuminanceText(hdrDisplay));
+            String hdrSdrRatioText = buildHdrSdrRatioText(hdrDisplay);
+            if (hdrSdrRatioText != null) {
+                addPerfRow("HDR/SDR比率", hdrSdrRatioText);
+            }
+            addPerfRow("主机HDR母版峰值",
+                    formatHdrMetadataLuminance(currentHdrMasteringPeakLuminanceNits));
+        }
         addPerfRow("编码", nonEmpty(stats.codecName, "--"));
         addPerfRow("目标码率", formatMbps(stats.targetBitrateKbps > 0 ? stats.targetBitrateKbps : prefConfig.bitrate));
         addPerfRow("目标帧率", (stats.targetFps > 0 ? stats.targetFps : prefConfig.fps) + " FPS");
@@ -4683,6 +4698,85 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         row.addView(labelView);
         row.addView(valueView);
         performanceOverlayBigContent.addView(row);
+    }
+
+    private Display getActiveRenderDisplay() {
+        if (activeExternalDisplayId != Display.INVALID_DISPLAY) {
+            DisplayManager displayManager = externalDisplayManager;
+            if (displayManager == null) {
+                displayManager = (DisplayManager) getSystemService(Context.DISPLAY_SERVICE);
+            }
+            if (displayManager != null) {
+                Display externalDisplay = displayManager.getDisplay(activeExternalDisplayId);
+                if (externalDisplay != null && externalDisplay.isValid()) {
+                    return externalDisplay;
+                }
+            }
+        }
+        return getWindowManager().getDefaultDisplay();
+    }
+
+    private String buildHdrTargetPeakLuminanceText(Display display) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N || display == null) {
+            return "系统未报告";
+        }
+
+        try {
+            Display.HdrCapabilities hdrCapabilities = display.getHdrCapabilities();
+            if (hdrCapabilities == null) {
+                return "系统未报告";
+            }
+            float peakLuminance = hdrCapabilities.getDesiredMaxLuminance();
+            if (!isValidPositiveDisplayValue(peakLuminance)
+                    || peakLuminance == Display.HdrCapabilities.INVALID_LUMINANCE) {
+                return "系统未报告";
+            }
+            return String.format(Locale.US, "%,.0f nit", peakLuminance);
+        }
+        catch (RuntimeException e) {
+            return "系统未报告";
+        }
+    }
+
+    private String buildHdrSdrRatioText(Display display) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE || display == null) {
+            return null;
+        }
+
+        try {
+            if (!display.isHdrSdrRatioAvailable()) {
+                return null;
+            }
+            float hdrSdrRatio = display.getHdrSdrRatio();
+            return isValidPositiveDisplayValue(hdrSdrRatio)
+                    ? String.format(Locale.US, "%.2f:1", hdrSdrRatio)
+                    : null;
+        }
+        catch (RuntimeException e) {
+            return null;
+        }
+    }
+
+    private static boolean isValidPositiveDisplayValue(float value) {
+        return value > 0.0f && !Float.isNaN(value) && !Float.isInfinite(value);
+    }
+
+    private static int parseHdrMasteringPeakLuminance(byte[] metadata) {
+        if (metadata == null || metadata.length < HDR_METADATA_MASTERING_PEAK_REQUIRED_LENGTH) {
+            return 0;
+        }
+
+        return readUnsignedShortLittleEndian(metadata, HDR_METADATA_MASTERING_PEAK_OFFSET);
+    }
+
+    private static int readUnsignedShortLittleEndian(byte[] data, int offset) {
+        return (data[offset] & 0xFF) | ((data[offset + 1] & 0xFF) << 8);
+    }
+
+    private static String formatHdrMetadataLuminance(int luminanceNits) {
+        return luminanceNits > 0
+                ? String.format(Locale.US, "%,d nit", luminanceNits)
+                : "主机未提供";
     }
 
     private String buildUpscaleStatusText() {
