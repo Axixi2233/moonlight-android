@@ -89,6 +89,7 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
     private final AtomicBoolean firstFrameReported = new AtomicBoolean(false);
 
     private static final int CR_MAX_TRIES = 10;
+    private static final long INPUT_BUFFER_TIMEOUT_MS = 5000;
     private static final int CR_RECOVERY_TYPE_NONE = 0;
     private static final int CR_RECOVERY_TYPE_FLUSH = 1;
     private static final int CR_RECOVERY_TYPE_RESTART = 2;
@@ -303,11 +304,16 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
     }
 
     public void setRenderTarget(Surface renderTarget) {
+        setRenderTarget(renderTarget, false);
+    }
+
+    public void setRenderTarget(Surface renderTarget, boolean forceRebind) {
         Surface previousRenderTarget = this.renderTarget;
         this.renderTarget = renderTarget;
 
         MediaCodec decoder = videoDecoder;
-        if (decoder == null || renderTarget == null || previousRenderTarget == renderTarget) {
+        if (stopping || decoder == null || renderTarget == null ||
+                (!forceRebind && previousRenderTarget == renderTarget)) {
             return;
         }
 
@@ -321,7 +327,7 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
 
         try {
             decoder.setOutputSurface(renderTarget);
-            LimeLog.info("Updated MediaCodec output surface without restart");
+            LimeLog.info("Updated MediaCodec output surface without restart: forceRebind=" + forceRebind);
         } catch (IllegalStateException | IllegalArgumentException e) {
             LimeLog.warning("Unable to hot-swap MediaCodec output surface; requesting decoder restart");
             if (!codecRecoveryType.compareAndSet(CR_RECOVERY_TYPE_NONE, CR_RECOVERY_TYPE_RESTART)) {
@@ -1252,6 +1258,13 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
     private boolean fetchNextInputBuffer() {
         long startTime;
         boolean codecRecovered;
+        boolean timedOut = false;
+
+        if (stopping || !foreground) {
+            // Still participate in any pending recovery to release quiesced codec threads.
+            doCodecRecoveryIfRequired(CR_FLAG_INPUT_THREAD);
+            return false;
+        }
 
         if (nextInputBuffer != null) {
             // We already have an input buffer
@@ -1262,12 +1275,25 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
 
         try {
             // If we don't have an input buffer index yet, fetch one now
-            while (nextInputBufferIndex < 0 && !stopping) {
+            while (nextInputBufferIndex < 0 && !stopping && foreground &&
+                    codecRecoveryType.get() == CR_RECOVERY_TYPE_NONE) {
                 nextInputBufferIndex = videoDecoder.dequeueInputBuffer(10000);
+                if (nextInputBufferIndex < 0 && !stopping && foreground &&
+                        SystemClock.uptimeMillis() - startTime >= INPUT_BUFFER_TIMEOUT_MS) {
+                    timedOut = true;
+                    // A stalled output surface can exhaust input buffers without a CodecException.
+                    // Use the existing bounded recovery path before treating it as a fatal hang.
+                    if (codecRecoveryAttempts < CR_MAX_TRIES) {
+                        LimeLog.warning("Timed out waiting for MediaCodec input; requesting decoder restart");
+                        codecRecoveryType.compareAndSet(CR_RECOVERY_TYPE_NONE, CR_RECOVERY_TYPE_RESTART);
+                    }
+                    break;
+                }
             }
 
             // Get the backing ByteBuffer for the input buffer index
-            if (nextInputBufferIndex >= 0) {
+            if (nextInputBufferIndex >= 0 && !stopping && foreground &&
+                    codecRecoveryType.get() == CR_RECOVERY_TYPE_NONE) {
                 // Using the new getInputBuffer() API on Lollipop allows
                 // the framework to do some performance optimizations for us
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -1295,7 +1321,7 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
 
         // If codec recovery is required, always return false to ensure the caller will request
         // an IDR frame to complete the codec recovery.
-        if (codecRecovered) {
+        if (codecRecovered || stopping || !foreground) {
             return false;
         }
 
@@ -1306,9 +1332,9 @@ public class MediaCodecDecoderRenderer extends VideoDecoderRenderer implements C
         }
 
         if (nextInputBuffer == null) {
-            // We've been hung for 5 seconds and no other exception was reported,
-            // so generate a decoder hung exception
-            if (deltaMs >= 5000 && initialException == null) {
+            // Only report a foreground hang after exhausting codec recovery. Stopping or
+            // backgrounding must never turn cancellation into an uncaught decoder exception.
+            if (timedOut && initialException == null) {
                 DecoderHungException decoderHungException = new DecoderHungException(deltaMs);
                 if (!reportedCrash) {
                     reportedCrash = true;

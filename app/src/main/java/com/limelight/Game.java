@@ -5471,7 +5471,10 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             }
         }
 
-        decoderRenderer.setRenderTarget(renderTarget);
+        // SurfaceView may reuse its Java Surface after replacing the native BufferQueue.
+        // Rebind direct output on resume even when the Java object is unchanged. GLES owns
+        // a separate input Surface, so its unchanged target can remain attached.
+        decoderRenderer.setRenderTarget(renderTarget, !glesRenderingEnabled);
         decoderRenderer.notifyVideoForeground();
         if (audioRenderer != null) {
             audioRenderer.setBackgrounded(false);
