@@ -8,10 +8,12 @@
 | --- | --- |
 | 月光·阿西西 Android 版 | [GitHub Releases](https://github.com/Axixi2233/moonlight-android/releases) · [项目网盘（夸克）](https://pan.quark.cn/s/9a334d831290) |
 | Sunshine·阿西西（电脑串流服务端） | [GitHub Releases](https://github.com/Axixi2233/Sunshine/releases) |
+| StarCore 星核（macOS串流服务端） | [项目网盘（夸克）](https://pan.quark.cn/s/9a334d831290) |
 | iOS 版 · StarLight | [App Store](https://apps.apple.com/us/app/starlight-pc-streaming/id6761065654) |
+| tvOS 版 · StarLight | [App Store](https://apps.apple.com/us/app/星光-阿西西-tv版/id6792559600) |
 | 鸿蒙版 · 月光·阿西西 | [华为应用市场](https://appgallery.huawei.com/app/detail?id=cn.axi.moonlight.hw) |
 
-在电脑上安装并配置 Sunshine·阿西西或其他兼容服务端，在客户端添加电脑、完成配对，即可选择游戏或桌面开始串流。
+在电脑上安装并配置 Sunshine·阿西西、StarCore 星核（macOS）或其他兼容服务端，在客户端添加电脑、完成配对，即可选择游戏或桌面开始串流。
 
 以下功能介绍对应本仓库的 Android 版，其他平台以各自版本为准。
 
