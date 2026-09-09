@@ -17,4 +17,15 @@
     <string name="settings_panel_pixels">像素</string>
     <string name="settings_panel_bitrate_hint">手动输入，最大 99999 Mbps</string>
     <string name="settings_panel_bitrate_presets">常用码率 · Mbps</string>
+    <string name="settings_profile_switch">切换配置</string>
+    <string name="settings_profile_name">配置 %1$s</string>
+    <string name="settings_profile_current">当前：配置 %1$s</string>
+    <string name="settings_profile_title">设置 · %1$s</string>
+    <string name="settings_profile_reset">重置数据</string>
+    <string name="settings_profile_reset_hint">恢复当前配置的默认设置</string>
+    <string name="settings_profile_reset_confirm">将配置 %1$s 的设置恢复为默认值。其他配置、主机配对、日志和已导入的文件会保留。</string>
+    <string name="settings_profile_reset_action">恢复默认</string>
+    <string name="settings_profile_working">正在保存配置…</string>
+    <string name="settings_profile_failed">配置保存失败，请重试。</string>
+    <string name="settings_profile_choose_hint">切换时自动保存当前配置，新配置使用默认设置。</string>
 </resources>

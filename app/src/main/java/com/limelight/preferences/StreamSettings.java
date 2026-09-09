@@ -57,6 +57,49 @@ public class StreamSettings extends Activity {
     private int previousDisplayPixelCount;
     private boolean backupOperationRunning;
     private AlertDialog backupProgress;
+    private boolean profileOperationRunning;
+    private AlertDialog profileProgress;
+
+    void changeSettingsProfile(int target, boolean reset) {
+        if (profileOperationRunning || isFinishing()) return;
+        if (!reset && target == SettingsProfileStore.active(this)) return;
+        profileOperationRunning = true;
+        profileProgress = AppDialog.showProgress(this,
+                getString(reset ? R.string.settings_profile_reset : R.string.settings_profile_switch),
+                getString(R.string.settings_profile_working), null);
+        // Remove the old Preference model before replacing live keys, so its pending
+        // dependency bindings cannot write values back into the newly selected profile.
+        SettingsFragment model = getSettingsModel();
+        if (model != null) {
+            getFragmentManager().beginTransaction().remove(model).commit();
+            getFragmentManager().executePendingTransactions();
+        }
+        Context context = getApplicationContext();
+        new Thread(() -> {
+            Exception failure = null;
+            try {
+                SettingsProfileStore.change(context, target, reset);
+            } catch (Exception e) {
+                failure = e;
+                LimeLog.warning("Settings profile update failed: " + e);
+            }
+            final Exception result = failure;
+            runOnUiThread(() -> {
+                profileOperationRunning = false;
+                if (profileProgress != null) {
+                    profileProgress.dismiss();
+                    profileProgress = null;
+                }
+                if (isFinishing() || isDestroyed()) return;
+                UiHelper.setLocale(this);
+                reloadSettings();
+                if (result != null) {
+                    AppDialog.showMessage(this, getString(R.string.settings_profile_switch),
+                            getString(R.string.settings_profile_failed), getString(R.string.dialog_action_close), null);
+                }
+            });
+        }, "Settings profiles").start();
+    }
 
     private void runBackupOperation(Uri uri, boolean export) {
         if (backupOperationRunning) {
@@ -100,6 +143,10 @@ public class StreamSettings extends Activity {
 
     @Override
     protected void onDestroy() {
+        if (profileProgress != null) {
+            profileProgress.dismiss();
+            profileProgress = null;
+        }
         if (backupProgress != null) {
             backupProgress.dismiss();
             backupProgress = null;
@@ -111,6 +158,7 @@ public class StreamSettings extends Activity {
     static DisplayCutout displayCutoutP;
 
     void reloadSettings() {
+        if (profileOperationRunning) return;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             Display.Mode mode = getWindowManager().getDefaultDisplay().getMode();
             previousDisplayPixelCount = mode.getPhysicalWidth() * mode.getPhysicalHeight();

@@ -199,7 +199,7 @@ public class PreferenceConfiguration {
     private static final boolean DEFAULT_GAMEPAD_TOUCHPAD_AS_MOUSE = false;
     private static final boolean DEFAULT_GAMEPAD_MOTION_SENSORS = true;
     private static final boolean DEFAULT_GAMEPAD_MOTION_FALLBACK = false;
-    private static final boolean DEFAULT_KEEP_VIDEO_ZOOM_ON_DISABLE = false;
+    private static final boolean DEFAULT_KEEP_VIDEO_ZOOM_ON_DISABLE = true;
     private static final boolean DEFAULT_KEYBOARD_ESC_OPENS_GAME_MENU = false;
 
     public static final int FRAME_PACING_MIN_LATENCY = 0;

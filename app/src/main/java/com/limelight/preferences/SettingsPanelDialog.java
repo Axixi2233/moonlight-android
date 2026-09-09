@@ -1,6 +1,7 @@
 package com.limelight.preferences;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
@@ -33,6 +34,7 @@ import android.widget.TextView;
 
 import com.limelight.R;
 import com.limelight.ui.BaseFragmentDialog.BaseGameMenuFragmentDialog;
+import com.limelight.ui.AppDialog;
 import org.apmem.tools.layouts.FlowLayout;
 
 import java.math.BigDecimal;
@@ -55,6 +57,9 @@ public class SettingsPanelDialog extends BaseGameMenuFragmentDialog {
     private EditText input;
     private EditText heightInput;
     private TextView inputError;
+    private View profileSwitch;
+    private View closeButton;
+    private AlertDialog resetConfirmation;
     private android.window.OnBackInvokedCallback backCallback;
     private android.window.OnBackInvokedDispatcher backDispatcher;
 
@@ -107,6 +112,13 @@ public class SettingsPanelDialog extends BaseGameMenuFragmentDialog {
         content = view.findViewById(R.id.settings_content);
         scroll = view.findViewById(R.id.settings_scroll);
         title = view.findViewById(R.id.settings_title);
+        closeButton = view.findViewById(R.id.settings_close);
+        profileSwitch = view.findViewById(R.id.settings_profile_switch);
+        profileSwitch.setOnClickListener(v -> {
+            if (getFragmentManager().findFragmentByTag(SettingsProfilePicker.TAG) == null) {
+                new SettingsProfilePicker().show(getFragmentManager(), SettingsProfilePicker.TAG);
+            }
+        });
         view.findViewById(R.id.settings_back).setOnClickListener(v -> goBack());
         view.findViewById(R.id.settings_close).setOnClickListener(v -> closeSettings());
         view.setOnApplyWindowInsetsListener((root, insets) -> {
@@ -180,6 +192,12 @@ public class SettingsPanelDialog extends BaseGameMenuFragmentDialog {
 
     @Override public void onDestroyView() {
         unregisterBackCallback();
+        if (resetConfirmation != null) {
+            resetConfirmation.dismiss();
+            resetConfirmation = null;
+        }
+        profileSwitch = null;
+        closeButton = null;
         content = null;
         scroll = null;
         title = null;
@@ -273,6 +291,9 @@ public class SettingsPanelDialog extends BaseGameMenuFragmentDialog {
 
     private void render() {
         if (content == null || model() == null) return;
+        boolean home = group < 0 && editor == null;
+        profileSwitch.setVisibility(home ? View.VISIBLE : View.GONE);
+        closeButton.setVisibility(home ? View.GONE : View.VISIBLE);
         content.removeAllViews();
         input = null;
         heightInput = null;
@@ -280,22 +301,32 @@ public class SettingsPanelDialog extends BaseGameMenuFragmentDialog {
         if (editor != null) {
             renderEditor();
         } else if (group < 0) {
-            title.setText(R.string.settings_panel_title);
+            String activeName = SettingsProfilePicker.name(SettingsProfileStore.active(getActivity()));
+            title.setText(getString(R.string.settings_profile_title, activeName));
+            profileSwitch.setContentDescription(getString(R.string.settings_profile_switch) + "，"
+                    + getString(R.string.settings_profile_current, activeName));
             paragraph(getString(R.string.settings_panel_hint));
-            for (int i = 0; i < SettingsCatalog.GROUPS.length; i += 2) {
+            int tileCount = SettingsCatalog.GROUPS.length + 1;
+            for (int i = 0; i < tileCount; i += 2) {
                 LinearLayout line = new LinearLayout(getActivity());
-                for (int j = i; j < Math.min(i + 2, SettingsCatalog.GROUPS.length); j++) {
+                for (int j = i; j < Math.min(i + 2, tileCount); j++) {
                     final int index = j;
-                    SettingsCatalog.Group item = SettingsCatalog.GROUPS[j];
+                    boolean reset = j == SettingsCatalog.GROUPS.length;
+                    String tileTitle = reset ? getString(R.string.settings_profile_reset) : SettingsCatalog.GROUPS[j].title;
+                    String tileHint = reset ? getString(R.string.settings_profile_reset_hint) : SettingsCatalog.GROUPS[j].description;
                     LinearLayout tile = vertical();
                     tile.setPadding(dp(12), dp(10), dp(10), dp(10));
                     tile.setMinimumHeight(dp(68));
-                    tile.addView(text(item.title, 15, Color.WHITE));
-                    TextView hint = text(item.description, 11, 0xFFB4B4B4);
+                    tile.addView(text(tileTitle, 15, Color.WHITE));
+                    TextView hint = text(tileHint, 11, 0xFFB4B4B4);
                     hint.setPadding(0, dp(4), 0, 0);
                     tile.addView(hint);
                     tile.setTag("group_" + j);
                     clickable(tile, () -> {
+                        if (reset) {
+                            confirmProfileReset();
+                            return;
+                        }
                         hubScroll = scroll.getScrollY();
                         group = index;
                         groupScroll = 0;
@@ -309,7 +340,7 @@ public class SettingsPanelDialog extends BaseGameMenuFragmentDialog {
                     lp.setMargins(dp(j == i ? 0 : 6), dp(6), 0, 0);
                     line.addView(tile, lp);
                 }
-                if (i + 1 == SettingsCatalog.GROUPS.length) {
+                if (i + 1 == tileCount) {
                     View spacer = new View(getActivity());
                     LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, 1, 1);
                     lp.leftMargin = dp(6);
@@ -585,6 +616,18 @@ public class SettingsPanelDialog extends BaseGameMenuFragmentDialog {
         content.addView(field, lp);
         addInputError();
         return field;
+    }
+
+    private void confirmProfileReset() {
+        int active = SettingsProfileStore.active(getActivity());
+        resetConfirmation = AppDialog.showConfirm(getActivity(), getString(R.string.settings_profile_reset),
+                getString(R.string.settings_profile_reset_confirm, SettingsProfilePicker.name(active)),
+                getString(R.string.settings_profile_reset_action), true,
+                () -> ((StreamSettings) getActivity()).changeSettingsProfile(active, true), null);
+        if (resetConfirmation != null && getDialog() != null) {
+            resetConfirmation.getWindow().getDecorView().setSystemUiVisibility(
+                    getDialog().getWindow().getDecorView().getSystemUiVisibility());
+        }
     }
 
     private EditText createInput(int inputType, String value) {

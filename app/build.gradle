@@ -96,7 +96,7 @@ android {
     buildTypes {
         debug {
             applicationIdSuffix ".debug"
-            resValue "string", "app_label", "西·月光"
+            resValue "string", "app_label", "月光"
             resValue "string", "app_label_root", "DR·月光"
 
             minifyEnabled true

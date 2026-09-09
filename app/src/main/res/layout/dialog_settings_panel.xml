@@ -39,6 +39,15 @@
             android:text="@string/settings_panel_close"
             android:textColor="#DDDDDD"
             android:textSize="12sp" />
+        <ImageButton
+            android:id="@+id/settings_profile_switch"
+            android:layout_width="48dp"
+            android:layout_height="44dp"
+            android:padding="11dp"
+            android:background="@drawable/ic_game_menu_btn_side_selector"
+            android:src="@drawable/ic_transition_slide"
+            android:contentDescription="@string/settings_profile_switch"
+            android:visibility="gone" />
     </LinearLayout>
 
     <ScrollView
