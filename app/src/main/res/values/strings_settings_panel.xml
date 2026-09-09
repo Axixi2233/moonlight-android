@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_panel_title">设置</string>
+    <string name="settings_panel_back">返回</string>
+    <string name="settings_panel_close">关闭</string>
+    <string name="settings_panel_hint">配置下次串流使用的选项</string>
+    <string name="settings_panel_custom">自定义分辨率</string>
+    <string name="settings_panel_apply">保存</string>
+    <string name="settings_panel_reset">使用默认值</string>
+    <string name="settings_panel_resolution_hint">宽 × 高，例如 1920x1080</string>
+    <string name="settings_panel_resolution_error">请输入 2–16384 之间的偶数宽高，例如 1920x1080</string>
+    <string name="settings_panel_range_error">请输入 %1$s–%2$s 之间的数值</string>
+    <string name="settings_panel_empty">当前设备没有可用选项</string>
+    <string name="settings_panel_width">宽度</string>
+    <string name="settings_panel_height">高度</string>
+    <string name="settings_panel_swap">交换宽高</string>
+    <string name="settings_panel_pixels">像素</string>
+    <string name="settings_panel_bitrate_hint">手动输入，最大 99999 Mbps</string>
+    <string name="settings_panel_bitrate_presets">常用码率 · Mbps</string>
+</resources>

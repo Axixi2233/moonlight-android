@@ -22,7 +22,7 @@
             android:key="seekbar_bitrate_kbps"
             android:dialogMessage="@string/summary_seekbar_bitrate"
             seekbar:min="500"
-            android:max="300000"
+            android:max="99999000"
             seekbar:step="500"
             seekbar:keyStep="1000"
             seekbar:divisor="1000"
@@ -730,11 +730,13 @@
         android:key="category_axi_about">
 
         <com.limelight.preferences.WebLauncherPreference
+            android:key="settings_about"
             android:title="关于我们"
             android:summary="版本信息·获取更新·关注作者"
             url="about"/>
 
         <com.limelight.preferences.WebLauncherPreference
+            android:key="settings_help"
             android:title="Moonlight帮助指南"
             android:summary="官方使用文档"
             url="https://github.com/moonlight-stream/moonlight-docs/wiki/Setup-Guide"/>
@@ -758,6 +760,40 @@
 
     </PreferenceCategory>
 
+
+    <!-- Additional persistent controls also available through the in-stream quick menu. -->
+    <PreferenceCategory android:key="category_settings_additional" android:title="其他配置">
+        <CheckBoxPreference
+            android:key="checkbox_enable_hdr_high_brightness"
+            android:title="HDR 高亮度"
+            android:summary="在支持的设备上提高 HDR 画面亮度"
+            android:defaultValue="false" />
+        <CheckBoxPreference
+            android:key="checkbox_enforce_display_mode"
+            android:title="强制显示模式"
+            android:summary="优先使用匹配串流帧率的显示模式；显示异常时可关闭"
+            android:defaultValue="false" />
+        <CheckBoxPreference
+            android:key="checkbox_keep_video_zoom_on_disable"
+            android:title="保留画面缩放"
+            android:summary="关闭缩放调节时保留已调整的画面比例"
+            android:defaultValue="false" />
+        <CheckBoxPreference
+            android:key="checkbox_keyboard_esc_opens_game_menu"
+            android:title="Esc 打开游戏菜单"
+            android:summary="使用实体键盘 Esc 键打开串流快捷菜单"
+            android:defaultValue="false" />
+        <CheckBoxPreference
+            android:key="checkbox_ds5_native_pcm"
+            android:title="DualSense 原生音频震动"
+            android:summary="接收支持的主机发送的原生 PCM 触觉数据"
+            android:defaultValue="true" />
+        <CheckBoxPreference
+            android:key="checkbox_ds5_controller_speaker"
+            android:title="DualSense 手柄扬声器"
+            android:summary="向支持的 DualSense 手柄输出游戏扬声器音频"
+            android:defaultValue="false" />
+    </PreferenceCategory>
 
     <!--PreferenceCategory android:title="@string/category_help"
         android:key="category_help">

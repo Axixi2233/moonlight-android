@@ -14,9 +14,9 @@ android {
         minSdk 21
         targetSdk 34
 
-        versionName "26.09.06"
+        versionName "26.09.09"
         versionCode = 500
-        buildConfigField "int", "AXI_CODE", "25"
+        buildConfigField "int", "AXI_CODE", "26"
         buildConfigField "boolean", "HAS_KISHI_HAPTICS", gradle.ext.hasKishiHaptics.toString()
         buildConfigField "boolean", "HAS_STEREO3D_AI", gradle.ext.hasStereo3dAi.toString()
         // Generate native debug symbols to allow Google Play to symbolicate our native crashes

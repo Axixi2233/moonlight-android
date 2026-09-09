@@ -50,6 +50,14 @@
         <item name="android:windowNoTitle">true</item>
     </style>
 
+    <style name="SettingsHostTheme" parent="AppTheme">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowDisablePreview">true</item>
+        <item name="android:colorAccent">@color/home_accent_bright</item>
+    </style>
+
     <style name="BottomDialog" parent="@android:style/Theme.DeviceDefault.Dialog">
         <item name="android:windowTitleStyle">@null</item>
         <item name="android:windowIsFloating">false</item>

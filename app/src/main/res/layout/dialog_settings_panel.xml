@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F2272727"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:gravity="center_vertical">
+        <ImageButton
+            android:id="@+id/settings_back"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:padding="12dp"
+            android:background="@drawable/ic_game_menu_btn_side_selector"
+            android:src="@drawable/ic_axi_back"
+            android:contentDescription="@string/settings_panel_back" />
+        <TextView
+            android:id="@+id/settings_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:paddingStart="12dp"
+            android:paddingEnd="8dp"
+            android:textColor="#FFFFFF"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+        <TextView
+            android:id="@+id/settings_close"
+            android:layout_width="48dp"
+            android:layout_height="44dp"
+            android:gravity="center"
+            android:background="@drawable/ic_game_menu_btn_side_selector"
+            android:focusable="true"
+            android:clickable="true"
+            android:text="@string/settings_panel_close"
+            android:textColor="#DDDDDD"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <ScrollView
+        android:id="@+id/settings_scroll"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:scrollbars="none"
+        android:fillViewport="true"
+        android:clipToPadding="false"
+        android:paddingBottom="12dp">
+        <LinearLayout
+            android:id="@+id/settings_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </ScrollView>
+</LinearLayout>

@@ -172,6 +172,25 @@ public class SeekBarPreference extends DialogPreference
         return currentValue;
     }
 
+    public int getSavedValue() { return getPersistedInt(defaultValue); }
+    public int getMinValue() { return minValue; }
+    public int getMaxValue() { return maxValue; }
+    public int getStepSize() { return stepSize; }
+    public int getDivisor() { return divisor; }
+    public int getDefaultValue() { return defaultValue; }
+    public String getSuffix() { return suffix; }
+
+    /** Commit through the same listener and persistence contract as the preference UI. */
+    public boolean saveValue(int value) {
+        if (value < minValue || value > maxValue || !callChangeListener(value)) {
+            return false;
+        }
+        persistInt(value);
+        setProgress(value);
+        notifyChanged();
+        return true;
+    }
+
     @Override
     public void showDialog(Bundle state) {
         super.showDialog(state);

@@ -120,11 +120,26 @@ public class StreamSettings extends Activity {
         ).commitAllowingStateLoss();
     }
 
+    SettingsFragment getSettingsModel() {
+        android.app.Fragment fragment = getFragmentManager().findFragmentById(R.id.stream_settings);
+        return fragment instanceof SettingsFragment ? (SettingsFragment) fragment : null;
+    }
+
+    private void showSettingsPanel() {
+        if (isFinishing() || isDestroyed()
+                || (Build.VERSION.SDK_INT >= 26 && getFragmentManager().isStateSaved())) return;
+        SettingsPanelDialog panel = (SettingsPanelDialog) getFragmentManager()
+                .findFragmentByTag(SettingsPanelDialog.TAG);
+        if (panel == null) {
+            new SettingsPanelDialog().show(getFragmentManager(), SettingsPanelDialog.TAG);
+        } else {
+            panel.refresh();
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !PreferenceConfiguration.readPreferences(this).uiThemeColorWhite) {
-            setTheme(R.style.AppTheme);
-        }
+        setTheme(R.style.SettingsHostTheme);
         super.onCreate(savedInstanceState);
 
         previousPrefs = PreferenceConfiguration.readPreferences(this);
@@ -135,9 +150,6 @@ public class StreamSettings extends Activity {
 
         UiHelper.notifyNewRootView(this);
 
-        if (previousPrefs.uiThemeColorWhite) {
-            UiHelper.setStatusBarLightMode(getWindow(),true);
-        }
     }
 
     @Override
@@ -426,6 +438,13 @@ public class StreamSettings extends Activity {
         public void onResume() {
             super.onResume();
             updateStreamLogSummary();
+            // Keep the Preference lifecycle for dependencies and activity results. Only the
+            // independent settings sheet is visible; never open native preference dialogs.
+            new Handler().post(() -> {
+                if (isResumed() && getActivity() instanceof StreamSettings) {
+                    ((StreamSettings) getActivity()).showSettingsPanel();
+                }
+            });
         }
 
         private void updateStreamLogSummary() {
@@ -568,15 +587,11 @@ public class StreamSettings extends Activity {
             }*/
             PreferenceCategory category_gamepad_settings =
                     (PreferenceCategory) findPreference("category_gamepad_settings");
-            PreferenceCategory category_audio_settings =
-                    (PreferenceCategory) findPreference("category_audio_settings");
             // Remove the vibration options if the device can't vibrate
             if (!((Vibrator)getActivity().getSystemService(Context.VIBRATOR_SERVICE)).hasVibrator()) {
                 category_gamepad_settings.removePreference(findPreference("checkbox_vibrate_fallback"));
                 category_gamepad_settings.removePreference(findPreference("seekbar_vibrate_fallback_strength"));
-                category_audio_settings.removePreference(findPreference("checkbox_enable_audio_haptics"));
-                category_audio_settings.removePreference(findPreference("seekbar_audio_haptics_strength"));
-                category_audio_settings.removePreference(findPreference("list_audio_haptics_voice_filter"));
+                // Audio haptics also supports external controllers without a phone vibrator.
                 // The entire OSC category may have already been removed by the touchscreen check above
                 PreferenceCategory category = (PreferenceCategory) findPreference("category_onscreen_controls");
                 if (category != null) {

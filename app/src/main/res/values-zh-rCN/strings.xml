@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="pairing_backup_category">备份恢复数据</string>
-    <string name="pairing_backup_export">导出备份 ZIP</string>
-    <string name="pairing_backup_import">导入备份 ZIP</string>
+    <string name="pairing_backup_export">导出备份</string>
+    <string name="pairing_backup_import">导入备份</string>
     <string name="pairing_backup_export_summary">将主机数据库、客户端证书和私钥保存为一个 ZIP 压缩包，请妥善保管。</string>
     <string name="pairing_backup_import_summary">选择备份 ZIP 恢复主机与客户端身份，同一主机覆盖更新。导入后需重新启动应用。</string>
     <string name="pairing_backup_working">正在处理备份…</string>
