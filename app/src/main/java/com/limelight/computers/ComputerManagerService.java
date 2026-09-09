@@ -61,7 +61,7 @@ public class ComputerManagerService extends Service {
     private final LinkedList<PollingTuple> pollingTuples = new LinkedList<>();
     private ComputerManagerListener listener = null;
     private final AtomicInteger activePolls = new AtomicInteger(0);
-    private boolean pollingActive = false;
+    private volatile boolean pollingActive = false;
     private final Lock defaultNetworkLock = new ReentrantLock();
 
     private ConnectivityManager.NetworkCallback networkCallback;
@@ -152,8 +152,8 @@ public class ComputerManagerService extends Service {
             }
         }
 
-        // Don't call the listener if this is a failed lookup of a new PC
-        if ((!newPc || details.state == ComputerDetails.State.ONLINE) && listener != null) {
+        // Newly added PCs are reported by addTuple() after merging their saved route policy.
+        if (!newPc && listener != null) {
             listener.notifyComputerUpdated(details);
         }
 
@@ -167,24 +167,53 @@ public class ComputerManagerService extends Service {
             public void run() {
 
                 int offlineCount = 0;
-                while (!isInterrupted() && pollingActive && tuple.thread == this) {
-                    try {
-                        // Only allow one request to the machine at a time
-                        synchronized (tuple.networkLock) {
-                            // Check if this poll has modified the details
-                            if (!runPoll(tuple.computer, false, offlineCount)) {
-                                LimeLog.warning(tuple.computer.name + " is offline (try " + offlineCount + ")");
-                                offlineCount++;
-                            } else {
-                                tuple.lastSuccessfulPollMs = SystemClock.elapsedRealtime();
-                                offlineCount = 0;
+                try {
+                    while (!isInterrupted() && pollingActive) {
+                        List<Runnable> refreshCallbacks;
+                        synchronized (pollingTuples) {
+                            if (tuple.thread != this) {
+                                break;
+                            }
+                            refreshCallbacks = tuple.takeRefreshCallbacks();
+                        }
+                        try {
+                            // Only allow one request to the machine at a time.
+                            synchronized (tuple.networkLock) {
+                                if (isInterrupted()) {
+                                    break;
+                                }
+                                if (!runPoll(tuple.computer, false, offlineCount)) {
+                                    LimeLog.warning(tuple.computer.name + " is offline (try " + offlineCount + ")");
+                                    offlineCount++;
+                                } else {
+                                    tuple.lastSuccessfulPollMs = SystemClock.elapsedRealtime();
+                                    offlineCount = 0;
+                                }
+                            }
+                        } catch (InterruptedException e) {
+                            break;
+                        } finally {
+                            for (Runnable callback : refreshCallbacks) {
+                                callback.run();
                             }
                         }
-
-                        // Wait until the next polling interval
-                        Thread.sleep(SERVERINFO_POLLING_PERIOD_MS);
-                    } catch (InterruptedException e) {
-                        break;
+                        try {
+                            synchronized (tuple.pollEvent) {
+                                if (tuple.refreshCallbacks.isEmpty()) {
+                                    tuple.pollEvent.wait(SERVERINFO_POLLING_PERIOD_MS);
+                                }
+                            }
+                        } catch (InterruptedException e) {
+                            break;
+                        }
+                    }
+                } finally {
+                    synchronized (pollingTuples) {
+                        // A replaced thread must not consume the new thread's requests.
+                        if (tuple.thread == this) {
+                            tuple.thread = null;
+                            tuple.completePendingRefreshes();
+                        }
                     }
                 }
             }
@@ -194,6 +223,76 @@ public class ComputerManagerService extends Service {
     }
 
     public class ComputerManagerBinder extends Binder {
+        /** Queue one fresh poll per host, without interrupting in-flight network requests. */
+        public void refreshComputers(Runnable onComplete) {
+            synchronized (pollingTuples) {
+                AtomicInteger remaining = new AtomicInteger(1);
+                Runnable completed = () -> {
+                    if (remaining.decrementAndGet() == 0) {
+                        onComplete.run();
+                    }
+                };
+                for (PollingTuple tuple : pollingTuples) {
+                    if (pollingActive && tuple.thread != null) {
+                        remaining.incrementAndGet();
+                        synchronized (tuple.pollEvent) {
+                            tuple.refreshCallbacks.add(completed);
+                            tuple.pollEvent.notifyAll();
+                        }
+                    }
+                }
+                completed.run();
+            }
+        }
+
+        /** Must run off the UI thread. A failed probe leaves the existing policy intact. */
+        public boolean switchAddressBlocking(String uuid, ComputerDetails.AddressTuple address)
+                throws InterruptedException {
+            PollingTuple target = null;
+            synchronized (pollingTuples) {
+                for (PollingTuple tuple : pollingTuples) {
+                    if (uuid.equals(tuple.computer.uuid)) {
+                        target = tuple;
+                        break;
+                    }
+                }
+            }
+            if (target == null || !getLocalDatabaseReference()) {
+                return false;
+            }
+            try {
+                synchronized (target.networkLock) {
+                    ComputerDetails candidate = new ComputerDetails(target.computer);
+                    candidate.preferredAddress = ComputerDetails.copyAddress(address);
+                    // Automatic selection can be restored even when the host is offline.
+                    if (address != null && !pollComputer(candidate)) {
+                        return false;
+                    }
+                    ComputerDetails saved = dbManager.getComputerByUUID(uuid);
+                    if (Thread.currentThread().isInterrupted() || saved == null) {
+                        return false;
+                    }
+                    // A concurrent add may have persisted history before updating the live tuple.
+                    candidate.mergeAddressHistory(saved);
+                    if (!dbManager.updateComputer(candidate)) {
+                        return false;
+                    }
+                    target.computer.update(candidate);
+                    target.computer.preferredAddress = ComputerDetails.copyAddress(address);
+                    synchronized (target.pollEvent) {
+                        target.refreshCallbacks.add(() -> {});
+                        target.pollEvent.notifyAll();
+                    }
+                    if (listener != null) {
+                        listener.notifyComputerUpdated(target.computer);
+                    }
+                    return true;
+                }
+            } finally {
+                releaseLocalDatabaseReference();
+            }
+        }
+
         public void startPolling(ComputerManagerListener listener) {
             // Polling is active
             pollingActive = true;
@@ -321,6 +420,7 @@ public class ComputerManagerService extends Service {
                     tuple.thread.interrupt();
                     tuple.thread = null;
                 }
+                tuple.completePendingRefreshes();
             }
         }
 
@@ -437,32 +537,50 @@ public class ComputerManagerService extends Service {
     }
 
     private void addTuple(ComputerDetails details) {
+        PollingTuple existing = null;
         synchronized (pollingTuples) {
             for (PollingTuple tuple : pollingTuples) {
-                // Check if this is the same computer
                 if (tuple.computer.uuid.equals(details.uuid)) {
-                    // Update the saved computer with potentially new details
-                    tuple.computer.update(details);
-
-                    // Start a polling thread if polling is active
-                    if (pollingActive && tuple.thread == null) {
-                        tuple.thread = createPollingThread(tuple);
-                        tuple.thread.start();
-                    }
-
-                    // Found an entry so we're done
-                    return;
+                    existing = tuple;
+                    break;
                 }
             }
-
-            // If we got here, we didn't find an entry
-            PollingTuple tuple = new PollingTuple(details, null);
-            if (pollingActive) {
-                tuple.thread = createPollingThread(tuple);
+            if (existing == null) {
+                PollingTuple tuple = new PollingTuple(details, null);
+                pollingTuples.add(tuple);
+                if (listener != null) {
+                    listener.notifyComputerUpdated(tuple.computer);
+                }
+                if (pollingActive) {
+                    tuple.thread = createPollingThread(tuple);
+                    tuple.thread.start();
+                }
+                return;
             }
-            pollingTuples.add(tuple);
-            if (tuple.thread != null) {
-                tuple.thread.start();
+        }
+
+        // Never hold the global list lock while waiting for a host's network request.
+        synchronized (existing.networkLock) {
+            if (existing.computer.preferredAddress == null) {
+                existing.computer.update(details);
+            } else {
+                // Discovery/re-adding may reach a different route. Keep the user's route.
+                existing.computer.mergeAddressHistory(details);
+                if (details.manualAddress != null) {
+                    existing.computer.manualAddress = ComputerDetails.copyAddress(details.manualAddress);
+                }
+            }
+        }
+        synchronized (pollingTuples) {
+            if (!pollingTuples.contains(existing)) {
+                return;
+            }
+            if (listener != null) {
+                listener.notifyComputerUpdated(existing.computer);
+            }
+            if (pollingActive && existing.thread == null) {
+                existing.thread = createPollingThread(existing);
+                existing.thread.start();
             }
         }
     }
@@ -473,11 +591,13 @@ public class ComputerManagerService extends Service {
         // We cannot use runPoll() here because it will attempt to persist the state of the machine
         // in the database, which would be bad because we don't have our pinned cert loaded yet.
         if (pollComputer(fakeDetails)) {
+            Object existingNetworkLock = new Object();
             // See if we have record of this PC to pull its pinned cert
             synchronized (pollingTuples) {
                 for (PollingTuple tuple : pollingTuples) {
                     if (tuple.computer.uuid.equals(fakeDetails.uuid)) {
                         fakeDetails.serverCert = tuple.computer.serverCert;
+                        existingNetworkLock = tuple.networkLock;
                         break;
                     }
                 }
@@ -485,7 +605,9 @@ public class ComputerManagerService extends Service {
 
             // Poll again, possibly with the pinned cert, to get accurate pairing information.
             // This will insert the host into the database too.
-            runPoll(fakeDetails, true, 0);
+            synchronized (existingNetworkLock) {
+                runPoll(fakeDetails, true, 0);
+            }
         }
 
         // If the machine is reachable, it was successful
@@ -519,6 +641,7 @@ public class ComputerManagerService extends Service {
                         tuple.thread = null;
                     }
                     pollingTuples.remove(tuple);
+                    tuple.completePendingRefreshes();
                     break;
                 }
             }
@@ -702,7 +825,15 @@ public class ComputerManagerService extends Service {
     private boolean pollComputer(ComputerDetails details) throws InterruptedException {
         // Poll all addresses in parallel to speed up the process
         LimeLog.info("Starting parallel poll for "+details.name+" ("+details.localAddress +", "+details.remoteAddress +", "+details.manualAddress+", "+details.ipv6Address+")");
-        ComputerDetails polledDetails = parallelPollPc(details);
+        ComputerDetails polledDetails;
+        if (details.preferredAddress != null) {
+            polledDetails = tryPollIp(details, details.preferredAddress);
+            if (polledDetails != null) {
+                polledDetails.activeAddress = ComputerDetails.copyAddress(details.preferredAddress);
+            }
+        } else {
+            polledDetails = parallelPollPc(details);
+        }
         LimeLog.info("Parallel poll for "+details.name+" returned address: "+details.activeAddress);
 
         if (polledDetails != null) {
@@ -947,10 +1078,26 @@ public class ComputerManagerService extends Service {
 }
 
 class PollingTuple {
-    public Thread thread;
+    public volatile Thread thread;
     public final ComputerDetails computer;
     public final Object networkLock;
     public long lastSuccessfulPollMs;
+    public final Object pollEvent = new Object();
+    public final List<Runnable> refreshCallbacks = new LinkedList<>();
+
+    public List<Runnable> takeRefreshCallbacks() {
+        synchronized (pollEvent) {
+            List<Runnable> callbacks = new LinkedList<>(refreshCallbacks);
+            refreshCallbacks.clear();
+            return callbacks;
+        }
+    }
+
+    public void completePendingRefreshes() {
+        for (Runnable callback : takeRefreshCallbacks()) {
+            callback.run();
+        }
+    }
 
     public PollingTuple(ComputerDetails computer, Thread thread) {
         this.computer = computer;

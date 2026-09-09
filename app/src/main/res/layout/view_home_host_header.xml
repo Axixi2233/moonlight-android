@@ -44,14 +44,28 @@
         android:textStyle="bold" />
 
     <ImageButton
+        android:id="@+id/homeHostRefreshButton"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:background="@drawable/bg_home_circle_button"
+        android:contentDescription="@string/home_refresh_hosts"
+        android:focusable="true"
+        android:nextFocusDown="@id/hostCarousel"
+        android:padding="8dp"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_home_refresh" />
+
+    <ImageButton
         android:id="@+id/homeHostLayoutToggle"
         android:layout_width="36dp"
         android:layout_height="36dp"
+        android:layout_marginStart="8dp"
         android:background="@drawable/bg_home_circle_button"
         android:contentDescription="@string/home_switch_to_list"
         android:focusable="true"
         android:nextFocusDown="@id/hostCarousel"
         android:nextFocusRight="@id/homeHostAddButton"
+        android:nextFocusLeft="@id/homeHostRefreshButton"
         android:padding="8dp"
         android:scaleType="centerInside"
         android:src="@drawable/ic_home_layout_list"

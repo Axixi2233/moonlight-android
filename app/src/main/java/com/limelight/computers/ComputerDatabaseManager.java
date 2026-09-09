@@ -2,6 +2,7 @@ package com.limelight.computers;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -22,6 +23,7 @@ import android.database.sqlite.SQLiteException;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONArray;
 
 public class ComputerDatabaseManager {
     public static final String COMPUTER_DB_NAME = "computers4.db";
@@ -34,6 +36,8 @@ public class ComputerDatabaseManager {
         String REMOTE = "remote";
         String MANUAL = "manual";
         String IPv6 = "ipv6";
+        String HISTORY = "manualHistory";
+        String PREFERRED = "preferred";
 
         String ADDRESS = "address";
         String PORT = "port";
@@ -67,11 +71,7 @@ public class ComputerDatabaseManager {
     }
 
     private void initializeDb(Context c) {
-        // Create tables if they aren't already there
-        computerDb.execSQL(String.format((Locale)null,
-                "CREATE TABLE IF NOT EXISTS %s(%s TEXT PRIMARY KEY, %s TEXT NOT NULL, %s TEXT NOT NULL, %s TEXT, %s TEXT)",
-                COMPUTER_TABLE_NAME, COMPUTER_UUID_COLUMN_NAME, COMPUTER_NAME_COLUMN_NAME,
-                ADDRESSES_COLUMN_NAME, MAC_ADDRESS_COLUMN_NAME, SERVER_CERT_COLUMN_NAME));
+        createComputerTable();
 
         // Move all computers from the old DB (if any) to the new one
         List<ComputerDetails> oldComputers = LegacyDatabaseReader.migrateAllComputers(c);
@@ -85,6 +85,45 @@ public class ComputerDatabaseManager {
         oldComputers = LegacyDatabaseReader3.migrateAllComputers(c);
         for (ComputerDetails computer : oldComputers) {
             updateComputer(computer);
+        }
+    }
+
+    private void createComputerTable() {
+        // Create tables if they aren't already there
+        computerDb.execSQL(String.format((Locale)null,
+                "CREATE TABLE IF NOT EXISTS %s(%s TEXT PRIMARY KEY, %s TEXT NOT NULL, %s TEXT NOT NULL, %s TEXT, %s TEXT)",
+                COMPUTER_TABLE_NAME, COMPUTER_UUID_COLUMN_NAME, COMPUTER_NAME_COLUMN_NAME,
+                ADDRESSES_COLUMN_NAME, MAC_ADDRESS_COLUMN_NAME, SERVER_CERT_COLUMN_NAME));
+
+    }
+
+    private ComputerDatabaseManager(SQLiteDatabase database) {
+        computerDb = database;
+    }
+
+    /** Build a standalone database rather than copying a live SQLite/WAL file. */
+    public void writeBackup(File destination) throws IOException {
+        ComputerDatabaseManager snapshot = new ComputerDatabaseManager(
+                SQLiteDatabase.openOrCreateDatabase(destination, null));
+        try {
+            snapshot.createComputerTable();
+            snapshot.restoreComputers(getAllComputers());
+        } finally {
+            snapshot.close();
+        }
+    }
+
+    public void restoreComputers(List<ComputerDetails> computers) throws IOException {
+        computerDb.beginTransaction();
+        try {
+            for (ComputerDetails computer : computers) {
+                if (!updateComputer(computer)) {
+                    throw new IOException("Failed to restore host database");
+                }
+            }
+            computerDb.setTransactionSuccessful();
+        } finally {
+            computerDb.endTransaction();
         }
     }
 
@@ -125,6 +164,13 @@ public class ComputerDatabaseManager {
             addresses.put(AddressFields.REMOTE, tupleToJson(details.remoteAddress));
             addresses.put(AddressFields.MANUAL, tupleToJson(details.manualAddress));
             addresses.put(AddressFields.IPv6, tupleToJson(details.ipv6Address));
+            addresses.put(AddressFields.PREFERRED, tupleToJson(details.preferredAddress));
+            details.rememberManualAddress(details.manualAddress);
+            JSONArray history = new JSONArray();
+            for (ComputerDetails.AddressTuple address : details.getManualAddressHistory()) {
+                history.put(tupleToJson(address));
+            }
+            addresses.put(AddressFields.HISTORY, history);
             values.put(ADDRESSES_COLUMN_NAME, addresses.toString());
         } catch (JSONException e) {
             throw new RuntimeException(e);
@@ -156,6 +202,17 @@ public class ComputerDatabaseManager {
             details.remoteAddress = tupleFromJson(addresses, AddressFields.REMOTE);
             details.manualAddress = tupleFromJson(addresses, AddressFields.MANUAL);
             details.ipv6Address = tupleFromJson(addresses, AddressFields.IPv6);
+            details.preferredAddress = tupleFromJson(addresses, AddressFields.PREFERRED);
+            JSONArray history = addresses.optJSONArray(AddressFields.HISTORY);
+            if (history != null) {
+                for (int i = 0; i < history.length(); i++) {
+                    JSONObject address = history.getJSONObject(i);
+                    details.rememberManualAddress(new ComputerDetails.AddressTuple(
+                            address.getString(AddressFields.ADDRESS), address.getInt(AddressFields.PORT)));
+                }
+            }
+            // Seed older installations with the last manually added address.
+            details.rememberManualAddress(details.manualAddress);
         } catch (JSONException e) {
             throw new RuntimeException(e);
          }

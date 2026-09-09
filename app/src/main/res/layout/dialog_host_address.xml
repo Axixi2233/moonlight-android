@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:orientation="vertical" android:padding="18dp"
+    android:background="@drawable/bg_update_dialog_panel">
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/pc_switch_address" android:textColor="@color/home_primary_text"
+        android:textSize="18sp" android:textStyle="bold" />
+    <TextView android:id="@+id/hostAddressSummary"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="8dp" android:textColor="@color/home_secondary_text"
+        android:textSize="12sp" />
+    <ListView android:id="@+id/hostAddressList"
+        android:layout_width="match_parent" android:layout_height="200dp"
+        android:layout_marginTop="12dp" android:choiceMode="singleChoice"
+        android:divider="@android:color/transparent" android:dividerHeight="4dp" />
+    <TextView android:id="@+id/hostAddressClose"
+        android:layout_width="match_parent" android:layout_height="42dp"
+        android:layout_marginTop="12dp" android:gravity="center"
+        android:background="@drawable/bg_app_dialog_action"
+        android:clickable="true" android:focusable="true"
+        android:text="@string/dialog_action_cancel" android:textColor="@color/home_primary_text"
+        android:textSize="13sp" />
+</LinearLayout>

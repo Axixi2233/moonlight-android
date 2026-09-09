@@ -1,5 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="pairing_backup_category">Back up and restore data</string>
+    <string name="pairing_backup_export">Export backup ZIP</string>
+    <string name="pairing_backup_import">Import backup ZIP</string>
+    <string name="pairing_backup_export_summary">Save your host database, client certificate and private key in one ZIP file. Keep the backup private.</string>
+    <string name="pairing_backup_import_summary">Choose a backup ZIP to restore hosts and the client identity. Matching hosts are updated. Restart the app after importing.</string>
+    <string name="pairing_backup_working">Processing backup…</string>
+    <string name="pairing_backup_export_success">Backup ZIP saved.</string>
+    <string name="pairing_backup_import_success">Backup restored. Fully close and reopen the app to use the restored hosts and client identity.</string>
+    <string name="pairing_backup_export_failed">Could not export the backup. Check the save location and available storage, then try again.</string>
+    <string name="pairing_backup_import_failed">Could not restore this backup. Choose a complete backup ZIP containing a valid host database and a matching certificate and private key.</string>
+    <string name="home_refresh_hosts">Refresh hosts</string>
+    <string name="home_refreshing_hosts">Refreshing hosts…</string>
+    <string name="pc_switch_address">Switch address</string>
+    <string name="pc_address_automatic">Automatic selection</string>
+    <string name="pc_address_summary">%1$s\nCurrent address: %2$s\nChoose a known or previously added address. A manual selection stays fixed until you choose Automatic selection.</string>
+    <string name="pc_address_switching">Checking the selected address…</string>
+    <string name="pc_address_switch_failed">Could not switch address. Check that it is reachable and belongs to this PC. The previous selection has been kept.</string>
+    <string name="pc_address_switched">Address selection updated</string>
     <!-- Shortcut strings -->
     <string name="scut_deleted_pc">PC deleted</string>
     <string name="scut_not_paired">PC not paired</string>

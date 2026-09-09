@@ -673,44 +673,18 @@
 
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="备份恢复数据【注意数据安全】"
+    <PreferenceCategory android:title="@string/pairing_backup_category"
         android:key="category_axixi_back_data">
 
         <Preference
-            android:key="export_computers_data_file"
-            android:title="导出配对的电脑数据库文件"
-            android:summary="导出一个db格式的sqlite数据库文件"
-            />
+            android:key="export_pairing_backup"
+            android:title="@string/pairing_backup_export"
+            android:summary="@string/pairing_backup_export_summary" />
 
         <Preference
-            android:key="export_https_data_crt_file"
-            android:title="导出网络请求的证书文件"
-            android:summary="导出一个crt格式的证书文件"
-            />
-
-        <Preference
-            android:key="export_https_data_key_file"
-            android:title="导出网络请求的key文件"
-            android:summary="导出一个key格式的验证文件"
-            />
-
-        <Preference
-            android:key="import_computers_data_file"
-            android:title="导入配对的电脑数据库文件"
-            android:summary="选择db数据库文件，会覆盖更新原有的电脑列表，需要重新打开APP生效。"
-            />
-
-        <Preference
-            android:key="import_https_data_crt_file"
-            android:title="导入网络请求的证书文件"
-            android:summary="导入一个crt格式的证书文件"
-            />
-
-        <Preference
-            android:key="import_https_data_key_file"
-            android:title="导入网络请求的key文件"
-            android:summary="导入一个key格式的验证文件"
-            />
+            android:key="import_pairing_backup"
+            android:title="@string/pairing_backup_import"
+            android:summary="@string/pairing_backup_import_summary" />
 
     </PreferenceCategory>
 

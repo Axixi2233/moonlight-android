@@ -20,6 +20,7 @@ public final class PcActionsDialog extends BaseGameMenuDialog {
         void onWakeComputer(ComputerDetails computer);
         void onShowGameStreamEol();
         void onTestNetwork();
+        void onSwitchAddress(ComputerDetails computer);
         void onDeleteComputer(ComputerDetails computer);
         void onDismiss();
     }
@@ -57,6 +58,7 @@ public final class PcActionsDialog extends BaseGameMenuDialog {
         Button wakeButton = view.findViewById(R.id.btn_pc_actions_wake);
         Button gameStreamEolButton = view.findViewById(R.id.btn_pc_actions_gamestream_eol);
         Button networkTestButton = view.findViewById(R.id.btn_pc_actions_network_test);
+        Button switchAddressButton = view.findViewById(R.id.btn_pc_actions_switch_address);
         Button deleteButton = view.findViewById(R.id.btn_pc_actions_delete);
 
         titleView.setText(valueOrUnavailable(computer.name));
@@ -126,6 +128,12 @@ public final class PcActionsDialog extends BaseGameMenuDialog {
             dismiss();
             if (listener != null) {
                 listener.onShowGameStreamEol();
+            }
+        });
+        switchAddressButton.setOnClickListener(v -> {
+            dismiss();
+            if (listener != null) {
+                listener.onSwitchAddress(computer);
             }
         });
         networkTestButton.setOnClickListener(v -> {

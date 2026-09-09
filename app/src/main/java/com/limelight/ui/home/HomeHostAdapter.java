@@ -608,6 +608,9 @@ final class HomeHostAdapter extends RecyclerView.Adapter<HomeHostAdapter.HostVie
     }
 
     private AddressDisplay getAddressDisplay(ComputerDetails details, android.content.Context context) {
+        if (details.preferredAddress != null) {
+            return new AddressDisplay(details.preferredAddress.address, R.string.home_host_connection_manual);
+        }
         if (details.activeAddress != null) {
             return new AddressDisplay(details.activeAddress.address, addressLabel(details, details.activeAddress));
         }

@@ -34,6 +34,7 @@ import com.limelight.preferences.PreferenceConfiguration;
 import com.limelight.preferences.StreamSettings;
 import com.limelight.ui.AppDialog;
 import com.limelight.ui.PcActionsDialog;
+import com.limelight.ui.HostAddressDialog;
 import com.limelight.ui.home.HomeControllerCarouselView;
 import com.limelight.ui.home.HomeHostCarouselView;
 import com.limelight.ui.home.HomePageIndicatorView;
@@ -46,6 +47,8 @@ import com.limelight.utils.UiHelper;
 import com.limelight.utils.UpdateChecker;
 
 import android.app.Activity;
+import android.animation.ObjectAnimator;
+import android.view.animation.LinearInterpolator;
 import android.app.ActivityManager;
 import android.app.AlertDialog;
 import android.app.Service;
@@ -112,6 +115,12 @@ public class PcView extends Activity {
     private TextView hostHint;
     private ImageButton hostLayoutToggle;
     private ImageButton hostAddButton;
+    private ImageButton hostRefreshButton;
+    private ObjectAnimator hostRefreshAnimator;
+    private boolean refreshingHosts;
+    private int refreshGeneration;
+    private AlertDialog hostAddressDialog;
+    private boolean switchingHostAddress;
     private TextView selectedHostSummary;
     private HomeControllerCarouselView controllerCarousel;
     private InputManager inputManager;
@@ -260,6 +269,9 @@ public class PcView extends Activity {
         hostHint = findViewById(R.id.homeHostHint);
         hostLayoutToggle = findViewById(R.id.homeHostLayoutToggle);
         hostAddButton = findViewById(R.id.homeHostAddButton);
+        hostRefreshButton = findViewById(R.id.homeHostRefreshButton);
+        hostRefreshButton.setOnClickListener(view -> refreshHosts());
+        updateHostRefreshButton();
         selectedHostSummary = findViewById(R.id.homeSelectedSummary);
         controllerCarousel = findViewById(R.id.homeControllerCarousel);
         controllerCarousel.setOnSelectionChangedListener(
@@ -424,7 +436,8 @@ public class PcView extends Activity {
     private void startComputerUpdates() {
         // Only allow polling to start if we're bound to CMS, polling is not already running,
         // and our activity is in the foreground.
-        if (managerBinder != null && !runningPolling && inForeground) {
+        if (managerBinder != null && !runningPolling && inForeground && !switchingHostAddress
+                && (hostAddressDialog == null || !hostAddressDialog.isShowing())) {
             freezeUpdates = false;
             managerBinder.startPolling(new ComputerManagerListener() {
                 @Override
@@ -445,6 +458,7 @@ public class PcView extends Activity {
                 }
             });
             runningPolling = true;
+            runOnUiThread(this::updateHostRefreshButton);
         }
     }
 
@@ -501,6 +515,9 @@ public class PcView extends Activity {
         super.onPause();
 
         inForeground = false;
+        refreshingHosts = false;
+        refreshGeneration++;
+        updateHostRefreshButton();
         stopComputerUpdates(false);
         unregisterInputDeviceListener();
     }
@@ -533,6 +550,10 @@ public class PcView extends Activity {
         super.onStop();
 
         dismissPairingDialog();
+        if (hostAddressDialog != null) {
+            hostAddressDialog.dismiss();
+            hostAddressDialog = null;
+        }
         Dialog.closeDialogs();
     }
 
@@ -604,6 +625,11 @@ public class PcView extends Activity {
             public void onDismiss() {
                 startComputerUpdates();
                 restoreHostFocus(sourceView);
+            }
+
+            @Override
+            public void onSwitchAddress(ComputerDetails selectedComputer) {
+                showHostAddressDialog(selectedComputer);
             }
         });
         dialog.show();
@@ -974,6 +1000,93 @@ public class PcView extends Activity {
         startActivity(new Intent(PcView.this, AddComputerManually.class));
     }
 
+    private void refreshHosts() {
+        if (managerBinder == null || !runningPolling || refreshingHosts) {
+            return;
+        }
+        refreshingHosts = true;
+        int generation = ++refreshGeneration;
+        updateHostRefreshButton();
+        managerBinder.refreshComputers(() -> runOnUiThread(() -> {
+            if (generation == refreshGeneration && !isFinishing() && !isDestroyed()) {
+                refreshingHosts = false;
+                updateHostRefreshButton();
+            }
+        }));
+    }
+
+    private void updateHostRefreshButton() {
+        if (hostRefreshAnimator != null) {
+            hostRefreshAnimator.cancel();
+            hostRefreshAnimator = null;
+        }
+        if (hostRefreshButton == null) {
+            return;
+        }
+        hostRefreshButton.setRotation(0);
+        hostRefreshButton.setEnabled(managerBinder != null && inForeground && !refreshingHosts);
+        hostRefreshButton.setAlpha(hostRefreshButton.isEnabled() || refreshingHosts ? 1f : 0.45f);
+        hostRefreshButton.setContentDescription(getString(refreshingHosts
+                ? R.string.home_refreshing_hosts : R.string.home_refresh_hosts));
+        if (refreshingHosts) {
+            hostRefreshAnimator = ObjectAnimator.ofFloat(hostRefreshButton, View.ROTATION, 0f, 360f);
+            hostRefreshAnimator.setDuration(800);
+            hostRefreshAnimator.setRepeatCount(ObjectAnimator.INFINITE);
+            hostRefreshAnimator.setInterpolator(new LinearInterpolator());
+            hostRefreshAnimator.start();
+        }
+    }
+
+    private void showHostAddressDialog(ComputerDetails computer) {
+        if (managerBinder == null) {
+            Toast.makeText(this, R.string.error_manager_not_running, Toast.LENGTH_LONG).show();
+            return;
+        }
+        stopComputerUpdates(false);
+        hostAddressDialog = HostAddressDialog.show(this, computer,
+                address -> switchHostAddress(computer.uuid, address));
+        if (hostAddressDialog != null) {
+            hostAddressDialog.setOnDismissListener(ignored -> startComputerUpdates());
+        } else {
+            startComputerUpdates();
+        }
+    }
+
+    private void switchHostAddress(String uuid, ComputerDetails.AddressTuple address) {
+        final ComputerManagerService.ComputerManagerBinder binder = managerBinder;
+        if (binder == null || switchingHostAddress) {
+            return;
+        }
+        switchingHostAddress = true;
+        stopComputerUpdates(false);
+        hostAddressDialog = AppDialog.showProgress(this, getString(R.string.pc_switch_address),
+                getString(R.string.pc_address_switching), null);
+        new Thread(() -> {
+            boolean success = false;
+            try {
+                success = binder.switchAddressBlocking(uuid, address);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } finally {
+                final boolean switched = success;
+                runOnUiThread(() -> {
+                    switchingHostAddress = false;
+                    if (hostAddressDialog != null) {
+                        hostAddressDialog.dismiss();
+                        hostAddressDialog = null;
+                    }
+                    if (!isFinishing() && !isDestroyed()) {
+                        startComputerUpdates();
+                        if (inForeground) {
+                            Toast.makeText(this, switched ? R.string.pc_address_switched
+                                    : R.string.pc_address_switch_failed, Toast.LENGTH_LONG).show();
+                        }
+                    }
+                });
+            }
+        }, "Switch host address").start();
+    }
+
     private void applyHostLayoutMode() {
         if (hostCarousel == null || hostLayoutToggle == null || hostAddButton == null) {
             return;
@@ -1029,6 +1142,14 @@ public class PcView extends Activity {
         }
         hostAddButton.setVisibility(hostCarousel.shouldShowHeaderAddButton()
                 ? View.VISIBLE : View.GONE);
+        if (hostRefreshButton != null) {
+            int nextAction = hostLayoutToggle.getVisibility() == View.VISIBLE
+                    ? hostLayoutToggle.getId() : hostAddButton.getVisibility() == View.VISIBLE
+                    ? hostAddButton.getId() : R.id.hostCarousel;
+            hostRefreshButton.setNextFocusRightId(nextAction);
+            hostAddButton.setNextFocusLeftId(hostLayoutToggle.getVisibility() == View.VISIBLE
+                    ? hostLayoutToggle.getId() : hostRefreshButton.getId());
+        }
     }
 
     private void updateHostSelectionSummary(int position, int hostCount,

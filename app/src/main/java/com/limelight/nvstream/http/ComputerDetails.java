@@ -2,6 +2,8 @@ package com.limelight.nvstream.http;
 
 import java.security.cert.X509Certificate;
 import java.util.Objects;
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class ComputerDetails {
@@ -64,6 +66,9 @@ public class ComputerDetails {
     public AddressTuple remoteAddress;
     public AddressTuple manualAddress;
     public AddressTuple ipv6Address;
+    // User policy is deliberately not overwritten by serverinfo/update().
+    public AddressTuple preferredAddress;
+    private final List<AddressTuple> manualAddressHistory = new ArrayList<>();
     public String macAddress;
     public X509Certificate serverCert;
 
@@ -85,6 +90,64 @@ public class ComputerDetails {
     public ComputerDetails(ComputerDetails details) {
         // Copy details from the other computer
         update(details);
+        localAddress = copyAddress(details.localAddress);
+        remoteAddress = copyAddress(details.remoteAddress);
+        manualAddress = copyAddress(details.manualAddress);
+        ipv6Address = copyAddress(details.ipv6Address);
+        activeAddress = copyAddress(details.activeAddress);
+        preferredAddress = copyAddress(details.preferredAddress);
+    }
+
+    public static AddressTuple copyAddress(AddressTuple address) {
+        return address == null ? null : new AddressTuple(address.address, address.port);
+    }
+
+    public synchronized void rememberManualAddress(AddressTuple address) {
+        addUniqueAddress(manualAddressHistory, address);
+    }
+
+    private static void addUniqueAddress(List<AddressTuple> addresses, AddressTuple address) {
+        if (address == null) {
+            return;
+        }
+        for (AddressTuple saved : addresses) {
+            if (saved.port == address.port && saved.address.equalsIgnoreCase(address.address)) {
+                return;
+            }
+        }
+        addresses.add(copyAddress(address));
+    }
+
+    public synchronized List<AddressTuple> getManualAddressHistory() {
+        List<AddressTuple> result = new ArrayList<>();
+        for (AddressTuple address : manualAddressHistory) {
+            result.add(copyAddress(address));
+        }
+        return result;
+    }
+
+    /** Known routes plus saved user input; opening the picker does not alter history. */
+    public List<AddressTuple> getSelectableAddresses() {
+        List<AddressTuple> addresses = new ArrayList<>();
+        addUniqueAddress(addresses, localAddress);
+        addUniqueAddress(addresses, manualAddress);
+        for (AddressTuple address : getManualAddressHistory()) {
+            addUniqueAddress(addresses, address);
+        }
+        addUniqueAddress(addresses, remoteAddress);
+        addUniqueAddress(addresses, ipv6Address);
+        addUniqueAddress(addresses, activeAddress);
+        // Keep a pinned route selectable even if discovery has since changed its address.
+        addUniqueAddress(addresses, preferredAddress);
+        return addresses;
+    }
+
+    public void mergeAddressHistory(ComputerDetails details) {
+        rememberManualAddress(manualAddress);
+        for (AddressTuple address : details.getManualAddressHistory()) {
+            rememberManualAddress(address);
+        }
+        rememberManualAddress(details.manualAddress);
     }
 
     public int guessExternalPort() {
@@ -109,6 +172,7 @@ public class ComputerDetails {
     }
 
     public void update(ComputerDetails details) {
+        mergeAddressHistory(details);
         this.state = details.state;
         this.name = details.name;
         this.uuid = details.uuid;
