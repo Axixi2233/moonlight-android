@@ -105,8 +105,8 @@ public final class VideoZoomGestureOverlay extends View {
             return false;
         }
 
-        // Physical mice and other pointer devices continue through the existing input path.
-        if (!event.isFromSource(InputDevice.SOURCE_TOUCHSCREEN)) {
+        // Only finger touches control zoom. Mice and pens continue to the stream.
+        if (!isTouchscreenFingerEvent(event)) {
             return false;
         }
 
@@ -117,6 +117,27 @@ public final class VideoZoomGestureOverlay extends View {
             scaling = false;
         }
         return true;
+    }
+
+    @Override
+    public boolean onHoverEvent(MotionEvent event) {
+        // Declining touch events alone does not stop a clickable View from consuming hover.
+        if (!isTouchscreenFingerEvent(event) || !modeEnabled || inputSuppressed || controller == null) {
+            return false;
+        }
+        return super.onHoverEvent(event);
+    }
+
+    private static boolean isTouchscreenFingerEvent(MotionEvent event) {
+        if (!event.isFromSource(InputDevice.SOURCE_TOUCHSCREEN)) {
+            return false;
+        }
+        for (int i = 0; i < event.getPointerCount(); i++) {
+            if (event.getToolType(i) != MotionEvent.TOOL_TYPE_FINGER) {
+                return false;
+            }
+        }
+        return event.getPointerCount() > 0;
     }
 
     @Override

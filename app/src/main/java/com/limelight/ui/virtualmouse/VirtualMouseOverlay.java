@@ -295,9 +295,9 @@ public final class VirtualMouseOverlay extends View implements VirtualMouseContr
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        // The virtual mouse is a touchscreen control. Pen input must continue to the stream even
-        // when the pen lands on one of this full-screen overlay's interactive regions.
-        if (isStylusEvent(event)) {
+        // Only finger touches operate this overlay. Physical mice (including DeX pointers)
+        // and pens must reach the stream even over the overlay's interactive regions.
+        if (!isTouchscreenFingerEvent(event)) {
             return false;
         }
 
@@ -335,27 +335,27 @@ public final class VirtualMouseOverlay extends View implements VirtualMouseContr
 
     @Override
     public boolean onHoverEvent(MotionEvent event) {
-        // Clickable Views consume hover by default. Explicitly decline stylus hover so the
-        // StreamView can forward hover position, pressure/distance, and tool state to the host.
-        if (isStylusEvent(event)) {
+        // This full-screen View remains visible even when the virtual mouse is disabled.
+        // Clickable Views consume hover by default, so let physical pointer movement reach
+        // the StreamView instead of swallowing it while allowing only clicks through.
+        if (!isTouchscreenFingerEvent(event)
+                || controller == null || !controller.isEnabled() || controller.isInputSuppressed()) {
             return false;
         }
         return super.onHoverEvent(event);
     }
 
-    private static boolean isStylusEvent(MotionEvent event) {
-        if (event.isFromSource(InputDevice.SOURCE_STYLUS)) {
-            return true;
+    private static boolean isTouchscreenFingerEvent(MotionEvent event) {
+        if (!event.isFromSource(InputDevice.SOURCE_TOUCHSCREEN)) {
+            return false;
         }
 
         for (int i = 0; i < event.getPointerCount(); i++) {
-            int toolType = event.getToolType(i);
-            if (toolType == MotionEvent.TOOL_TYPE_STYLUS
-                    || toolType == MotionEvent.TOOL_TYPE_ERASER) {
-                return true;
+            if (event.getToolType(i) != MotionEvent.TOOL_TYPE_FINGER) {
+                return false;
             }
         }
-        return false;
+        return event.getPointerCount() > 0;
     }
 
     @Override
