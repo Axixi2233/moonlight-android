@@ -415,4 +415,16 @@
     <string name="home_host_connection_ipv6">IPv6</string>
     <string name="home_host_connection_unknown">地址待确认</string>
     <string name="home_host_card_accessibility">%1$s，%2$s，%3$s</string>
+    <string name="title_touch_stutter_compatibility">触控卡顿兼容</string>
+    <string name="summary_touch_stutter_compatibility">放宽控制连接对短暂网络延迟波动的容忍度，可尝试缓解持续拖动时的偶发卡顿。重新连接后生效。</string>
+    <string name="title_perf_overlay_lite_position">精简性能信息位置</string>
+    <string name="perf_overlay_position_top">顶部</string>
+    <string name="perf_overlay_position_bottom">底部</string>
+    <string name="title_perf_overlay_lite_margin">精简性能信息边距</string>
+    <string name="summary_perf_overlay_lite_margin">距离所选屏幕顶部或底部的边距，默认 4 dp。</string>
+    <string name="title_virtual_display">虚拟显示器</string>
+    <string name="summary_virtual_display">使用 Sunshine·阿西西、雷蛇雷游生效，兼容 Apollo 扩展模式。下次连接串流时生效。</string>
+    <string name="virtual_display_off">关闭</string>
+    <string name="virtual_display_extend">扩展模式</string>
+    <string name="virtual_display_only">仅虚拟显示器</string>
 </resources>

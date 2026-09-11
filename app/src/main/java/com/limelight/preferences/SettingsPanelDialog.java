@@ -43,6 +43,7 @@ import java.math.BigDecimal;
 public class SettingsPanelDialog extends BaseGameMenuFragmentDialog {
     public static final String TAG = "settings_panel";
     private static final String HUD = "performance_overlay_mode";
+    private static final String VIRTUAL_DISPLAY = "vdValue";
     private static final String CUSTOM_RESOLUTION = "edit_diy_w_h";
     private int group = -1;
     private String editor;
@@ -363,7 +364,7 @@ public class SettingsPanelDialog extends BaseGameMenuFragmentDialog {
                         headingAdded = true;
                     }
                     if (HUD.equals(key)) {
-                        row("性能信息", hudLabel(), null, key, () -> openEditor(key));
+                        row("性能信息", null, hudLabel(), null, key, () -> openEditor(key));
                     } else {
                         addPreference(pref);
                     }
@@ -388,7 +389,8 @@ public class SettingsPanelDialog extends BaseGameMenuFragmentDialog {
     private boolean visible(Preference pref) {
         String key = pref.getKey();
         if ("checkbox_enable_hdr_high_brightness".equals(key)) return checked("checkbox_enable_hdr");
-        if (key.startsWith("checkbox_enable_perf_overlay_lite_") || "performance_overlayLite_magin_top".equals(key)) {
+        if (key.startsWith("checkbox_enable_perf_overlay_lite_") || "performance_overlayLite_magin_top".equals(key)
+                || "list_perf_overlay_lite_position".equals(key)) {
             return checked("checkbox_enable_perf_overlay_lite") && checked("checkbox_enable_perf_overlay");
         }
         if ("checkbox_enable_screen_obscure".equals(key)) return checked("checkbox_enable_screen_bg") && Build.VERSION.SDK_INT >= 31;
@@ -398,7 +400,11 @@ public class SettingsPanelDialog extends BaseGameMenuFragmentDialog {
 
     private void addPreference(Preference pref) {
         Boolean state = pref instanceof CheckBoxPreference ? ((CheckBoxPreference) pref).isChecked() : null;
-        LinearLayout view = row(pref.getTitle(), summary(pref), state, pref.getKey(), () -> {
+        boolean hasValue = pref instanceof ListPreference || pref instanceof EditTextPreference
+                || pref instanceof SeekBarPreference || VIRTUAL_DISPLAY.equals(pref.getKey());
+        CharSequence summary = summary(pref);
+        LinearLayout view = row(pref.getTitle(), hasValue ? null : summary, hasValue ? summary : null,
+                state, pref.getKey(), () -> {
             if (!pref.isEnabled()) return;
             if (pref instanceof CheckBoxPreference) {
                 CheckBoxPreference toggle = (CheckBoxPreference) pref;
@@ -412,7 +418,8 @@ public class SettingsPanelDialog extends BaseGameMenuFragmentDialog {
                 } catch (ActivityNotFoundException e) {
                     openEditor(pref.getKey());
                 }
-            } else if (pref instanceof ListPreference || pref instanceof EditTextPreference || pref instanceof SeekBarPreference) {
+            } else if (pref instanceof ListPreference || pref instanceof EditTextPreference || pref instanceof SeekBarPreference
+                    || VIRTUAL_DISPLAY.equals(pref.getKey())) {
                 openEditor(pref.getKey());
             } else if (pref.getOnPreferenceClickListener() != null) {
                 pref.getOnPreferenceClickListener().onPreferenceClick(pref);
@@ -425,6 +432,11 @@ public class SettingsPanelDialog extends BaseGameMenuFragmentDialog {
     }
 
     private CharSequence summary(Preference pref) {
+        if (VIRTUAL_DISPLAY.equals(pref.getKey())) {
+            int mode = PreferenceManager.getDefaultSharedPreferences(getActivity()).getInt(VIRTUAL_DISPLAY, 0);
+            String[] labels = getResources().getStringArray(R.array.virtual_display_modes);
+            return labels[mode >= 0 && mode < labels.length ? mode : 0];
+        }
         if (pref instanceof ListPreference) {
             ListPreference list = (ListPreference) pref;
             return list.getEntry() == null ? list.getValue() : list.getEntry();
@@ -469,6 +481,21 @@ public class SettingsPanelDialog extends BaseGameMenuFragmentDialog {
             return;
         }
         title.setText(CUSTOM_RESOLUTION.equals(editor) ? getString(R.string.settings_panel_custom) : pref.getTitle());
+        if (VIRTUAL_DISPLAY.equals(editor)) {
+            paragraph(pref.getSummary());
+            String[] labels = getResources().getStringArray(R.array.virtual_display_modes);
+            int selected = PreferenceManager.getDefaultSharedPreferences(getActivity()).getInt(VIRTUAL_DISPLAY, 0);
+            for (int i = 0; i < labels.length; i++) {
+                final int mode = i;
+                choice(labels[i], mode == selected, () -> {
+                    // The in-game menu and connection configuration already store this as an integer.
+                    PreferenceManager.getDefaultSharedPreferences(getActivity()).edit()
+                            .putInt(VIRTUAL_DISPLAY, mode).apply();
+                    goBack();
+                });
+            }
+            return;
+        }
         if (pref instanceof ListPreference) {
             ListPreference list = (ListPreference) pref;
             paragraph(pref.getSummary());
@@ -773,6 +800,11 @@ public class SettingsPanelDialog extends BaseGameMenuFragmentDialog {
     }
 
     private LinearLayout row(CharSequence label, CharSequence detail, Boolean checked, String key, Runnable action) {
+        return row(label, detail, null, checked, key, action);
+    }
+
+    private LinearLayout row(CharSequence label, CharSequence detail, CharSequence value,
+                             Boolean checked, String key, Runnable action) {
         LinearLayout row = new LinearLayout(getActivity());
         row.setGravity(Gravity.CENTER_VERTICAL);
         row.setPadding(dp(12), dp(8), dp(12), dp(8));
@@ -786,6 +818,22 @@ public class SettingsPanelDialog extends BaseGameMenuFragmentDialog {
             labels.addView(subtitle);
         }
         row.addView(labels, new LinearLayout.LayoutParams(0, -2, 1));
+        if (!TextUtils.isEmpty(value)) {
+            TextView selectedValue = text(value, 12, 0xFFB4B4B4);
+            selectedValue.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
+            selectedValue.setSingleLine(true);
+            selectedValue.setEllipsize(TextUtils.TruncateAt.END);
+            selectedValue.setMaxWidth(Math.max(0, (getViewSize() - dp(74)) / 2));
+            LinearLayout.LayoutParams valueParams = new LinearLayout.LayoutParams(-2, -2);
+            valueParams.setMarginStart(dp(12));
+            row.addView(selectedValue, valueParams);
+            // Keep room for the title on narrow panels and after a rotation.
+            row.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+                int maxWidth = Math.max(0, (right - left - v.getPaddingLeft() - v.getPaddingRight() - dp(38)) / 2);
+                if (selectedValue.getMaxWidth() != maxWidth) selectedValue.setMaxWidth(maxWidth);
+            });
+            row.setContentDescription(label + "，" + value);
+        }
         if (checked != null) {
             Switch toggle = new Switch(getActivity());
             toggle.setChecked(checked);

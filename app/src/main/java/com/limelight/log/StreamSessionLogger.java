@@ -88,6 +88,8 @@ public final class StreamSessionLogger {
                 config.width, config.height, config.fps, config.bitrate,
                 onOff(config.enableHdr), onOff(config.usbDriver),
                 onOff(config.enableAudioHaptics)));
+        writeRawDirect("控制连接: 触控卡顿兼容=" + onOff(config.touchStutterCompatibility)
+                + ", 请求RTT容忍=" + (config.touchStutterCompatibility ? 10 : 0) + " ms");
         writeRawDirect("触觉: 音频输出=" + safe(config.audioHapticsOutputTarget)
                 + ", 强度=" + config.audioHapticsStrength + "%"
                 + ", 保留普通震动=" + onOff(config.audioHapticsKeepControllerRumble));

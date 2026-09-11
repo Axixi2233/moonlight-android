@@ -26,7 +26,7 @@ final class SettingsCatalog {
 
     static final Group[] GROUPS = {
         new Group("显示", "分辨率、帧率与画面增强",
-            new Section("视频参数", "list_resolution", "list_fps", "seekbar_bitrate_kbps", "video_format"),
+            new Section("视频参数", "list_resolution", "list_fps", "seekbar_bitrate_kbps", "video_format", "vdValue"),
             new Section("画面布局", "checkbox_stretch_video", "checkbox_cutout_mode_video",
                 "checkbox_auto_screen_orientation", "checkbox_enable_portrait", "screen_gravity_list",
                 "checkbox_keep_video_zoom_on_disable"),
@@ -48,7 +48,7 @@ final class SettingsCatalog {
                 "checkbox_vibrate_fallback", "seekbar_vibrate_fallback_strength",
                 "checkbox_ds5_native_pcm", "checkbox_ds5_controller_speaker")),
         new Group("触摸与鼠标", "触屏、鼠标与实体键盘",
-            new Section("鼠标与触屏", "mouse_model_list_axi", "checkbox_mouse_local_cursor",
+            new Section("鼠标与触屏", "mouse_model_list_axi", "checkbox_touch_stutter_compatibility", "checkbox_mouse_local_cursor",
                 "checkbox_mouse_nav_buttons", "checkbox_absolute_mouse_mode"),
             new Section("实体键盘与辅助输入", "checkbox_keyboard_esc_opens_game_menu",
                 "checkbox_enable_clear_default_special_button", "import_switch_button_file")),
@@ -68,7 +68,8 @@ final class SettingsCatalog {
                 "checkbox_vibrate_osc", "checkbox_rocker_click_L3R3"),
             new Section("手柄配置", "import_gamepad_file", "export_gamepad_file")),
         new Group("悬浮信息", "性能数据与悬浮球",
-            new Section("性能信息", "performance_overlay_mode", "checkbox_enable_perf_overlay_lite_dialog",
+            new Section("性能信息", "performance_overlay_mode", "list_perf_overlay_lite_position",
+                "checkbox_enable_perf_overlay_lite_dialog",
                 "checkbox_enable_perf_overlay_lite_ext", "performance_overlayLite_magin_top",
                 "checkbox_enable_post_stream_toast"),
             new Section("悬浮球", "checkbox_enable_ax_floating")),

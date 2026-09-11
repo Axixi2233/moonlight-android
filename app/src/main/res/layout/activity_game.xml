@@ -59,89 +59,105 @@
         android:preferKeepClear="true"
         android:visibility="gone" />
 
-    <LinearLayout
+    <FrameLayout
         android:id="@+id/performanceOverlay"
-        android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="match_parent"
+        android:clickable="false"
+        android:focusable="false">
 
         <LinearLayout
-            android:id="@+id/performanceOverlayBig"
-            android:layout_width="260dp"
+            android:id="@+id/performanceOverlayTop"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="16dp"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="5dp"
-            android:layout_gravity="left"
-            android:background="@drawable/bg_stream_panel_soft"
-            android:orientation="vertical"
-            android:padding="14dp"
-            android:preferKeepClear="true"
-            android:visibility="gone">
+            android:layout_gravity="top"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:id="@+id/performanceOverlayBig"
+                android:layout_width="260dp"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="16dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="5dp"
+                android:layout_gravity="left"
+                android:background="@drawable/bg_stream_panel_soft"
+                android:orientation="vertical"
+                android:padding="14dp"
+                android:preferKeepClear="true"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/performanceOverlayBigTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="性能信息"
+                    android:textColor="@android:color/white"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <ScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:overScrollMode="ifContentScrolls"
+                    android:scrollbars="none">
+
+                    <LinearLayout
+                        android:id="@+id/performanceOverlayBigContent"
+                        android:layout_width="match_parent"
+                        android:layout_height="360dp"
+                        android:orientation="vertical" />
+                </ScrollView>
+            </LinearLayout>
+
+            <android.support.v7.widget.AppCompatTextView
+                android:id="@+id/performanceOverlayLite"
+                tools:text="延迟/解码：109ms/7ms 丢包率：69% FPS：60"
+                android:textSize="10sp"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/ic_hud_bg"
+                android:paddingLeft="8dp"
+                android:paddingRight="8dp"
+                android:paddingTop="4dp"
+                android:drawablePadding="2dp"
+                tools:drawableLeft="@drawable/icon_axi_wifi"
+                android:paddingBottom="4dp"
+                android:gravity="center_vertical"
+                android:visibility="gone"
+                tools:visibility="visible"
+                android:maxLines="1"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:textAppearance="?android:attr/textAppearanceLarge"
+                android:layout_gravity="center_horizontal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
 
             <TextView
-                android:id="@+id/performanceOverlayBigTitle"
+                android:id="@+id/performanceRumble"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="性能信息"
-                android:textColor="@android:color/white"
-                android:textSize="12sp"
-                android:textStyle="bold" />
+                android:layout_marginLeft="5dp"
+                android:layout_marginStart="5dp"
+                android:layout_marginTop="5dp"
+                android:padding="4dp"
+                android:textSize="13sp"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:layout_gravity="center_horizontal"
+                android:background="@drawable/ic_hud_bg"
+                android:preferKeepClear="true"
+                android:visibility="gone" />
 
-            <ScrollView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:overScrollMode="ifContentScrolls"
-                android:scrollbars="none">
-
-                <LinearLayout
-                    android:id="@+id/performanceOverlayBigContent"
-                    android:layout_width="match_parent"
-                    android:layout_height="360dp"
-                    android:orientation="vertical" />
-            </ScrollView>
         </LinearLayout>
 
-        <android.support.v7.widget.AppCompatTextView
-            android:id="@+id/performanceOverlayLite"
-            tools:text="延迟/解码：109ms/7ms 丢包率：69% FPS：60"
-            android:textSize="10sp"
-            android:layout_marginTop="4dp"
-            android:background="@drawable/ic_hud_bg"
-            android:paddingLeft="8dp"
-            android:paddingRight="8dp"
-            android:paddingTop="4dp"
-            android:drawablePadding="2dp"
-            tools:drawableLeft="@drawable/icon_axi_wifi"
-            android:paddingBottom="4dp"
-            android:gravity="center_vertical"
-            android:visibility="gone"
-            tools:visibility="visible"
-            android:maxLines="1"
-            android:textColor="@android:color/white"
-            android:textStyle="bold"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:layout_gravity="center_horizontal"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
-
-        <TextView
-            android:id="@+id/performanceRumble"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:id="@+id/performanceOverlayBottom"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="5dp"
-            android:layout_marginStart="5dp"
-            android:layout_marginTop="5dp"
-            android:padding="4dp"
-            android:textSize="13sp"
-            android:textAppearance="?android:attr/textAppearanceSmall"
-            android:layout_gravity="center_horizontal"
-            android:background="@drawable/ic_hud_bg"
-            android:preferKeepClear="true"
-            android:visibility="gone" />
-
-    </LinearLayout>
+            android:layout_gravity="bottom"
+            android:orientation="vertical" />
+    </FrameLayout>
 
     <include layout="@layout/view_stream_loading_overlay" />
 

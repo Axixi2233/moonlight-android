@@ -980,6 +980,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 .setColorRange(decoderRenderer.getPreferredColorRange())
                 .setPPI(RazerUtils.getPPI(this))
                 .setRazerVD(prefConfig.razerVD)
+                .setControlStreamRttToleranceMs(prefConfig.touchStutterCompatibility ? 10 : 0)
                 .setPersistGamepadsAfterDisconnect(!prefConfig.multiController)
                 .build();
 
@@ -4071,6 +4072,12 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     @Override
     public void connectionStarted() {
         logSessionInfo("CONNECT", "串流连接已建立");
+        if (streamSessionLogger != null) {
+            int appliedToleranceMs = MoonBridge.getControlStreamRttToleranceMs();
+            logSessionInfo("CONTROL", appliedToleranceMs >= 0
+                    ? "transport=ENet, rttToleranceMs=" + appliedToleranceMs
+                    : "rttToleranceMs=unavailable_or_not_applicable");
+        }
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -6487,12 +6494,19 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     }
 
     public void setPerformanceOverlayLiteMagin(){
-        if(prefConfig.performanceOverlayLiteMaginTop==4){
-            return;
+        boolean atBottom = prefConfig.performanceOverlayLiteAtBottom;
+        LinearLayout target = findViewById(atBottom
+                ? R.id.performanceOverlayBottom : R.id.performanceOverlayTop);
+        if (performanceOverlayLite.getParent() != target) {
+            ((ViewGroup) performanceOverlayLite.getParent()).removeView(performanceOverlayLite);
+            // Keep the compact bar ahead of the other top overlays when returning to the top.
+            target.addView(performanceOverlayLite, atBottom ? 0 : 1);
         }
-        LinearLayout.LayoutParams params1= (LinearLayout.LayoutParams) performanceOverlayLite.getLayoutParams();
-        params1.setMargins(0,UiHelper.dpToPx(this,prefConfig.performanceOverlayLiteMaginTop),0,0);
-        performanceOverlayLite.setLayoutParams(params1);
+        int margin = UiHelper.dpToPx(this, prefConfig.performanceOverlayLiteMaginTop);
+        LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) performanceOverlayLite.getLayoutParams();
+        params.gravity = Gravity.CENTER_HORIZONTAL;
+        params.setMargins(0, atBottom ? 0 : margin, 0, atBottom ? margin : 0);
+        performanceOverlayLite.setLayoutParams(params);
     }
 
     public void setAudioHapticsSettings() {

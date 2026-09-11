@@ -110,6 +110,7 @@ public class PreferenceConfiguration {
     private static final String VIBRATE_FALLBACK_STRENGTH_PREF_STRING = "seekbar_vibrate_fallback_strength";
     private static final String FLIP_FACE_BUTTONS_PREF_STRING = "checkbox_flip_face_buttons";
     static final String TOUCHSCREEN_TRACKPAD_PREF_STRING = "checkbox_touchscreen_trackpad";
+    private static final String TOUCH_STUTTER_COMPATIBILITY_PREF_STRING = "checkbox_touch_stutter_compatibility";
     private static final String LATENCY_TOAST_PREF_STRING = "checkbox_enable_post_stream_toast";
     private static final String FRAME_PACING_PREF_STRING = "frame_pacing";
     public static final String ENABLE_XIAOMI_XRING_O1_OPTIMIZATION_PREF_STRING = "checkbox_enable_xiaomi_xring_o1_optimization";
@@ -290,6 +291,7 @@ public class PreferenceConfiguration {
 
     //多点触控模式
     public boolean enableMultiTouchScreen;
+    public boolean touchStutterCompatibility;
 
     //物理光标捕获
     public boolean enableMouseLocalCursor;
@@ -450,6 +452,7 @@ public class PreferenceConfiguration {
 
     //精简性能信息顶部边距
     public int performanceOverlayLiteMaginTop;
+    public boolean performanceOverlayLiteAtBottom;
 
     //鼠标滚轮移动距离
     public int mouseSCAmount;
@@ -966,6 +969,7 @@ public class PreferenceConfiguration {
         config.vibrateFallbackToDeviceStrength = prefs.getInt(VIBRATE_FALLBACK_STRENGTH_PREF_STRING, DEFAULT_VIBRATE_FALLBACK_STRENGTH);
         config.flipFaceButtons = prefs.getBoolean(FLIP_FACE_BUTTONS_PREF_STRING, DEFAULT_FLIP_FACE_BUTTONS);
         config.touchscreenTrackpad = prefs.getBoolean(TOUCHSCREEN_TRACKPAD_PREF_STRING, DEFAULT_TOUCHSCREEN_TRACKPAD);
+        config.touchStutterCompatibility = prefs.getBoolean(TOUCH_STUTTER_COMPATIBILITY_PREF_STRING, false);
         config.enableLatencyToast = prefs.getBoolean(LATENCY_TOAST_PREF_STRING, DEFAULT_LATENCY_TOAST);
         //软键盘
         config.enablePortrait = prefs.getBoolean(CHECKBOX_ENABLE_PORTRAIT,false);
@@ -1106,6 +1110,8 @@ public class PreferenceConfiguration {
         config.ds5NativePcmEnabled = prefs.getBoolean(DS5_NATIVE_PCM_PREF_STRING, true);
 
         config.performanceOverlayLiteMaginTop=prefs.getInt("performance_overlayLite_magin_top",4);
+        config.performanceOverlayLiteAtBottom = "bottom".equals(
+                prefs.getString("list_perf_overlay_lite_position", "top"));
 
         config.axFloatingPostionAuto =prefs.getBoolean("ax_floating_postion_auto",false);
         config.axFloatingPostionX =prefs.getFloat("ax_floating_postion_x",-1);

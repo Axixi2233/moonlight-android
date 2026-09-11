@@ -1082,7 +1082,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="虚拟显示器"
+                    android:text="@string/title_virtual_display"
                     android:textStyle="bold"
                     android:textColor="@android:color/white"
                     android:textSize="12dp" />
@@ -1118,7 +1118,7 @@
                     android:padding="4dp"
                     android:id="@+id/rbt_game_display_vd_1"
                     android:button="@null"
-                    android:text="关闭"
+                    android:text="@string/virtual_display_off"
                     android:checked="true"
                     android:textSize="10dp" />
 
@@ -1132,7 +1132,7 @@
                     android:padding="4dp"
                     android:id="@+id/rbt_game_display_vd_2"
                     android:button="@null"
-                    android:text="扩展模式"
+                    android:text="@string/virtual_display_extend"
                     android:textSize="10dp" />
 
                 <RadioButton
@@ -1145,7 +1145,7 @@
                     android:padding="4dp"
                     android:id="@+id/rbt_game_display_vd_3"
                     android:button="@null"
-                    android:text="仅虚拟显示屏"
+                    android:text="@string/virtual_display_only"
                     android:textSize="10dp" />
 
             </RadioGroup>

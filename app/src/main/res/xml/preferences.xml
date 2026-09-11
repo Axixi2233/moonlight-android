@@ -39,6 +39,12 @@
             android:dialogMessage="请输入数字，小数点只能识别到x.5，超过会四舍五入~"
             android:title="强制设置视频码率（覆盖上方滑动码率）" />
 
+        <Preference
+            android:key="vdValue"
+            android:persistent="false"
+            android:title="@string/title_virtual_display"
+            android:summary="@string/summary_virtual_display" />
+
         <ListPreference
             android:key="frame_pacing"
             android:title="@string/title_frame_pacing"
@@ -267,11 +273,17 @@
 
         <ListPreference
             android:key="mouse_model_list_axi"
-            android:title="触控/鼠标模式 【默认多点触控】"
+            android:title="触控/鼠标模式"
             android:summary="可选择一种鼠标模式，多点触控需要搭配sunshine使用~"
             android:entries="@array/mouse_model_names_axi"
             android:entryValues="@array/mouse_model_values_axi"
             android:defaultValue="0" />
+
+        <CheckBoxPreference
+            android:key="checkbox_touch_stutter_compatibility"
+            android:title="@string/title_touch_stutter_compatibility"
+            android:summary="@string/summary_touch_stutter_compatibility"
+            android:defaultValue="false" />
 
         <CheckBoxPreference
             android:key="checkbox_mouse_local_cursor"
@@ -453,27 +465,35 @@
         <CheckBoxPreference
             android:key="checkbox_enable_perf_overlay_lite_dialog"
             android:dependency="checkbox_enable_perf_overlay_lite"
-            android:title="Lite精简模式点击弹出快捷选项"
+            android:title="精简模式点击选项"
             android:summary="代替返回键逻辑，弹出游戏快捷菜单。"
             android:defaultValue="true" />
+
+        <ListPreference
+            android:key="list_perf_overlay_lite_position"
+            android:dependency="checkbox_enable_perf_overlay_lite"
+            android:title="@string/title_perf_overlay_lite_position"
+            android:entries="@array/perf_overlay_lite_positions"
+            android:entryValues="@array/perf_overlay_lite_position_values"
+            android:defaultValue="top" />
 
         <CheckBoxPreference
             android:key="checkbox_enable_perf_overlay_lite_ext"
             android:dependency="checkbox_enable_perf_overlay_lite"
-            android:title="Lite精简模式扩展参数"
+            android:title="精简模式扩展参数"
             android:summary="开启后，增加分辨率、HDR、解码器等参数。"
             android:defaultValue="true" />
 
         <com.limelight.preferences.SeekBarPreference
             android:key="performance_overlayLite_magin_top"
-            android:dialogMessage="设置精简性能信息距屏幕顶部边距，默认是4dp"
+            android:dialogMessage="@string/summary_perf_overlay_lite_margin"
             seekbar:min="0"
             android:max="100"
             seekbar:step="2"
             android:defaultValue="4"
-            android:summary="设置精简性能信息距屏幕顶部边距，默认是4dp"
+            android:summary="@string/summary_perf_overlay_lite_margin"
             android:text="dp"
-            android:title="精简性能控件距顶部距离" />
+            android:title="@string/title_perf_overlay_lite_margin" />
 
         <CheckBoxPreference
             android:key="checkbox_enable_post_stream_toast"
@@ -517,7 +537,7 @@
 
         <CheckBoxPreference
             android:key="checkbox_enable_ax_floating"
-            android:title="启用悬浮球（Beta）"
+            android:title="启用悬浮球"
             android:summary="开启后，点击打开快捷菜单。"
             android:defaultValue="true"/>
 

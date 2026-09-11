@@ -27,6 +27,7 @@ public class StreamConfiguration {
     private int encryptionFlags;
     private int colorRange;
     private int colorSpace;
+    private int controlStreamRttToleranceMs;
     private boolean persistGamepadsAfterDisconnect;
     private int ppi;
     //雷蛇虚拟显示器
@@ -135,6 +136,14 @@ public class StreamConfiguration {
             config.ppi = ppi;
             return this;
         }
+
+        public StreamConfiguration.Builder setControlStreamRttToleranceMs(int toleranceMs) {
+            if (toleranceMs < 0) {
+                throw new IllegalArgumentException("RTT tolerance must not be negative");
+            }
+            config.controlStreamRttToleranceMs = toleranceMs;
+            return this;
+        }
         public StreamConfiguration.Builder setRazerVD(int vd) {
             config.razerVD = vd;
             return this;
@@ -237,6 +246,10 @@ public class StreamConfiguration {
 
     public int getPpi() {
         return ppi;
+    }
+
+    public int getControlStreamRttToleranceMs() {
+        return controlStreamRttToleranceMs;
     }
 
     public int getRrazerVD(){

@@ -537,4 +537,16 @@
     <string name="home_host_connection_ipv6">IPv6</string>
     <string name="home_host_connection_unknown">Address pending</string>
     <string name="home_host_card_accessibility">%1$s, %2$s, %3$s</string>
+    <string name="title_touch_stutter_compatibility">Touch stutter compatibility</string>
+    <string name="summary_touch_stutter_compatibility">Tolerate brief control connection latency fluctuations to help with occasional stuttering during continuous dragging. Reconnect to apply.</string>
+    <string name="title_perf_overlay_lite_position">Compact performance overlay position</string>
+    <string name="perf_overlay_position_top">Top</string>
+    <string name="perf_overlay_position_bottom">Bottom</string>
+    <string name="title_perf_overlay_lite_margin">Compact performance overlay margin</string>
+    <string name="summary_perf_overlay_lite_margin">Distance from the selected top or bottom screen edge. Default: 4 dp.</string>
+    <string name="title_virtual_display">Virtual display</string>
+    <string name="summary_virtual_display">Supported by Sunshine · Axixi and Razer hosts; Apollo supports extended mode. Applies on the next stream connection.</string>
+    <string name="virtual_display_off">Off</string>
+    <string name="virtual_display_extend">Extended mode</string>
+    <string name="virtual_display_only">Virtual display only</string>
 </resources>

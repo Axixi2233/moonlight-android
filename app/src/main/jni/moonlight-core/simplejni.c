@@ -218,6 +218,11 @@ Java_com_limelight_nvstream_jni_MoonBridge_getEstimatedRttInfo(JNIEnv *env, jcla
     return ((uint64_t)rtt << 32U) | variance;
 }
 
+JNIEXPORT jint JNICALL
+Java_com_limelight_nvstream_jni_MoonBridge_getControlStreamRttToleranceMs(JNIEnv *env, jclass clazz) {
+    return LiGetControlStreamRttToleranceMs();
+}
+
 JNIEXPORT jlongArray JNICALL
 Java_com_limelight_nvstream_jni_MoonBridge_getRtpStatsNative(JNIEnv *env, jclass clazz) {
     const RTP_VIDEO_STATS* videoStats = LiGetRTPVideoStats();

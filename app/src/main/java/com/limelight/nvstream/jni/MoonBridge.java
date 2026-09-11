@@ -385,7 +385,8 @@ public class MoonBridge {
                                               int clientRefreshRateX100,
                                               byte[] riAesKey, byte[] riAesIv,
                                               int videoCapabilities,
-                                              int colorSpace, int colorRange);
+                                              int colorSpace, int colorRange,
+                                              int controlStreamRttToleranceMs);
 
     public static native void stopConnection();
 
@@ -448,6 +449,9 @@ public class MoonBridge {
 
     // The RTT is in the top 32 bits, and the RTT variance is in the bottom 32 bits
     public static native long getEstimatedRttInfo();
+
+    // Read only while a stream is active. -1 means no connected ENet control peer.
+    public static native int getControlStreamRttToleranceMs();
 
     private static native long[] getRtpStatsNative();
 
