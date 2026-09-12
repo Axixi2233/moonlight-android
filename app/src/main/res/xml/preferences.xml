@@ -145,7 +145,7 @@
 
         <ListPreference
             android:key="screen_gravity_list"
-            android:title="画面显示位置（默认居中）"
+            android:title="画面显示位置"
             android:summary="可能对折叠屏手机或者平板有点帮助,请自行DIY分辨率和画面位置。"
             android:entries="@array/screen_gravity_list_names"
             android:entryValues="@array/screen_gravity_list_values"
