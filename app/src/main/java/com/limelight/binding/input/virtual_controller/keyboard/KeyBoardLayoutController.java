@@ -155,8 +155,11 @@ public class KeyBoardLayoutController {
                                 case "60"://shift right
                                     return true;
                             }
+                            // Release the main key before its modifiers.
+                            sendKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, Integer.parseInt(tag2)));
                             if(!keyList.isEmpty()){
-                                for (String t:keyList) {
+                                for (int i = keyList.size() - 1; i >= 0; i--) {
+                                    String t = keyList.get(i);
                                     KeyEvent keyEvent2 = new KeyEvent(KeyEvent.ACTION_UP, Integer.parseInt(t));
                                     keyEvent2.setSource(0);
                                     sendKeyEvent(keyEvent2);
@@ -165,6 +168,8 @@ public class KeyBoardLayoutController {
                                 }
                                 keyList.clear();
                             }
+                            v.setBackgroundResource(R.drawable.bg_ax_keyboard_button);
+                            return true;
                         }
                         KeyEvent keyUP = new KeyEvent(KeyEvent.ACTION_UP, Integer.parseInt(tag2));
                         keyUP.setSource(0);
@@ -397,7 +402,8 @@ public class KeyBoardLayoutController {
         if (keyEvent.getSource() == 1) {
             Game.instance.mouseButtonEvent(keyEvent.getKeyCode(), KeyEvent.ACTION_DOWN == keyEvent.getAction());
         } else {
-            Game.instance.onKey(null, keyEvent.getKeyCode(), keyEvent);
+            Game.instance.keyboardEvent(keyEvent.getAction() == KeyEvent.ACTION_DOWN,
+                    (short) keyEvent.getKeyCode());
         }
 //        if (prefConfig.enableKeyboardVibrate && vibrator.hasVibrator()) {
 //            vibrator.vibrate(10);

@@ -4526,6 +4526,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     @Override
     public void keyboardEvent(boolean buttonDown, short keyCode) {
+        // App-owned keys use the fixed Android/QWERTY mapping and retain their real
+        // down/up lifetime. Do not route them through onKey(): synthetic KeyEvents
+        // are also VIRTUAL_KEYBOARD events and can be mistaken for IME text strokes.
         short keyMap = keyboardTranslator.translate(keyCode, -1);
         if (keyMap != 0) {
             // handleSpecialKeys() takes the Android keycode

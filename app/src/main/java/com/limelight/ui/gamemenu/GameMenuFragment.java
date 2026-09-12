@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Handler;
 import android.text.TextUtils;
-import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -660,15 +659,11 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
         }
         String[] keys=codes.split(",");
         for (int i = 0; i < keys.length; i++) {
-            KeyEvent keyEvent = new KeyEvent(KeyEvent.ACTION_DOWN,Integer.parseInt(keys[i]));
-            keyEvent.setSource(0);
-            Game.instance.onKey(null, keyEvent.getKeyCode(), keyEvent);
+            game.keyboardEvent(true, Short.parseShort(keys[i]));
         }
         new Handler().postDelayed((() -> {
             for (int i = keys.length - 1; i >= 0; i--) {
-                KeyEvent keyEvent = new KeyEvent(KeyEvent.ACTION_UP,Integer.parseInt(keys[i]));
-                keyEvent.setSource(0);
-                Game.instance.onKey(null, keyEvent.getKeyCode(), keyEvent);
+                game.keyboardEvent(false, Short.parseShort(keys[i]));
             }
         }), KEY_UP_DELAY);
     }

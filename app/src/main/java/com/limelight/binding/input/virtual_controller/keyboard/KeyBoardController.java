@@ -736,7 +736,8 @@ public class KeyBoardController {
         if (keyEvent.getSource() == 1) {
             Game.instance.mouseButtonEvent(keyEvent.getKeyCode(), KeyEvent.ACTION_DOWN == keyEvent.getAction());
         } else {
-            Game.instance.onKey(null, keyEvent.getKeyCode(), keyEvent);
+            Game.instance.keyboardEvent(keyEvent.getAction() == KeyEvent.ACTION_DOWN,
+                    (short) keyEvent.getKeyCode());
         }
         if (prefConfig.enableKeyboardVibrate && vibrator.hasVibrator()&&keyEvent.getSource()!=2) {
             vibrator.vibrate(10);
@@ -791,9 +792,9 @@ public class KeyBoardController {
             return;
         }
         for (int i = 0; i < keys.length; i++) {
-            KeyEvent keyEvent = new KeyEvent(action,Integer.parseInt(keys[i]));
-            keyEvent.setSource(0);
-            Game.instance.onKey(null, keyEvent.getKeyCode(), keyEvent);
+            int index = action == KeyEvent.ACTION_DOWN ? i : keys.length - 1 - i;
+            Game.instance.keyboardEvent(action == KeyEvent.ACTION_DOWN,
+                    Short.parseShort(keys[index]));
         }
     }
 
