@@ -61,31 +61,55 @@ public abstract class AbstractXboxController extends AbstractController {
 
                     int res;
 
-                    //
-                    // There's no way that I can tell to determine if a device has failed
-                    // or if the timeout has simply expired. We'll check how long the transfer
-                    // took to fail and assume the device failed if it happened before the timeout
-                    // expired.
-                    //
-
-                    do {
+                    // Use a short transfer timeout with a small sleep between
+                    // attempts instead of a single long (3000ms) blocking read.
+                    // On low-end TV SoCs (e.g. Amlogic T972) a long pending bulk
+                    // transfer on an idle wireless dongle input endpoint keeps
+                    // the Android USB framework's device lock held for seconds,
+                    // which periodically stalls the whole process (audio feed
+                    // thread included) and causes audio dropouts.
+                    int ioErrorCount = 0;
+                    while (true) {
                         // Read the next input state packet
                         long lastMillis = SystemClock.uptimeMillis();
-                        res = connection.bulkTransfer(inEndpt, buffer, buffer.length, 3000);
+                        res = connection.bulkTransfer(inEndpt, buffer, buffer.length, 64);
 
                         // If we get a zero length response, treat it as an error
                         if (res == 0) {
                             res = -1;
                         }
 
-                        if (res == -1 && SystemClock.uptimeMillis() - lastMillis < 1000) {
-                            LimeLog.warning("Detected device I/O error");
-                            AbstractXboxController.this.stop();
-                            break;
-                        }
-                    } while (res == -1 && !isInterrupted() && !stopped);
+                        if (res == -1) {
+                            // A fast failure (< timeout) is a real device I/O error
+                            // (e.g. the wireless dongle hiccuped or was unplugged).
+                            // Only tear the controller down after many consecutive
+                            // fast failures so transient 2.4G link glitches don't
+                            // kill the gamepad and trigger USB re-open storms.
+                            long elapsed = SystemClock.uptimeMillis() - lastMillis;
+                            if (elapsed < 64) {
+                                if (++ioErrorCount > 50) {
+                                    LimeLog.warning("Detected device I/O error");
+                                    AbstractXboxController.this.stop();
+                                    return;
+                                }
+                            }
+                            else {
+                                // Timeout with no data: normal idle state
+                                ioErrorCount = 0;
+                            }
 
-                    if (res == -1 || stopped) {
+                            // Give the USB stack a breather between attempts
+                            try {
+                                Thread.sleep(8);
+                            } catch (InterruptedException e) {
+                                return;
+                            }
+                            continue;
+                        }
+                        break;
+                    }
+
+                    if (stopped) {
                         break;
                     }
 
