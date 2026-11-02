@@ -12,6 +12,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.limelight.R;
+import com.limelight.Game;
+import com.limelight.binding.input.StylusInputRouter;
 import com.limelight.preferences.PreferenceConfiguration;
 import com.limelight.ui.BaseFragmentDialog.BaseGameMenuDialog;
 
@@ -30,7 +32,6 @@ public class GameDisplayDeviceFragment extends BaseGameMenuDialog implements See
     private TextView tx_title;
 
     private String title;
-
     private CheckBox btn_game_usb;
     private CheckBox btn_game_grip;
     private CheckBox btn_game_trigger;
@@ -62,6 +63,33 @@ public class GameDisplayDeviceFragment extends BaseGameMenuDialog implements See
         super.bindView(v);
         ibtn_back=v.findViewById(R.id.ibtn_back);
         tx_title=v.findViewById(R.id.tx_title);
+        RadioGroup stylusChoices = v.findViewById(R.id.stylus_choices);
+        TextView stylusDescription = v.findViewById(R.id.stylus_mode_description);
+        Game game = getActivity() instanceof Game ? (Game) getActivity() : null;
+        RadioGroup rotationChoices = v.findViewById(R.id.touchpad_rotation_choices);
+        int[] rotationIds = {R.id.touchpad_rotation_normal, R.id.touchpad_rotation_90,
+                R.id.touchpad_rotation_180, R.id.touchpad_rotation_270};
+        int rotation = game != null ? game.prefConfig.touchpadRotation
+                : prefConfig != null ? prefConfig.touchpadRotation : 0;
+        rotationChoices.check(rotationIds[com.limelight.binding.input.TouchpadRotation.normalize(rotation)]);
+        rotationChoices.setOnCheckedChangeListener((group, id) -> {
+            for (int i = 0; i < rotationIds.length; i++) {
+                if (rotationIds[i] == id && game != null) game.setTouchpadRotation(i);
+            }
+        });
+        int stylusMode = game != null ? game.prefConfig.stylusMode
+                : prefConfig != null ? prefConfig.stylusMode : StylusInputRouter.NATIVE_PEN;
+        stylusChoices.check(stylusMode == StylusInputRouter.FOLLOW_TOUCH ? R.id.stylus_follow
+                : stylusMode == StylusInputRouter.MOUSE ? R.id.stylus_mouse : R.id.stylus_native);
+        updateStylusDescription(stylusDescription, stylusMode);
+        stylusChoices.setOnCheckedChangeListener((group, id) -> {
+            int mode = id == R.id.stylus_follow ? StylusInputRouter.FOLLOW_TOUCH
+                    : id == R.id.stylus_mouse ? StylusInputRouter.MOUSE : StylusInputRouter.NATIVE_PEN;
+            updateStylusDescription(stylusDescription, mode);
+            if (game != null) {
+                game.setStylusMode(mode);
+            }
+        });
 
         btn_game_usb=v.findViewById(R.id.btn_game_usb);
         btn_game_grip=v.findViewById(R.id.btn_game_grip);
@@ -128,6 +156,7 @@ public class GameDisplayDeviceFragment extends BaseGameMenuDialog implements See
         btn_game_gyroscope.setOnCheckedChangeListener((buttonView, isChecked) -> {
             prefConfig.enableVirtualControllerMotion=isChecked;
             setSetting("checkbox_enable_virtual_motion",isChecked);
+            if (game != null) game.setMotionForceGyro();
         });
         btn_game_joycon.setOnCheckedChangeListener((buttonView, isChecked) -> {
             prefConfig.enableJoyConFix=isChecked;
@@ -206,6 +235,12 @@ public class GameDisplayDeviceFragment extends BaseGameMenuDialog implements See
 
         sb_game_control_ds5_end.setProgress(prefConfig.ds5TriggerEnd);
         tx_game_control_ds5_end.setText(""+prefConfig.ds5TriggerEnd);
+    }
+
+    private static void updateStylusDescription(TextView description, int mode) {
+        description.setText(mode == StylusInputRouter.FOLLOW_TOUCH ? R.string.stylus_follow_description
+                : mode == StylusInputRouter.MOUSE ? R.string.stylus_mouse_description
+                : R.string.stylus_native_description);
     }
 
     private void initViewData() {

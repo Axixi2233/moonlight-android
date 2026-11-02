@@ -1,0 +1,8 @@
+<resources>
+    <string name="touchpad_rotation_title">触控板方向</string>
+    <string name="touchpad_rotation_description">校正外接触控板方向，即时生效；角度为逆时针。</string>
+    <string name="touchpad_rotation_normal">正常</string>
+    <string name="touchpad_rotation_90">90°</string>
+    <string name="touchpad_rotation_180">180°</string>
+    <string name="touchpad_rotation_270">270°</string>
+</resources>

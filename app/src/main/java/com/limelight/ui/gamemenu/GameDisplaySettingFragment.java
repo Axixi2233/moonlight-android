@@ -53,7 +53,8 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
 
 
     private CheckBox btn_game_force_gyro;
-    private CheckBox btn_game_force_gyro_left_trgger;
+    private View gyroActivationSection;
+    private RadioGroup gyroActivationChoices;
     private CheckBox btn_game_force_gyro_switch;
     private SeekBar sb_game_setting_pref_zoom;
 
@@ -87,7 +88,8 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
         btn_game_rumble_hud=v.findViewById(R.id.btn_game_rumble_hud);
         rg_game_setting_float_ball=v.findViewById(R.id.rg_game_setting_float_ball);
         btn_game_force_gyro=v.findViewById(R.id.btn_game_force_gyro);
-        btn_game_force_gyro_left_trgger=v.findViewById(R.id.btn_game_force_gyro_left_trgger);
+        gyroActivationChoices = v.findViewById(R.id.gyro_activation_choices);
+        gyroActivationSection = v.findViewById(R.id.gyro_activation_section);
         btn_game_force_gyro_switch=v.findViewById(R.id.btn_game_force_gyro_switch);
         sb_game_setting_pref_zoom=v.findViewById(R.id.sb_game_setting_pref_zoom);
         tx_game_setting_pref_zoom=v.findViewById(R.id.tx_game_setting_pref_zoom);
@@ -290,6 +292,7 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 prefConfig.gameForceGyro=isChecked;
+                gyroActivationSection.setVisibility(isChecked ? View.VISIBLE : View.GONE);
                 setSetting("gameForceGyro",isChecked);
                 if(onClick!=null){
                     onClick.click(4,isChecked);
@@ -297,12 +300,10 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
             }
         });
 
-        btn_game_force_gyro_left_trgger.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                prefConfig.gameForceGyroLeftTrigger=isChecked;
-                setSetting("gameForceGyroLeftTrigger",isChecked);
-            }
+        gyroActivationChoices.setOnCheckedChangeListener((group, id) -> {
+            prefConfig.gameForceGyroActivation = id == R.id.gyro_activation_left ? 1
+                    : id == R.id.gyro_activation_right ? 2 : 0;
+            saveSetting("gameForceGyroActivation", prefConfig.gameForceGyroActivation);
         });
         btn_game_force_gyro_switch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -487,7 +488,9 @@ public class GameDisplaySettingFragment extends BaseGameMenuDialog {
         btn_game_rumble_hud.setChecked(prefConfig.showRumbleHUD);
 
         btn_game_force_gyro.setChecked(prefConfig.gameForceGyro);
-        btn_game_force_gyro_left_trgger.setChecked(prefConfig.gameForceGyroLeftTrigger);
+        gyroActivationSection.setVisibility(prefConfig.gameForceGyro ? View.VISIBLE : View.GONE);
+        gyroActivationChoices.check(prefConfig.gameForceGyroActivation == 1 ? R.id.gyro_activation_left
+                : prefConfig.gameForceGyroActivation == 2 ? R.id.gyro_activation_right : R.id.gyro_activation_always);
         btn_game_force_gyro_switch.setChecked(prefConfig.gameForceGyroXYSwitch);
     }
 

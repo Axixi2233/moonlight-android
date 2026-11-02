@@ -10,6 +10,10 @@ import android.view.Display;
 import com.limelight.nvstream.jni.MoonBridge;
 
 public class PreferenceConfiguration {
+    public static final String TOUCHPAD_ROTATION_PREF = "external_touchpad_rotation";
+    public int touchpadRotation;
+    public static final String STYLUS_MODE_PREF_STRING = "stylus_mode";
+    public int stylusMode = com.limelight.binding.input.StylusInputRouter.NATIVE_PEN;
     public enum FormatOption {
         AUTO,
         FORCE_AV1,
@@ -459,7 +463,7 @@ public class PreferenceConfiguration {
     //强制体感模拟右摇杆
     public boolean gameForceGyro;
     //按住左扳机生效
-    public boolean gameForceGyroLeftTrigger;
+    public int gameForceGyroActivation;
     //强制体感反转xy轴方向
     public boolean gameForceGyroXYSwitch;
     //强制体感灵敏度
@@ -776,6 +780,11 @@ public class PreferenceConfiguration {
     public static PreferenceConfiguration readPreferences(Context context) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         PreferenceConfiguration config = new PreferenceConfiguration();
+        config.touchpadRotation = com.limelight.binding.input.TouchpadRotation.normalize(
+                prefs.getInt(TOUCHPAD_ROTATION_PREF, 0));
+        config.stylusMode = com.limelight.binding.input.StylusInputRouter.normalizeMode(
+                prefs.getInt(STYLUS_MODE_PREF_STRING,
+                        com.limelight.binding.input.StylusInputRouter.NATIVE_PEN));
 
         // Migrate legacy preferences to the new locations
         if (prefs.contains(LEGACY_ENABLE_51_SURROUND_PREF_STRING)) {
@@ -1120,7 +1129,8 @@ public class PreferenceConfiguration {
 
         config.mouseSCAmount=prefs.getInt("mouse_sc_amount",5);
 
-        config.gameForceGyroLeftTrigger=prefs.getBoolean("gameForceGyroLeftTrigger",false);
+        config.gameForceGyroActivation = com.limelight.binding.input.GyroActivation.normalize(
+                prefs.getInt("gameForceGyroActivation", prefs.getBoolean("gameForceGyroLeftTrigger", false) ? 1 : 0));
         config.gameForceGyro=prefs.getBoolean("gameForceGyro",false);
         config.gameForceGyroXYSwitch=prefs.getBoolean("gameForceGyroXYSwitch",true);
 

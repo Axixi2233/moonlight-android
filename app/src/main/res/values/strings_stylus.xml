@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="stylus_mode_title">手写笔模式</string>
+    <string name="stylus_follow">跟随触控模式</string>
+    <string name="stylus_native">原生笔</string>
+    <string name="stylus_mouse">鼠标</string>
+    <string name="stylus_follow_description">按当前触控模式处理；多点触控时作为触屏输入。</string>
+    <string name="stylus_native_description">发送悬停、压感与倾斜；主机不支持时使用鼠标。</string>
+    <string name="stylus_mouse_description">笔尖定位，落笔和拖动时按住左键，抬笔释放。</string>
+</resources>

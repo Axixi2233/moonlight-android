@@ -128,6 +128,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
     private final Vector2d inputVector = new Vector2d();
 
     private final SparseArray<InputDeviceContext> inputDeviceContexts = new SparseArray<>();
+    private final SparseArray<Short> hostGyroReportRates = new SparseArray<>();
     private final SparseArray<UsbDeviceContext> usbDeviceContexts = new SparseArray<>();
 
     private final NvConnection conn;
@@ -669,6 +670,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         mouseEmulationActive = false;
         mainThreadHandler.removeCallbacks(mouseEmulationRunnable);
         stopped = true;
+        defaultContext.destroy();
         optionalPcmHapticsBackend.stop();
         optionalPcmHapticsWasActive = false;
 
@@ -1882,8 +1884,8 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                 rightTrigger |= maxByMagnitude(rightTrigger, context.rightTrigger);
                 leftStickX |= maxByMagnitude(leftStickX, context.leftStickX);
                 leftStickY |= maxByMagnitude(leftStickY, context.leftStickY);
-                rightStickX |= maxByMagnitude(rightStickX, context.rightStickX);
-                rightStickY |= maxByMagnitude(rightStickY, context.rightStickY);
+                rightStickX |= maxByMagnitude(rightStickX, maxByMagnitude(context.rightStickX, context.gyroStickX));
+                rightStickY |= maxByMagnitude(rightStickY, maxByMagnitude(context.rightStickY, context.gyroStickY));
             }
         }
         for (int i = 0; i < usbDeviceContexts.size(); i++) {
@@ -1896,8 +1898,8 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                 rightTrigger |= maxByMagnitude(rightTrigger, context.rightTrigger);
                 leftStickX |= maxByMagnitude(leftStickX, context.leftStickX);
                 leftStickY |= maxByMagnitude(leftStickY, context.leftStickY);
-                rightStickX |= maxByMagnitude(rightStickX, context.rightStickX);
-                rightStickY |= maxByMagnitude(rightStickY, context.rightStickY);
+                rightStickX |= maxByMagnitude(rightStickX, maxByMagnitude(context.rightStickX, context.gyroStickX));
+                rightStickY |= maxByMagnitude(rightStickY, maxByMagnitude(context.rightStickY, context.gyroStickY));
             }
         }
         if (!mouseEmulationContext && defaultContext.controllerNumber == controllerNumber) {
@@ -1906,8 +1908,8 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             rightTrigger |= maxByMagnitude(rightTrigger, defaultContext.rightTrigger);
             leftStickX |= maxByMagnitude(leftStickX, defaultContext.leftStickX);
             leftStickY |= maxByMagnitude(leftStickY, defaultContext.leftStickY);
-            rightStickX |= maxByMagnitude(rightStickX, defaultContext.rightStickX);
-            rightStickY |= maxByMagnitude(rightStickY, defaultContext.rightStickY);
+            rightStickX |= maxByMagnitude(rightStickX, maxByMagnitude(defaultContext.rightStickX, defaultContext.gyroStickX));
+            rightStickY |= maxByMagnitude(rightStickY, maxByMagnitude(defaultContext.rightStickY, defaultContext.gyroStickY));
         }
 
         if (isMouseEmulationEligible(originalContext) &&
@@ -1931,6 +1933,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             //强制体感模拟右摇杆
             if(PreferenceConfiguration.readPreferences(activityContext).gameForceGyro){
                 sensorLeftTrigger=leftTrigger;
+                sensorRightTrigger=rightTrigger;
             }
             conn.sendControllerInput(controllerNumber, getActiveControllerMask(),
                     inputMap,
@@ -1940,7 +1943,8 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         }
     }
 
-    private short sensorLeftTrigger=0x00;
+    private volatile short sensorLeftTrigger=0x00;
+    private volatile short sensorRightTrigger=0x00;
 
     private final int REMAP_IGNORE = -1;
     private final int REMAP_CONSUME = -2;
@@ -3225,6 +3229,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
 
             @Override
             public void onSensorChanged(SensorEvent sensorEvent) {
+                if (stopped) return;
                 // Android will invoke our callback any time we get a new reading,
                 // even if the values are the same as last time. Don't report a
                 // duplicate set of values to save bandwidth.
@@ -3281,10 +3286,14 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                 }
                 //强制体感
                 if (PreferenceConfiguration.readPreferences(activityContext).gameForceGyro) {
-                    //按下左扳机生效
-                    if((PreferenceConfiguration.readPreferences(activityContext).gameForceGyroLeftTrigger && (sensorLeftTrigger & 0xFF) < 200 )){
-                        context.rightStickX = 0x0000;
-                        context.rightStickY = 0x0000;
+                    // Only gyroscope samples drive the emulated stick.
+                    if (motionType != MoonBridge.LI_MOTION_TYPE_GYRO) return;
+                    if (!GyroActivation.isActive(PreferenceConfiguration.readPreferences(activityContext).gameForceGyroActivation,
+                            sensorLeftTrigger, sensorRightTrigger)) {
+                        filterGyroX = 0f;
+                        filterGyroY = 0f;
+                        context.gyroStickX = 0x0000;
+                        context.gyroStickY = 0x0000;
                         sendControllerInputPacket(context);
                         return;
                     }
@@ -3322,8 +3331,8 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                         // --- 4. 限制范围并发送 ---
                         short rightX=(short) (clamp(filterGyroX) * 0x7FFF);
                         short rightY=(short) (clamp(filterGyroY) * 0x7FFF);
-                        context.rightStickX = (short) -rightX;
-                        context.rightStickY = (short) -rightY;
+                        context.gyroStickX = (short) -rightX;
+                        context.gyroStickY = (short) -rightY;
                         sendControllerInputPacket(context);
                     }
                     return;
@@ -3382,16 +3391,54 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
 
 
     public synchronized void handleSetMotionEventState(final short controllerNumber, final byte motionType, short reportRateHz) {
+        if (motionType == MoonBridge.LI_MOTION_TYPE_GYRO) {
+            hostGyroReportRates.put(controllerNumber, reportRateHz);
+        }
+        applyMotionEventState(controllerNumber, motionType, reportRateHz);
+    }
+
+    public synchronized void refreshMotionSettings() {
+        if (stopped) return;
+        filterGyroX = 0f;
+        filterGyroY = 0f;
+        clearGyroStick(defaultContext);
+        for (int i = 0; i < inputDeviceContexts.size(); i++) {
+            InputDeviceContext context = inputDeviceContexts.valueAt(i);
+            clearGyroStick(context);
+        }
+        applyMotionEventState((short) 0, MoonBridge.LI_MOTION_TYPE_GYRO,
+                hostGyroReportRates.get(0, (short) 0));
+        for (int i = 0; i < inputDeviceContexts.size(); i++) {
+            InputDeviceContext context = inputDeviceContexts.valueAt(i);
+            if (context.assignedControllerNumber && context.controllerNumber != 0) {
+                applyMotionEventState(context.controllerNumber, MoonBridge.LI_MOTION_TYPE_GYRO,
+                        hostGyroReportRates.get(context.controllerNumber, (short) 0));
+            }
+        }
+    }
+
+    private void clearGyroStick(GenericControllerContext context) {
+        if (context.gyroStickX != 0 || context.gyroStickY != 0) {
+            context.gyroStickX = context.gyroStickY = 0;
+            if (context.assignedControllerNumber) sendControllerInputPacket(context);
+        }
+    }
+
+    private synchronized void applyMotionEventState(final short controllerNumber, final byte motionType, short reportRateHz) {
         if (stopped) {
             return;
         }
 
         // Report rate is restricted to <= 200 Hz without the HIGH_SAMPLING_RATE_SENSORS permission
         reportRateHz = (short) Math.min(200, reportRateHz);
+        if (motionType == MoonBridge.LI_MOTION_TYPE_GYRO) {
+            reportRateHz = GyroActivation.reportRate(reportRateHz, prefConfig.gameForceGyro);
+        }
 
         //开启虚拟手柄陀螺仪功能
-        if(prefConfig.enableVirtualControllerMotion){
-            enableVirtualControllerMotionType(controllerNumber,motionType,reportRateHz);
+        if (controllerNumber == defaultContext.controllerNumber) {
+            enableVirtualControllerMotionType(controllerNumber, motionType,
+                    prefConfig.enableVirtualControllerMotion ? reportRateHz : (short) 0);
         }
 
         for (int i = 0; i < inputDeviceContexts.size(); i++) {
@@ -4472,6 +4519,8 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         public byte rightTrigger = 0x00;
         public short rightStickX = 0x0000;
         public short rightStickY = 0x0000;
+        public short gyroStickX = 0;
+        public short gyroStickY = 0;
         public short leftStickX = 0x0000;
         public short leftStickY = 0x0000;
 
@@ -4570,10 +4619,11 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             public void run() {
                 // Turn back on any sensors that should be reporting but are currently unregistered
                 if (accelReportRateHz != 0 && accelListener == null) {
-                    handleSetMotionEventState(controllerNumber, MoonBridge.LI_MOTION_TYPE_ACCEL, accelReportRateHz);
+                    applyMotionEventState(controllerNumber, MoonBridge.LI_MOTION_TYPE_ACCEL, accelReportRateHz);
                 }
                 if (gyroReportRateHz != 0 && gyroListener == null) {
-                    handleSetMotionEventState(controllerNumber, MoonBridge.LI_MOTION_TYPE_GYRO, gyroReportRateHz);
+                    applyMotionEventState(controllerNumber, MoonBridge.LI_MOTION_TYPE_GYRO,
+                            hostGyroReportRates.get(controllerNumber, (short) 0));
                 }
             }
         };
@@ -4842,6 +4892,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         backgroundThreadHandler.removeCallbacks(defaultContext.enableSensorRunnable);
 
         SensorManager sm = defaultContext.sensorManager;
+        if (sm == null) return;
 
         switch (motionType) {
             case MoonBridge.LI_MOTION_TYPE_ACCEL:

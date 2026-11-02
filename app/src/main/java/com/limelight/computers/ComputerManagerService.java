@@ -722,7 +722,7 @@ public class ComputerManagerService extends Service {
         }
     }
 
-    private void startParallelPollThread(ParallelPollTuple tuple, HashSet<ComputerDetails.AddressTuple> uniqueAddresses) {
+    private void startParallelPollThread(ParallelPollTuple tuple, HashSet<ComputerDetails.AddressTuple> uniqueAddresses, Object completionEvent) {
         // Don't bother starting a polling thread for an address that doesn't exist
         // or if the address has already been polled with an earlier tuple
         if (tuple.address == null || !uniqueAddresses.add(tuple.address)) {
@@ -736,11 +736,11 @@ public class ComputerManagerService extends Service {
             public void run() {
                 ComputerDetails details = tryPollIp(tuple.existingDetails, tuple.address);
 
-                synchronized (tuple) {
+                synchronized (completionEvent) {
                     tuple.complete = true; // Done
                     tuple.returnedDetails = details; // Polling result
 
-                    tuple.notify();
+                    completionEvent.notifyAll();
                 }
             }
         };
@@ -753,67 +753,68 @@ public class ComputerManagerService extends Service {
         ParallelPollTuple manualInfo = new ParallelPollTuple(details.manualAddress, details);
         ParallelPollTuple remoteInfo = new ParallelPollTuple(details.remoteAddress, details);
         ParallelPollTuple ipv6Info = new ParallelPollTuple(details.ipv6Address, details);
+        ParallelPollTuple activeInfo = new ParallelPollTuple(
+                details.state == ComputerDetails.State.ONLINE ? details.activeAddress : null, details);
 
         // These must be started in order of precedence for the deduplication algorithm
         // to result in the correct behavior.
         HashSet<ComputerDetails.AddressTuple> uniqueAddresses = new HashSet<>();
-        startParallelPollThread(localInfo, uniqueAddresses);
-        startParallelPollThread(manualInfo, uniqueAddresses);
-        startParallelPollThread(remoteInfo, uniqueAddresses);
-        startParallelPollThread(ipv6Info, uniqueAddresses);
+        Object completionEvent = new Object();
+        ParallelPollTuple[] candidates = {localInfo, activeInfo, manualInfo, remoteInfo, ipv6Info};
+        long localPreferenceDeadline = SystemClock.elapsedRealtime() + 300;
+        synchronized (completionEvent) {
+            for (ParallelPollTuple candidate : candidates) {
+                startParallelPollThread(candidate, uniqueAddresses, completionEvent);
+            }
+        }
 
         try {
-            // Check local first
-            synchronized (localInfo) {
-                while (!localInfo.complete) {
-                    localInfo.wait();
-                }
-
-                if (localInfo.returnedDetails != null) {
-                    localInfo.returnedDetails.activeAddress = localInfo.address;
-                    return localInfo.returnedDetails;
-                }
-            }
-
-            // Now manual
-            synchronized (manualInfo) {
-                while (!manualInfo.complete) {
-                    manualInfo.wait();
-                }
-
-                if (manualInfo.returnedDetails != null) {
-                    manualInfo.returnedDetails.activeAddress = manualInfo.address;
-                    return manualInfo.returnedDetails;
-                }
-            }
-
-            // Now remote IPv4
-            synchronized (remoteInfo) {
-                while (!remoteInfo.complete) {
-                    remoteInfo.wait();
-                }
-
-                if (remoteInfo.returnedDetails != null) {
-                    remoteInfo.returnedDetails.activeAddress = remoteInfo.address;
-                    return remoteInfo.returnedDetails;
-                }
-            }
-
-            // Now global IPv6
-            synchronized (ipv6Info) {
-                while (!ipv6Info.complete) {
-                    ipv6Info.wait();
-                }
-
-                if (ipv6Info.returnedDetails != null) {
-                    ipv6Info.returnedDetails.activeAddress = ipv6Info.address;
-                    return ipv6Info.returnedDetails;
+            synchronized (completionEvent) {
+                while (true) {
+                    if (localInfo.returnedDetails != null) {
+                        localInfo.returnedDetails.activeAddress = localInfo.address;
+                        return localInfo.returnedDetails;
+                    }
+                    // Give LAN a short head start over successful WAN responses, without
+                    // waiting for the full LAN connection timeout on cellular networks.
+                    if (!localInfo.complete) {
+                        if (localInfo.address.equals(activeInfo.address)) {
+                            // The established LAN route gets its normal health check.
+                            completionEvent.wait();
+                            continue;
+                        }
+                        long remaining = localPreferenceDeadline - SystemClock.elapsedRealtime();
+                        if (remaining > 0) {
+                            completionEvent.wait(remaining);
+                            continue;
+                        }
+                    }
+                    // Keep a healthy route stable across polls. Alternatives are already
+                    // being probed, so they are ready if the active route fails.
+                    if (!activeInfo.complete) {
+                        completionEvent.wait();
+                        continue;
+                    }
+                    boolean allComplete = true;
+                    // Prefer earlier routes among completed successes, but never wait for
+                    // an unreachable LAN address when a WAN route has already succeeded.
+                    for (ParallelPollTuple candidate : candidates) {
+                        if (!candidate.complete) {
+                            allComplete = false;
+                        } else if (candidate.returnedDetails != null) {
+                            candidate.returnedDetails.activeAddress = candidate.address;
+                            return candidate.returnedDetails;
+                        }
+                    }
+                    if (allComplete) break;
+                    completionEvent.wait();
                 }
             }
         } finally {
             // Stop any further polling if we've found a working address or we've been
             // interrupted by an attempt to stop polling.
             localInfo.interrupt();
+            activeInfo.interrupt();
             manualInfo.interrupt();
             remoteInfo.interrupt();
             ipv6Info.interrupt();
@@ -834,7 +835,8 @@ public class ComputerManagerService extends Service {
         } else {
             polledDetails = parallelPollPc(details);
         }
-        LimeLog.info("Parallel poll for "+details.name+" returned address: "+details.activeAddress);
+        LimeLog.info("Parallel poll for "+details.name+" returned address: "+
+                (polledDetails != null ? polledDetails.activeAddress : null));
 
         if (polledDetails != null) {
             details.update(polledDetails);

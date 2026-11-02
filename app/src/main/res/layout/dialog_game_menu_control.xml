@@ -57,6 +57,166 @@
             android:layout_height="wrap_content">
 
             <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="5dp"
+                android:orientation="vertical">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/stylus_mode_title"
+                        android:textStyle="bold"
+                        android:textColor="@android:color/white"
+                        android:textSize="12dp" />
+                    <TextView
+                        android:id="@+id/stylus_mode_description"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="5dp"
+                        android:textStyle="italic|bold"
+                        android:textColor="#FFC107"
+                        android:textSize="8dp" />
+                </LinearLayout>
+                <RadioGroup
+                    android:id="@+id/stylus_choices"
+                    android:layout_width="match_parent"
+                    android:layout_height="27dp"
+                    android:layout_marginTop="9dp"
+                    android:layout_marginRight="5dp"
+                    android:layout_marginBottom="5dp"
+                    android:orientation="horizontal">
+                    <RadioButton
+                        android:id="@+id/stylus_follow"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:gravity="center"
+                        android:padding="4dp"
+                        android:button="@null"
+                        android:text="@string/stylus_follow"
+                        android:textSize="8dp" />
+                    <RadioButton
+                        android:id="@+id/stylus_native"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:gravity="center"
+                        android:padding="4dp"
+                        android:button="@null"
+                        android:text="@string/stylus_native"
+                        android:textSize="8dp" />
+                    <RadioButton
+                        android:id="@+id/stylus_mouse"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:gravity="center"
+                        android:padding="4dp"
+                        android:button="@null"
+                        android:text="@string/stylus_mouse"
+                        android:textSize="8dp" />
+                </RadioGroup>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="5dp"
+                android:orientation="vertical">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/touchpad_rotation_title"
+                        android:textStyle="bold"
+                        android:textColor="@android:color/white"
+                        android:textSize="12dp" />
+                    <TextView
+                        android:id="@+id/touchpad_rotation_description" android:text="@string/touchpad_rotation_description"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="5dp"
+                        android:textStyle="italic|bold"
+                        android:textColor="#FFC107"
+                        android:textSize="8dp" />
+                </LinearLayout>
+                <RadioGroup
+                    android:id="@+id/touchpad_rotation_choices"
+                    android:layout_width="match_parent"
+                    android:layout_height="27dp"
+                    android:layout_marginTop="9dp"
+                    android:layout_marginRight="5dp"
+                    android:layout_marginBottom="5dp"
+                    android:orientation="horizontal">
+                    <RadioButton
+                        android:id="@+id/touchpad_rotation_normal"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:gravity="center"
+                        android:padding="4dp"
+                        android:button="@null"
+                        android:text="@string/touchpad_rotation_normal"
+                        android:textSize="8dp" />
+                    <RadioButton
+                        android:id="@+id/touchpad_rotation_90"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:gravity="center"
+                        android:padding="4dp"
+                        android:button="@null"
+                        android:text="@string/touchpad_rotation_90"
+                        android:textSize="8dp" />
+                    <RadioButton
+                        android:id="@+id/touchpad_rotation_180"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:gravity="center"
+                        android:padding="4dp"
+                        android:button="@null"
+                        android:text="@string/touchpad_rotation_180"
+                        android:textSize="8dp" />
+                    <RadioButton
+                        android:id="@+id/touchpad_rotation_270"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:gravity="center"
+                        android:padding="4dp"
+                        android:button="@null"
+                        android:text="@string/touchpad_rotation_270"
+                        android:textSize="8dp" />
+                </RadioGroup>
+            </LinearLayout>
+
+            <LinearLayout
                 android:layout_marginTop="10dp"
                 android:layout_marginLeft="5dp"
                 android:layout_marginRight="5dp"

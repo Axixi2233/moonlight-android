@@ -527,18 +527,7 @@
                         android:text="启用"
                         android:textSize="8dp" />
 
-                    <CheckBox
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:layout_marginRight="5dp"
-                        android:layout_weight="1"
-                        android:background="@drawable/ic_game_menu_btn_selector"
-                        android:gravity="center"
-                        android:padding="4dp"
-                        android:button="@null"
-                        android:id="@+id/btn_game_force_gyro_left_trgger"
-                        android:text="按下左扳机启用"
-                        android:textSize="8dp" />
+
 
                     <CheckBox
                         android:layout_width="match_parent"
@@ -554,6 +543,53 @@
                         android:textSize="8dp" />
 
                 </LinearLayout>
+                <LinearLayout android:id="@+id/gyro_activation_section"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="vertical" android:visibility="gone">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp" android:text="启动条件"
+                    android:textColor="@android:color/white" android:textSize="8dp" />
+                <RadioGroup android:id="@+id/gyro_activation_choices" android:layout_width="match_parent"
+                    android:layout_height="27dp" android:layout_marginTop="4dp" android:orientation="horizontal">
+                    <RadioButton
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:gravity="center"
+                        android:padding="4dp"
+                        android:button="@null"
+                        android:id="@+id/gyro_activation_always"
+                        android:text="始终"
+                        android:textSize="8dp" />
+                    <RadioButton
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:gravity="center"
+                        android:padding="4dp"
+                        android:button="@null"
+                        android:id="@+id/gyro_activation_left"
+                        android:text="按下左扳机"
+                        android:textSize="8dp" />
+                    <RadioButton
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginRight="5dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/ic_game_menu_btn_selector"
+                        android:gravity="center"
+                        android:padding="4dp"
+                        android:button="@null"
+                        android:id="@+id/gyro_activation_right"
+                        android:text="按下右扳机"
+                        android:textSize="8dp" />
+                </RadioGroup>
+                </LinearLayout>
+
 
                 <TextView
                     android:layout_width="wrap_content"

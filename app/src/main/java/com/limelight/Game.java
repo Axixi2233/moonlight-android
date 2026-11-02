@@ -6,6 +6,7 @@ import com.limelight.binding.PlatformBinding;
 import com.limelight.binding.audio.AndroidAudioRenderer;
 import com.limelight.binding.input.ControllerHandler;
 import com.limelight.binding.input.KeyboardTranslator;
+import com.limelight.binding.input.StylusInputRouter;
 import com.limelight.binding.input.haptics.OptionalPcmHapticsLoader;
 import com.limelight.binding.input.capture.InputCaptureManager;
 import com.limelight.binding.input.capture.InputCaptureProvider;
@@ -1829,6 +1830,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
+        if (!hasFocus) cancelStylusInput();
 
         // EXTENSION DEVELOPMENT [EXT-IME-ACCESSORY-BAR] [MODIFIED] BEGIN
         if (!hasFocus && imeKeyboardExtensionController != null) {
@@ -2273,6 +2275,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     @Override
     protected void onPause() {
+        cancelStylusInput();
         activityResumed = false;
         cancelDsTouchpadDrag();
         releaseDsTouchpadInput();
@@ -2416,6 +2419,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     }
 
     private void setInputGrabState(boolean grab) {
+        if (!grab) cancelStylusInput();
         // Grab/ungrab the mouse cursor
         if (grab) {
             inputCaptureProvider.enableCapture();
@@ -3162,48 +3166,217 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         }
     }
 
-    private boolean trySendPenEvent(View view, MotionEvent event) {
-        byte eventType = getLiTouchTypeFromEvent(event);
-        if (eventType < 0) {
-            return false;
-        }
+    private final StylusInputRouter stylusRouter = new StylusInputRouter();
+    private TouchContext stylusTouchContext;
+    private int currentMouseMode;
+    private int stylusMouseButtons;
+    private int stylusTipButton;
+    private int stylusPointerId;
+    private float stylusX, stylusY;
 
-        if (event.getActionMasked() == MotionEvent.ACTION_MOVE) {
-            // Move events may impact all active pointers
-            boolean handledStylusEvent = false;
-            for (int i = 0; i < event.getPointerCount(); i++) {
-                byte toolType = convertToolTypeToStylusToolType(event, i);
-                if (toolType == MoonBridge.LI_TOOL_TYPE_UNKNOWN) {
-                    // Not a stylus pointer, so skip it
-                    continue;
-                }
-                else {
-                    // This pointer is a stylus, so we'll report that we handled this event
-                    handledStylusEvent = true;
-                }
+    public void setStylusMode(int mode) {
+        cancelStylusInput();
+        prefConfig.stylusMode = StylusInputRouter.normalizeMode(mode);
+        PreferenceManager.getDefaultSharedPreferences(this).edit()
+                .putInt(PreferenceConfiguration.STYLUS_MODE_PREF_STRING, prefConfig.stylusMode).apply();
+    }
 
-                if (!sendPenEventForPointer(view, event, eventType, toolType, i)) {
-                    // Pen events aren't supported by the host
-                    return false;
-                }
+    public void setTouchpadRotation(int rotation) {
+        prefConfig.touchpadRotation = com.limelight.binding.input.TouchpadRotation.normalize(rotation);
+        externalTouchpadScrollRemainderX = 0f;
+        externalTouchpadScrollRemainderY = 0f;
+        PreferenceManager.getDefaultSharedPreferences(this).edit()
+                .putInt(PreferenceConfiguration.TOUCHPAD_ROTATION_PREF, prefConfig.touchpadRotation).apply();
+    }
+
+    private void cancelStylusInput() {
+        if (conn != null) {
+            stylusRouter.cancel((transport, action) -> sendStylusTransport(transport, action, null, null, 0));
+        }
+        if (stylusTouchContext != null) {
+            stylusTouchContext.cancelTouch();
+            stylusTouchContext = null;
+        }
+    }
+
+    private StylusInputRouter.TouchMode stylusFollowMode() {
+        if (disableMouseModel) return StylusInputRouter.TouchMode.DISABLED;
+        if (prefConfig.touchscreenTrackpad) return StylusInputRouter.TouchMode.TRACKPAD;
+        return prefConfig.enableMultiTouchScreen ? StylusInputRouter.TouchMode.MULTITOUCH
+                : StylusInputRouter.TouchMode.ABSOLUTE;
+    }
+
+    private byte stylusEventType(StylusInputRouter.Action action) {
+        switch (action) {
+            case DOWN: return MoonBridge.LI_TOUCH_EVENT_DOWN;
+            case UP: return MoonBridge.LI_TOUCH_EVENT_UP;
+            case CANCEL: return MoonBridge.LI_TOUCH_EVENT_CANCEL;
+            case HOVER: return MoonBridge.LI_TOUCH_EVENT_HOVER;
+            case LEAVE: return MoonBridge.LI_TOUCH_EVENT_HOVER_LEAVE;
+            case BUTTON: return MoonBridge.LI_TOUCH_EVENT_BUTTON_ONLY;
+            default: return MoonBridge.LI_TOUCH_EVENT_MOVE;
+        }
+    }
+
+    private void setStylusMouseButtons(int buttons) {
+        int changed = stylusMouseButtons ^ buttons;
+        byte[] ids = {MouseButtonPacket.BUTTON_LEFT, MouseButtonPacket.BUTTON_RIGHT, MouseButtonPacket.BUTTON_MIDDLE};
+        for (int i = 0; i < ids.length; i++) {
+            if ((changed & (1 << i)) != 0) {
+                if ((buttons & (1 << i)) != 0) conn.sendMouseButtonDown(ids[i]);
+                else conn.sendMouseButtonUp(ids[i]);
             }
-            return handledStylusEvent;
         }
-        else if (event.getActionMasked() == MotionEvent.ACTION_CANCEL) {
-            // Cancel impacts all active pointers
-            return conn.sendPenEvent(MoonBridge.LI_TOUCH_EVENT_CANCEL_ALL, MoonBridge.LI_TOOL_TYPE_UNKNOWN, (byte)0,
-                    0, 0, 0, 0, 0,
-                    MoonBridge.LI_ROT_UNKNOWN, MoonBridge.LI_TILT_UNKNOWN) != MoonBridge.LI_ERR_UNSUPPORTED;
-        }
-        else {
-            // Up, Down, and Hover events are specific to the action index
-            byte toolType = convertToolTypeToStylusToolType(event, event.getActionIndex());
-            if (toolType == MoonBridge.LI_TOOL_TYPE_UNKNOWN) {
-                // Not a stylus event
-                return false;
+        stylusMouseButtons = buttons;
+    }
+
+    private boolean sendStylusTransport(StylusInputRouter.Transport transport, StylusInputRouter.Action action,
+                                        View view, MotionEvent event, int index) {
+        byte type = stylusEventType(action);
+        if (transport == StylusInputRouter.Transport.PEN) {
+            if (action == StylusInputRouter.Action.CANCEL || action == StylusInputRouter.Action.LEAVE) {
+                return conn.sendPenEvent(action == StylusInputRouter.Action.CANCEL
+                                ? MoonBridge.LI_TOUCH_EVENT_CANCEL_ALL : type,
+                        MoonBridge.LI_TOOL_TYPE_PEN, (byte) 0, stylusX, stylusY, 0, 0, 0,
+                        MoonBridge.LI_ROT_UNKNOWN, MoonBridge.LI_TILT_UNKNOWN) != MoonBridge.LI_ERR_UNSUPPORTED;
             }
-            return sendPenEventForPointer(view, event, eventType, toolType, event.getActionIndex());
+            return sendPenEventForPointer(view, event, type, convertToolTypeToStylusToolType(event, index), index);
         }
+        if (transport == StylusInputRouter.Transport.TOUCH_SCREEN) {
+            if (event != null && action != StylusInputRouter.Action.CANCEL) {
+                float[] xy = getStreamViewRelativeNormalizedXY(view, event, index, true);
+                stylusX = xy[0];
+                stylusY = xy[1];
+            }
+            return conn.sendTouchEvent(type, stylusPointerId, stylusX, stylusY,
+                    event == null ? 0 : getPressureOrDistance(event, index), 0, 0,
+                    MoonBridge.LI_ROT_UNKNOWN) != MoonBridge.LI_ERR_UNSUPPORTED;
+        }
+        if (transport == StylusInputRouter.Transport.MOUSE) {
+            if (action == StylusInputRouter.Action.CANCEL || action == StylusInputRouter.Action.LEAVE) {
+                stylusTipButton = 0;
+                setStylusMouseButtons(0);
+                return true;
+            }
+            conn.sendMousePosition((short) (stylusX * 32767), (short) (stylusY * 32767),
+                    (short) 32767, (short) 32767);
+            if (action == StylusInputRouter.Action.DOWN) {
+                stylusTipButton = event.getToolType(index) == MotionEvent.TOOL_TYPE_ERASER ? 2 : 1;
+            }
+            if (action == StylusInputRouter.Action.UP) stylusTipButton = 0;
+            int buttons = stylusTipButton;
+            if (action == StylusInputRouter.Action.UP) buttons = 0;
+            else {
+                if ((event.getButtonState() & MotionEvent.BUTTON_STYLUS_PRIMARY) != 0) buttons |= 2;
+                if ((event.getButtonState() & MotionEvent.BUTTON_STYLUS_SECONDARY) != 0) buttons |= 4;
+            }
+            setStylusMouseButtons(buttons);
+            return true;
+        }
+        if (action == StylusInputRouter.Action.CANCEL) {
+            if (stylusTouchContext != null) stylusTouchContext.cancelTouch();
+            stylusTouchContext = null;
+            return true;
+        }
+        if (action == StylusInputRouter.Action.DOWN && stylusTouchContext == null) {
+            if (prefConfig.touchscreenTrackpad) {
+                stylusTouchContext = currentMouseMode == 5 || currentMouseMode == 6
+                        ? new RelativeTouchSwitchContext(conn, 0, REFERENCE_HORIZ_RES, REFERENCE_VERT_RES,
+                                streamView, prefConfig, currentMouseMode == 6)
+                        : new RelativeTouchContext(conn, 0, REFERENCE_HORIZ_RES, REFERENCE_VERT_RES, streamView, prefConfig);
+            } else {
+                stylusTouchContext = currentMouseMode == 4 ? new AbsoluteTouchSwitchContext(conn, 0, streamView)
+                        : new AbsoluteTouchContext(conn, 0, streamView);
+            }
+        }
+        if (stylusTouchContext != null && event != null) {
+            int x = prefConfig.touchscreenTrackpad ? (int) event.getX(index) : (int) (stylusX * streamView.getWidth());
+            int y = prefConfig.touchscreenTrackpad ? (int) event.getY(index) : (int) (stylusY * streamView.getHeight());
+            if (action == StylusInputRouter.Action.DOWN) {
+                stylusTouchContext.setPointerCount(1);
+                stylusTouchContext.touchDownEvent(x, y, event.getEventTime(), true);
+            } else if (action == StylusInputRouter.Action.MOVE) {
+                stylusTouchContext.touchMoveEvent(x, y, event.getEventTime());
+            } else if (action == StylusInputRouter.Action.UP) {
+                stylusTouchContext.touchUpEvent(x, y, event.getEventTime());
+            }
+        }
+        return true;
+    }
+
+    // MotionEvent.split() is hidden from the public Android SDK.
+    private static MotionEvent copyMotionPointers(MotionEvent event, int idBits) {
+        int count = Integer.bitCount(idBits);
+        MotionEvent.PointerProperties[] properties = new MotionEvent.PointerProperties[count];
+        MotionEvent.PointerCoords[] coords = new MotionEvent.PointerCoords[count];
+        int actionIndex = -1;
+        for (int i = 0, j = 0; i < event.getPointerCount(); i++) {
+            if ((idBits & (1 << event.getPointerId(i))) == 0) continue;
+            properties[j] = new MotionEvent.PointerProperties();
+            coords[j] = new MotionEvent.PointerCoords();
+            event.getPointerProperties(i, properties[j]);
+            event.getPointerCoords(i, coords[j]);
+            if (i == event.getActionIndex()) actionIndex = j;
+            j++;
+        }
+        int action = event.getActionMasked();
+        if (action == MotionEvent.ACTION_POINTER_DOWN || action == MotionEvent.ACTION_POINTER_UP) {
+            if (actionIndex < 0) action = MotionEvent.ACTION_MOVE;
+            else if (count == 1) action = action == MotionEvent.ACTION_POINTER_DOWN
+                    ? MotionEvent.ACTION_DOWN : MotionEvent.ACTION_UP;
+            else action |= actionIndex << MotionEvent.ACTION_POINTER_INDEX_SHIFT;
+        }
+        return MotionEvent.obtain(event.getDownTime(), event.getEventTime(), action, count, properties, coords,
+                event.getMetaState(), event.getButtonState(), event.getXPrecision(), event.getYPrecision(),
+                event.getDeviceId(), event.getEdgeFlags(), event.getSource(), event.getFlags());
+    }
+
+    private boolean handleStylusMotion(View view, MotionEvent event) {
+        int remainingBits = 0;
+        for (int i = 0; i < event.getPointerCount(); i++) {
+            if (convertToolTypeToStylusToolType(event, i) == MoonBridge.LI_TOOL_TYPE_UNKNOWN) {
+                remainingBits |= 1 << event.getPointerId(i);
+                continue;
+            }
+            if (view == null || conn == null || !hasWindowFocus()
+                    || !inputCaptureProvider.isCapturingActive()) {
+                cancelStylusInput();
+                continue;
+            }
+            int masked = event.getActionMasked();
+            if (masked != MotionEvent.ACTION_MOVE && masked != MotionEvent.ACTION_CANCEL
+                    && i != event.getActionIndex()) continue;
+            StylusInputRouter.Action action;
+            switch (masked) {
+                case MotionEvent.ACTION_DOWN:
+                case MotionEvent.ACTION_POINTER_DOWN: action = StylusInputRouter.Action.DOWN; break;
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_POINTER_UP:
+                    action = (event.getFlags() & MotionEvent.FLAG_CANCELED) != 0
+                            ? StylusInputRouter.Action.CANCEL : StylusInputRouter.Action.UP; break;
+                case MotionEvent.ACTION_MOVE: action = StylusInputRouter.Action.MOVE; break;
+                case MotionEvent.ACTION_CANCEL: action = StylusInputRouter.Action.CANCEL; break;
+                case MotionEvent.ACTION_HOVER_ENTER:
+                case MotionEvent.ACTION_HOVER_MOVE: action = StylusInputRouter.Action.HOVER; break;
+                case MotionEvent.ACTION_HOVER_EXIT: action = StylusInputRouter.Action.LEAVE; break;
+                case MotionEvent.ACTION_BUTTON_PRESS:
+                case MotionEvent.ACTION_BUTTON_RELEASE: action = StylusInputRouter.Action.BUTTON; break;
+                default: continue;
+            }
+            float[] xy = getStreamViewRelativeNormalizedXY(view, event, i, false);
+            stylusX = xy[0];
+            stylusY = xy[1];
+            stylusPointerId = event.getPointerId(i);
+            final int index = i;
+            stylusRouter.handle(action, prefConfig.stylusMode, stylusFollowMode(),
+                    (transport, routedAction) -> sendStylusTransport(transport, routedAction, view, event, index));
+        }
+        if (remainingBits != 0) {
+            MotionEvent remaining = copyMotionPointers(event, remainingBits);
+            try { handleMotionEventWithoutStylus(view, remaining); }
+            finally { remaining.recycle(); }
+        }
+        return true;
     }
 
     private boolean sendTouchEventForPointer(View view, MotionEvent event, byte eventType, int pointerIndex) {
@@ -3246,6 +3419,11 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     // Returns true if the event was consumed
     // NB: View is only present if called from a view callback
     private boolean handleMotionEvent(View view, MotionEvent event) {
+        if (grabbedInput && isStylusMotionEvent(event)) return handleStylusMotion(view, event);
+        return handleMotionEventWithoutStylus(view, event);
+    }
+
+    private boolean handleMotionEventWithoutStylus(View view, MotionEvent event) {
         // Pass through mouse/touch/joystick input if we're not grabbing
         if (!grabbedInput) {
             return false;
@@ -3331,6 +3509,11 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                     // Send the deltas straight from the motion event
                     float rawDeltaX = inputCaptureProvider.getRelativeAxisX(event);
                     float rawDeltaY = inputCaptureProvider.getRelativeAxisY(event);
+                    if (eventSource == InputDevice.SOURCE_TOUCHPAD) {
+                        float originalX = rawDeltaX;
+                        rawDeltaX = com.limelight.binding.input.TouchpadRotation.x(originalX, rawDeltaY, prefConfig.touchpadRotation);
+                        rawDeltaY = com.limelight.binding.input.TouchpadRotation.y(originalX, rawDeltaY, prefConfig.touchpadRotation);
+                    }
                     short deltaX = (short)(rawDeltaX * prefConfig.externalTouchPadSensitityX * 0.01f);
                     short deltaY = (short)(rawDeltaY * prefConfig.externalTouchPadSensitityY * 0.01f);
 
@@ -3404,10 +3587,6 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                             }
                         }
                     }
-                }
-                else if (view != null && trySendPenEvent(view, event)) {
-                    // If our host supports pen events, send it directly
-                    return true;
                 }
                 else if (view != null) {
                     // Otherwise send absolute position based on the view for SOURCE_CLASS_POINTER
@@ -5045,6 +5224,8 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     }
 
     public void switchMouseModel(int which){
+        cancelStylusInput();
+        currentMouseMode = which;
         disableMouseModel=false;
         // EXTENSION DEVELOPMENT [EXT-TOUCHPAD-MULTI-GESTURE] [MODIFIED] BEGIN
         if (multiGestureTouchpadController != null) {
@@ -5716,6 +5897,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     private GameMenuFragment dialogGameMenu;
     @Override
     public void showGameMenu() {
+        cancelStylusInput();
         if (dialogGameMenu != null && dialogGameMenu.getDialog() != null &&
                 dialogGameMenu.getDialog().isShowing()) {
             return;
@@ -6485,10 +6667,8 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     }
 
     public void setMotionForceGyro(){
-        if(prefConfig.gameForceGyro){
-            if(controllerHandler!=null){
-                controllerHandler.handleSetMotionEventState((short) 0, MoonBridge.LI_MOTION_TYPE_GYRO, (short) 100);
-            }
+        if(controllerHandler!=null){
+            controllerHandler.refreshMotionSettings();
         }
     }
 
