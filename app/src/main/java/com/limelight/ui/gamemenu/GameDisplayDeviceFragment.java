@@ -14,6 +14,7 @@ import android.widget.Toast;
 import com.limelight.R;
 import com.limelight.Game;
 import com.limelight.binding.input.StylusInputRouter;
+import com.limelight.binding.input.TouchpadRotation;
 import com.limelight.preferences.PreferenceConfiguration;
 import com.limelight.ui.BaseFragmentDialog.BaseGameMenuDialog;
 
@@ -71,12 +72,25 @@ public class GameDisplayDeviceFragment extends BaseGameMenuDialog implements See
                 R.id.touchpad_rotation_180, R.id.touchpad_rotation_270};
         int rotation = game != null ? game.prefConfig.touchpadRotation
                 : prefConfig != null ? prefConfig.touchpadRotation : 0;
-        rotationChoices.check(rotationIds[com.limelight.binding.input.TouchpadRotation.normalize(rotation)]);
+        rotationChoices.check(rotationIds[TouchpadRotation.normalize(rotation)]);
         rotationChoices.setOnCheckedChangeListener((group, id) -> {
             for (int i = 0; i < rotationIds.length; i++) {
                 if (rotationIds[i] == id && game != null) game.setTouchpadRotation(i);
             }
         });
+        RadioGroup mouseRotationChoices = v.findViewById(R.id.mouse_rotation_choices);
+        int[] mouseRotationIds = {R.id.mouse_rotation_normal, R.id.mouse_rotation_90,
+                R.id.mouse_rotation_180, R.id.mouse_rotation_270};
+        int mouseRotation = game != null ? game.prefConfig.mouseRotation
+                : prefConfig != null ? prefConfig.mouseRotation : 0;
+        mouseRotationChoices.check(mouseRotationIds[TouchpadRotation.normalize(mouseRotation)]);
+        if (game != null) {
+            mouseRotationChoices.setOnCheckedChangeListener((group, id) -> {
+                for (int i = 0; i < mouseRotationIds.length; i++) {
+                    if (mouseRotationIds[i] == id) game.setMouseRotation(i);
+                }
+            });
+        }
         int stylusMode = game != null ? game.prefConfig.stylusMode
                 : prefConfig != null ? prefConfig.stylusMode : StylusInputRouter.NATIVE_PEN;
         stylusChoices.check(stylusMode == StylusInputRouter.FOLLOW_TOUCH ? R.id.stylus_follow

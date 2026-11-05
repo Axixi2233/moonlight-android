@@ -7,6 +7,7 @@ import com.limelight.binding.audio.AndroidAudioRenderer;
 import com.limelight.binding.input.ControllerHandler;
 import com.limelight.binding.input.KeyboardTranslator;
 import com.limelight.binding.input.StylusInputRouter;
+import com.limelight.binding.input.TouchpadRotation;
 import com.limelight.binding.input.haptics.OptionalPcmHapticsLoader;
 import com.limelight.binding.input.capture.InputCaptureManager;
 import com.limelight.binding.input.capture.InputCaptureProvider;
@@ -3182,11 +3183,17 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     }
 
     public void setTouchpadRotation(int rotation) {
-        prefConfig.touchpadRotation = com.limelight.binding.input.TouchpadRotation.normalize(rotation);
+        prefConfig.touchpadRotation = TouchpadRotation.normalize(rotation);
         externalTouchpadScrollRemainderX = 0f;
         externalTouchpadScrollRemainderY = 0f;
         PreferenceManager.getDefaultSharedPreferences(this).edit()
                 .putInt(PreferenceConfiguration.TOUCHPAD_ROTATION_PREF, prefConfig.touchpadRotation).apply();
+    }
+
+    public void setMouseRotation(int rotation) {
+        prefConfig.mouseRotation = TouchpadRotation.normalize(rotation);
+        PreferenceManager.getDefaultSharedPreferences(this).edit()
+                .putInt(PreferenceConfiguration.MOUSE_ROTATION_PREF, prefConfig.mouseRotation).apply();
     }
 
     private void cancelStylusInput() {
@@ -3505,14 +3512,19 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 // Always update the position before sending any button events. If we're
                 // dealing with a stylus without hover support, our position might be
                 // significantly different than before.
+                boolean mouseSource = eventSource == InputDevice.SOURCE_MOUSE ||
+                        eventSource == InputDevice.SOURCE_MOUSE_RELATIVE;
+                int mouseRotation = mouseSource ? prefConfig.mouseRotation : 0;
                 if (inputCaptureProvider.eventHasRelativeMouseAxes(event)) {
                     // Send the deltas straight from the motion event
                     float rawDeltaX = inputCaptureProvider.getRelativeAxisX(event);
                     float rawDeltaY = inputCaptureProvider.getRelativeAxisY(event);
-                    if (eventSource == InputDevice.SOURCE_TOUCHPAD) {
+                    int rotation = eventSource == InputDevice.SOURCE_TOUCHPAD
+                            ? prefConfig.touchpadRotation : mouseRotation;
+                    if (rotation != 0) {
                         float originalX = rawDeltaX;
-                        rawDeltaX = com.limelight.binding.input.TouchpadRotation.x(originalX, rawDeltaY, prefConfig.touchpadRotation);
-                        rawDeltaY = com.limelight.binding.input.TouchpadRotation.y(originalX, rawDeltaY, prefConfig.touchpadRotation);
+                        rawDeltaX = TouchpadRotation.x(originalX, rawDeltaY, rotation);
+                        rawDeltaY = TouchpadRotation.y(originalX, rawDeltaY, rotation);
                     }
                     short deltaX = (short)(rawDeltaX * prefConfig.externalTouchPadSensitityX * 0.01f);
                     short deltaY = (short)(rawDeltaY * prefConfig.externalTouchPadSensitityY * 0.01f);
@@ -3590,7 +3602,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 }
                 else if (view != null) {
                     // Otherwise send absolute position based on the view for SOURCE_CLASS_POINTER
-                    updateMousePosition(view, event);
+                    updateMousePosition(view, event, mouseRotation);
                 }
 
                 if (event.getActionMasked() == MotionEvent.ACTION_SCROLL) {
@@ -3921,7 +3933,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     }
 
-    private void updateMousePosition(View touchedView, MotionEvent event) {
+    private void updateMousePosition(View touchedView, MotionEvent event, int rotation) {
         // X and Y are already relative to the provided view object
         float eventX, eventY;
 
@@ -3976,7 +3988,16 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         eventX = Math.min(Math.max(eventX, 0), streamView.getWidth());
         eventY = Math.min(Math.max(eventY, 0), streamView.getHeight());
 
-        conn.sendMousePosition((short)eventX, (short)eventY, (short)streamView.getWidth(), (short)streamView.getHeight());
+        int width = streamView.getWidth();
+        int height = streamView.getHeight();
+        if (rotation != 0 && width > 0 && height > 0) {
+            // Rotate in normalized coordinates so a quarter turn still spans the full viewport.
+            float x = eventX / width - 0.5f;
+            float y = eventY / height - 0.5f;
+            eventX = (TouchpadRotation.x(x, y, rotation) + 0.5f) * width;
+            eventY = (TouchpadRotation.y(x, y, rotation) + 0.5f) * height;
+        }
+        conn.sendMousePosition((short)eventX, (short)eventY, (short)width, (short)height);
     }
 
     @Override
@@ -4651,6 +4672,12 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     }
 
     @Override
+    public void evdevMouseMove(int deltaX, int deltaY) {
+        int rotation = prefConfig.mouseRotation;
+        mouseMove((int) TouchpadRotation.x(deltaX, deltaY, rotation),
+                (int) TouchpadRotation.y(deltaX, deltaY, rotation));
+    }
+
     public void mouseMove(int deltaX, int deltaY) {
         conn.sendMouseMove((short) deltaX, (short) deltaY);
     }

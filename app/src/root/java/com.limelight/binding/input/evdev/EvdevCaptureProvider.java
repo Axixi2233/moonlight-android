@@ -116,7 +116,7 @@ public class EvdevCaptureProvider extends InputCaptureProvider {
                 switch (event.type) {
                     case EvdevEvent.EV_SYN:
                         if (deltaX != 0 || deltaY != 0) {
-                            listener.mouseMove(deltaX, deltaY);
+                            listener.evdevMouseMove(deltaX, deltaY);
                             deltaX = deltaY = 0;
                         }
                         if (deltaVScroll != 0) {

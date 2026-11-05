@@ -5,4 +5,6 @@
     <string name="touchpad_rotation_90">90°</string>
     <string name="touchpad_rotation_180">180°</string>
     <string name="touchpad_rotation_270">270°</string>
+    <string name="mouse_rotation_title">实体鼠标方向</string>
+    <string name="mouse_rotation_description">校正实体鼠标移动方向，即时生效；角度为逆时针。</string>
 </resources>

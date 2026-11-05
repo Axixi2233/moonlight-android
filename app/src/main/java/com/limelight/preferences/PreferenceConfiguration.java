@@ -12,6 +12,8 @@ import com.limelight.nvstream.jni.MoonBridge;
 public class PreferenceConfiguration {
     public static final String TOUCHPAD_ROTATION_PREF = "external_touchpad_rotation";
     public int touchpadRotation;
+    public static final String MOUSE_ROTATION_PREF = "external_mouse_rotation";
+    public volatile int mouseRotation;
     public static final String STYLUS_MODE_PREF_STRING = "stylus_mode";
     public int stylusMode = com.limelight.binding.input.StylusInputRouter.NATIVE_PEN;
     public enum FormatOption {
@@ -782,6 +784,8 @@ public class PreferenceConfiguration {
         PreferenceConfiguration config = new PreferenceConfiguration();
         config.touchpadRotation = com.limelight.binding.input.TouchpadRotation.normalize(
                 prefs.getInt(TOUCHPAD_ROTATION_PREF, 0));
+        config.mouseRotation = com.limelight.binding.input.TouchpadRotation.normalize(
+                prefs.getInt(MOUSE_ROTATION_PREF, 0));
         config.stylusMode = com.limelight.binding.input.StylusInputRouter.normalizeMode(
                 prefs.getInt(STYLUS_MODE_PREF_STRING,
                         com.limelight.binding.input.StylusInputRouter.NATIVE_PEN));
