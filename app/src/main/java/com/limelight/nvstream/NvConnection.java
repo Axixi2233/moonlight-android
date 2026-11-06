@@ -89,6 +89,8 @@ public class NvConnection {
     }
 
     public void stop() {
+        context.usbIpImportHost = null;
+        context.usbIpTlsToken = null;
         if (micUplinkConnection != null) {
             micUplinkConnection.stop();
             micUplinkConnection = null;
@@ -106,6 +108,16 @@ public class NvConnection {
 
         // Now a pending connection can be processed
         connectionAllowed.release();
+    }
+
+    /** Return the paired launch response's USB/IP source; absent on older hosts and IPv4 sessions. */
+    public String getUsbIpImportHost() {
+        return context.usbIpImportHost;
+    }
+
+    /** Return the short-lived credential delivered only by a successful paired launch/resume response. */
+    public String getUsbIpTlsToken() {
+        return context.usbIpTlsToken;
     }
 
     public String getLastMicUplinkMessage() {

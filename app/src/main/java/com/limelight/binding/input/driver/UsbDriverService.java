@@ -11,7 +11,6 @@ import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 import android.net.ConnectivityManager;
-import android.net.LinkAddress;
 import android.net.LinkProperties;
 import android.net.Network;
 import android.net.RouteInfo;
@@ -30,7 +29,6 @@ import com.limelight.preferences.PreferenceConfiguration;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.Inet4Address;
 import java.util.ArrayList;
 
 public class UsbDriverService extends Service implements UsbDriverListener {
@@ -52,6 +50,8 @@ public class UsbDriverService extends Service implements UsbDriverListener {
     private int nextDeviceId;
     private final Handler usbIpHandler = new Handler(Looper.getMainLooper());
     private InetAddress usbIpPeer;
+    private byte[] usbIpTlsToken;
+    private volatile InetAddress usbIpLocalAddress;
     private boolean usbIpSessionActive;
     private UsbIpControllerExport usbIpExport;
     private String usbIpDeviceName;
@@ -190,45 +190,47 @@ public class UsbDriverService extends Service implements UsbDriverListener {
         }
 
         /** Configure the importer address from the selected stream host. */
-        public void configureUsbIp(String host) {
+        public void configureUsbIp(String host, String importHost, String tlsToken) {
+            usbIpTlsToken = UsbIpTls.validToken(tlsToken) ? tlsToken.getBytes(java.nio.charset.StandardCharsets.US_ASCII) : null;
+            boolean invalidTls = tlsToken != null && usbIpTlsToken == null;
             usbIpPeer = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-                    ? UsbIpControllerExport.parsePeer(host) : null;
+                    ? UsbIpNetwork.resolvePeer(host, importHost) : null;
+            if (invalidTls || !UsbIpNetwork.isAllowedPeer(usbIpPeer, hasDirectUsbIpRoute(usbIpPeer), usbIpTlsToken != null)) {
+                usbIpPeer = null;
+            }
+            usbIpLocalAddress = null;
+            final InetAddress peer = usbIpPeer;
+            if (peer != null) {
+                LimeLog.info("USB/IP authorized importer: " + peer.getHostAddress());
+                new Thread(() -> {
+                    try {
+                        InetAddress local = UsbIpNetwork.localAddress(peer);
+                        usbIpHandler.post(() -> {
+                            if (usbIpPeer == peer) usbIpLocalAddress = local;
+                        });
+                    } catch (IOException e) {
+                        LimeLog.warning("USB/IP source address unavailable: " + e);
+                    }
+                }, "USB/IP address").start();
+            }
             usbIpStatusRes = host == null ? R.string.usbip_disabled
+                    : Build.VERSION.SDK_INT < Build.VERSION_CODES.O ? R.string.usbip_android_required
+                    : invalidTls ? R.string.usbip_secure_error
                     : usbIpPeer == null ? R.string.usbip_host_required : R.string.usbip_waiting_session;
         }
 
         /** Return the session's USB/IP state for the full performance overlay. */
         public String getUsbIpStatus() {
-            return getString(usbIpStatusRes);
+            return getString(usbIpStatusRes) + (usbIpTlsToken != null ? " · TLS" : "");
         }
 
-        /** Return the IPv4 address on the route to the importer and the USB/IP listening port. */
+        /** Return the OS-selected streaming-family address and the USB/IP listening port. */
         public String getUsbIpAddress() {
             if (usbIpPeer == null) {
                 return "--";
             }
-            ConnectivityManager manager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
-            String address = null;
-            int prefixLength = -1;
-            for (Network network : manager.getAllNetworks()) {
-                LinkProperties properties = manager.getLinkProperties(network);
-                if (properties == null) {
-                    continue;
-                }
-                for (RouteInfo route : properties.getRoutes()) {
-                    if (!route.matches(usbIpPeer) || route.getDestination().getPrefixLength() <= prefixLength) {
-                        continue;
-                    }
-                    for (LinkAddress local : properties.getLinkAddresses()) {
-                        if (local.getAddress() instanceof Inet4Address && !local.getAddress().isLoopbackAddress()) {
-                            address = local.getAddress().getHostAddress();
-                            prefixLength = route.getDestination().getPrefixLength();
-                            break;
-                        }
-                    }
-                }
-            }
-            return address == null ? "--" : address + ":" + UsbIpControllerExport.PORT;
+            InetAddress address = usbIpLocalAddress;
+            return address == null ? "--" : UsbIpNetwork.endpoint(address);
         }
 
         /** Keep the export listener open only during a connected stream. */
@@ -256,6 +258,23 @@ public class UsbDriverService extends Service implements UsbDriverListener {
             prefConfig.bindAllUsb=flag;
         }
 
+    }
+
+    /** Require a non-default on-link route before exposing USB/IP to a global IPv6 stream host. */
+    private boolean hasDirectUsbIpRoute(InetAddress peer) {
+        if (peer == null) return false;
+        ConnectivityManager manager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+        if (manager == null) return false;
+        for (Network network : manager.getAllNetworks()) {
+            LinkProperties properties = manager.getLinkProperties(network);
+            if (properties == null) continue;
+            for (RouteInfo route : properties.getRoutes()) {
+                if (!route.hasGateway() && route.getDestination().getPrefixLength() > 0 && route.matches(peer)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private void handleUsbDeviceState(UsbDevice device) {
@@ -376,7 +395,7 @@ public class UsbDriverService extends Service implements UsbDriverListener {
             stateListener.onUsbIpHandoffStarted(device);
         }
         try {
-            UsbIpControllerExport exporter = new UsbIpControllerExport(device, connection, usbIpPeer);
+            UsbIpControllerExport exporter = new UsbIpControllerExport(device, connection, usbIpPeer, usbIpTlsToken, com.limelight.binding.PlatformBinding.getCryptoProvider(UsbDriverService.this));
             usbIpExport = exporter;
             usbIpDeviceName = device.getDeviceName();
             exporter.start(new UsbIpControllerExport.Listener() {

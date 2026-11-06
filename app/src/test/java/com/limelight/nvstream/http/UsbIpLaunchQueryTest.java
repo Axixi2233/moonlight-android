@@ -9,6 +9,6 @@ public class UsbIpLaunchQueryTest {
         assertEquals("", NvHTTP.usbIpLaunchQuery(false));
     }
     @Test public void enabledModeAdvertisesOnlyTheFixedOptInFlag() {
-        assertEquals("&usbipMode=1", NvHTTP.usbIpLaunchQuery(true));
+        assertEquals("&usbipMode=1&usbipTls=1", NvHTTP.usbIpLaunchQuery(true));
     }
 }

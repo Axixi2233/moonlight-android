@@ -480,13 +480,22 @@ public class NvHTTP {
             resp.close();
 
             if (verbose && !path.equals("serverinfo")) {
-                LimeLog.info(getCompleteUrl(baseUrl, path, query)+" -> "+respString);
+                if (path.equals("launch") || path.equals("resume")) {
+                    // Requests include streaming keys; responses may contain the USB/IP session credential.
+                    LimeLog.info("Paired " + path + " response received");
+                } else {
+                    LimeLog.info(getCompleteUrl(baseUrl, path, query)+" -> "+respString);
+                }
             }
 
             return respString;
         } catch (IOException e) {
             if (verbose && !path.equals("serverinfo")) {
-                LimeLog.warning(getCompleteUrl(baseUrl, path, query)+" -> "+e.getMessage());
+                if (path.equals("launch") || path.equals("resume")) {
+                    LimeLog.warning("Paired " + path + " request failed: " + e.getClass().getSimpleName());
+                } else {
+                    LimeLog.warning(getCompleteUrl(baseUrl, path, query)+" -> "+e.getMessage());
+                }
                 e.printStackTrace();
             }
             
@@ -833,6 +842,13 @@ public class NvHTTP {
                 (verb.equals("resume") && !getXmlString(xmlStr, "resume", true).equals("0")))) {
             // sessionUrl0 will be missing for older GFE versions
             context.rtspSessionUrl = getXmlString(xmlStr, "sessionUrl0", false);
+            context.usbIpImportHost = context.streamConfig.getUsbIpMode()
+                    ? getXmlString(xmlStr, "axiUsbIpHost", false) : null;
+            context.usbIpTlsToken = null;
+            if (context.streamConfig.getUsbIpMode() && "1".equals(getXmlString(xmlStr, "axiUsbIpTls", false))) {
+                String credential = getXmlString(xmlStr, "axiUsbIpToken", false);
+                context.usbIpTlsToken = credential == null ? "" : credential;
+            }
             return true;
         }
         else {
@@ -859,7 +875,7 @@ public class NvHTTP {
 
     /** Keep unsupported/older hosts compatible by advertising only an explicit enabled preference. */
     static String usbIpLaunchQuery(boolean enabled) {
-        return enabled ? "&usbipMode=1" : "";
+        return enabled ? "&usbipMode=1&usbipTls=1" : "";
     }
 
 

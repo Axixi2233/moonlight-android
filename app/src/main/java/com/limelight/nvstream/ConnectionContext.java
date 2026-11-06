@@ -23,6 +23,10 @@ public class ConnectionContext {
 
     // This is the sessionUrl0 tag from /resume and /launch
     public String rtspSessionUrl;
+    /** USB/IP import source advertised by the paired host after a successful launch/resume. */
+    public volatile String usbIpImportHost;
+    /** Null means legacy LAN transport; non-null is negotiated TLS and must pass token validation. */
+    public volatile String usbIpTlsToken;
 
     public boolean negotiatedMicUplinkEnabled;
     public int negotiatedMicPort;

@@ -347,7 +347,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             binder.setListener(controllerHandler);
             binder.setStateListener(Game.this);
             usbDriverBinder = binder;
-            binder.configureUsbIp(prefConfig.usbIpMode ? getIntent().getStringExtra(EXTRA_HOST) : null);
+            binder.configureUsbIp(prefConfig.usbIpMode ? getIntent().getStringExtra(EXTRA_HOST) : null, conn != null ? conn.getUsbIpImportHost() : null, conn != null ? conn.getUsbIpTlsToken() : null);
             binder.start();
             binder.setUsbIpSessionActive(connected);
             connectedToUsbDriverService = true;
@@ -4298,6 +4298,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 connected = true;
                 connecting = false;
                 if (usbDriverBinder != null) {
+                    usbDriverBinder.configureUsbIp(prefConfig.usbIpMode ? getIntent().getStringExtra(EXTRA_HOST) : null, conn != null ? conn.getUsbIpImportHost() : null, conn != null ? conn.getUsbIpTlsToken() : null);
                     usbDriverBinder.setUsbIpSessionActive(true);
                 }
                 streamStartElapsedMs = SystemClock.elapsedRealtime();
@@ -4855,7 +4856,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         if (stats == null) {
             addPerfRow("状态", "--");
             addPerfRow("USB/IP", buildUsbIpStatusText());
-            addPerfRow("USB/IP地址", buildUsbIpAddressText());
+            addPerfRow("USB/IP地址", buildUsbIpAddressText(), true);
             return;
         }
 
@@ -4902,7 +4903,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         addPerfRow("音频震动", buildAudioHapticsStatusText());
         addPerfRow("USB手柄", buildUsbControllerStatusText());
         addPerfRow("USB/IP", buildUsbIpStatusText());
-        addPerfRow("USB/IP地址", buildUsbIpAddressText());
+        addPerfRow("USB/IP地址", buildUsbIpAddressText(), true);
     }
 
     /** Read the service-owned USB/IP state without retaining an old handoff state in the UI. */
@@ -4919,10 +4920,17 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         return prefConfig.usbIpMode && usbDriverBinder != null ? usbDriverBinder.getUsbIpAddress() : "--";
     }
 
+    /** Add an ordinary single-line performance metric. */
     private void addPerfRow(String label, String value) {
+        addPerfRow(label, value, true);
+    }
+
+    /** Wrap overflowing performance values without changing text, font size or the HUD container geometry. */
+    private void addPerfRow(String label, String value, boolean wrapValue) {
+        boolean multiline = wrapValue;
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setGravity(multiline ? Gravity.TOP : Gravity.CENTER_VERTICAL);
         LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -4944,7 +4952,16 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         valueView.setTextColor(Color.WHITE);
         valueView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10f);
         valueView.setGravity(Gravity.END);
-        valueView.setSingleLine(true);
+        valueView.setSingleLine(!multiline);
+        if (multiline) {
+            valueView.setHorizontallyScrolling(false);
+            valueView.setEllipsize(null);
+            valueView.setTextDirection(View.TEXT_DIRECTION_LTR);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                valueView.setBreakStrategy(android.text.Layout.BREAK_STRATEGY_SIMPLE);
+                valueView.setHyphenationFrequency(android.text.Layout.HYPHENATION_FREQUENCY_NONE);
+            }
+        }
 
         row.addView(labelView);
         row.addView(valueView);

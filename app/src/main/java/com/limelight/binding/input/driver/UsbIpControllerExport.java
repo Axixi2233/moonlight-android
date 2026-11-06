@@ -39,11 +39,13 @@ final class UsbIpControllerExport implements AutoCloseable {
     private final byte[] descriptor;
     private final int speed;
     private final InetAddress peer;
+    private final byte[] tlsToken;
     private final ServerSocket server;
     private final ArrayList<UsbInterface> interfaces = new ArrayList<>();
     private final Map<Integer, UsbInterface> activeInterfaces = new HashMap<>();
     private final Object socketLock = new Object();
     private Socket activeSocket;
+    private InetAddress lastRejectedPeer;
     private volatile boolean closed;
     private boolean usbClosed;
     private final long createdAt = SystemClock.elapsedRealtime();
@@ -141,31 +143,16 @@ final class UsbIpControllerExport implements AutoCloseable {
         return false;
     }
 
-    /** Restrict the manual-import prototype to the selected private IPv4 host. */
+    /** Parse the selected streaming host; the service additionally validates its local IPv6 route. */
     static InetAddress parsePeer(String host) {
-        if (host == null || !host.matches("[0-9]{1,3}(\\.[0-9]{1,3}){3}")) {
-            return null;
-        }
-        String[] parts = host.split("\\.");
-        byte[] address = new byte[4];
-        for (int i = 0; i < address.length; i++) {
-            int part = Integer.parseInt(parts[i]);
-            if (part > 255) {
-                return null;
-            }
-            address[i] = (byte) part;
-        }
-        try {
-            InetAddress peer = InetAddress.getByAddress(address);
-            return peer.isSiteLocalAddress() ? peer : null;
-        } catch (java.net.UnknownHostException e) {
-            return null;
-        }
+        return UsbIpNetwork.parsePeer(host);
     }
 
-    UsbIpControllerExport(UsbDevice device, UsbDeviceConnection usb, InetAddress peer) throws IOException {
+    UsbIpControllerExport(UsbDevice device, UsbDeviceConnection usb, InetAddress peer, byte[] tlsToken,
+                          com.limelight.nvstream.http.LimelightCryptoProvider crypto) throws IOException {
         this.usb = usb;
         this.peer = peer;
+        this.tlsToken = tlsToken == null ? null : tlsToken.clone();
         configuration = device.getConfiguration(0);
         descriptor = usb.getRawDescriptors();
         if (descriptor == null || descriptor.length < 18 || descriptor[0] != 18 || descriptor[1] != 1) {
@@ -176,10 +163,10 @@ final class UsbIpControllerExport implements AutoCloseable {
         speed = negotiatedSpeed > 0 ? negotiatedSpeed : 2;
         LimeLog.info("USB/IP device " + device.getVendorId() + ":" + device.getProductId()
                 + " speed=" + speed + " (usbfs=" + negotiatedSpeed + ")");
-        server = new ServerSocket();
+        server = tlsToken == null ? new ServerSocket() : UsbIpTls.createServer(crypto);
         try {
             server.setReuseAddress(true);
-            server.bind(new InetSocketAddress("0.0.0.0", PORT), 2);
+            server.bind(new InetSocketAddress(UsbIpNetwork.wildcard(peer), PORT), 2);
             for (int i = 0; i < configuration.getInterfaceCount(); i++) {
                 UsbInterface iface = configuration.getInterface(i);
                 if (iface.getAlternateSetting() == 0) {
@@ -222,7 +209,12 @@ final class UsbIpControllerExport implements AutoCloseable {
     private void serve(Listener listener) throws IOException {
         while (!closed) {
             try (Socket socket = server.accept()) {
-                if (!peer.equals(socket.getInetAddress())) {
+                if (!UsbIpNetwork.samePeer(peer, socket.getInetAddress())) {
+                    if (!socket.getInetAddress().equals(lastRejectedPeer)) {
+                        lastRejectedPeer = socket.getInetAddress();
+                        LimeLog.warning("USB/IP rejected peer " + lastRejectedPeer.getHostAddress()
+                                + "; expected " + peer.getHostAddress());
+                    }
                     continue;
                 }
                 synchronized (socketLock) {
@@ -236,6 +228,15 @@ final class UsbIpControllerExport implements AutoCloseable {
                     socket.setSoTimeout(3000);
                     DataInputStream in = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
                     DataOutputStream out = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
+                    if (tlsToken != null) {
+                        ((javax.net.ssl.SSLSocket) socket).startHandshake();
+                        byte[] offered = new byte[64];
+                        in.readFully(offered);
+                        if (!java.security.MessageDigest.isEqual(tlsToken, offered)) {
+                            LimeLog.warning("USB/IP TLS session authentication rejected");
+                            continue;
+                        }
+                    }
                     if (in.readUnsignedShort() != VERSION) {
                         continue;
                     }
