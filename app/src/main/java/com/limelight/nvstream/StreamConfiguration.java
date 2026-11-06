@@ -28,6 +28,7 @@ public class StreamConfiguration {
     private int colorRange;
     private int colorSpace;
     private int controlStreamRttToleranceMs;
+    private boolean usbIpMode;
     private boolean persistGamepadsAfterDisconnect;
     private int ppi;
     //雷蛇虚拟显示器
@@ -99,6 +100,12 @@ public class StreamConfiguration {
                     config.attachedGamepadMask |= 1 << i;
                 }
             }
+            return this;
+        }
+
+        /** Forward the existing USB/IP preference as an explicit host-side importer opt-in. */
+        public StreamConfiguration.Builder setUsbIpMode(boolean enabled) {
+            config.usbIpMode = enabled;
             return this;
         }
 
@@ -226,6 +233,11 @@ public class StreamConfiguration {
 
     public int getAttachedGamepadMask() {
         return attachedGamepadMask;
+    }
+
+    /** Whether this stream explicitly requests the StarCore LAN USB/IP importer. */
+    public boolean getUsbIpMode() {
+        return usbIpMode;
     }
 
     public boolean getPersistGamepadsAfterDisconnect() {

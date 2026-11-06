@@ -158,8 +158,20 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
             return;
         }
 
-        //操作 或 显示器
-        if(v.getId()==R.id.btn_soft_function || v.getId()==R.id.btn_display_1){
+        if (v.getId() == R.id.btn_display_1) {
+            if (game != null && game.isHostDisplayApiUnavailable()) {
+                showLegacyDisplayControls();
+                return;
+            }
+            GameHostDisplaysFragment fragment = new GameHostDisplaysFragment();
+            fragment.setTargetFragment(this, 0);
+            fragment.setWidth(UiHelper.dpToPx(getActivity(), 364));
+            fragment.show(getFragmentManager());
+            return;
+        }
+
+        //操作
+        if(v.getId()==R.id.btn_soft_function){
             GameFunctionFragment fragment=new GameFunctionFragment();
             fragment.setWidth(UiHelper.dpToPx(getActivity(),364));
             fragment.setTitle("操作");
@@ -635,6 +647,14 @@ public class GameMenuFragment extends BaseGameMenuDialog implements View.OnClick
                 conn.sendKeyboardInput(key, KeyboardPacket.KEY_UP, modifier[0], (byte) 0);
             }
         }), KEY_UP_DELAY);
+    }
+
+    /** Reuse the original operations sheet and its existing shortcut handlers for older hosts. */
+    void showLegacyDisplayControls() {
+        View view = getView();
+        if (view != null && isAdded()) {
+            onClick(view.findViewById(R.id.btn_soft_function));
+        }
     }
 
     private static final long KEY_UP_DELAY = 25;

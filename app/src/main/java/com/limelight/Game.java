@@ -989,6 +989,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 .setPPI(RazerUtils.getPPI(this))
                 .setRazerVD(prefConfig.razerVD)
                 .setControlStreamRttToleranceMs(prefConfig.touchStutterCompatibility ? 10 : 0)
+                .setUsbIpMode(prefConfig.usbIpMode)
                 .setPersistGamepadsAfterDisconnect(!prefConfig.multiController)
                 .build();
 
@@ -6625,6 +6626,31 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         if (controllerHandler != null) {
             controllerHandler.beginUsbIpHandoff(device);
         }
+    }
+
+    private boolean hostDisplayApiUnavailable;
+
+    /** Remember an explicitly unsupported display API for this streaming session only. */
+    public void markHostDisplayApiUnavailable() {
+        hostDisplayApiUnavailable = true;
+    }
+
+    /** Skip repeated endpoint probes when this host already selected the legacy operations sheet. */
+    public boolean isHostDisplayApiUnavailable() {
+        return hostDisplayApiUnavailable;
+    }
+
+
+    /** Query or change PC display settings from a game-menu worker thread. */
+    public org.json.JSONObject requestHostDisplays(org.json.JSONObject operation)
+            throws java.io.IOException, org.json.JSONException {
+        StreamReqBean request = streamReqBean;
+        if (!connected || request == null) {
+            throw new java.io.IOException("串流已断开");
+        }
+        NvHTTP http = new NvHTTP(request.getActiveAddress(), request.getHttpsPort(), request.getUniqueId(),
+                request.getServerCert(), request.getCryptoProvider());
+        return http.requestDisplays(operation);
     }
 
     @Override
