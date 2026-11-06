@@ -113,7 +113,12 @@ public class KeyboardTranslator implements InputManager.InputDeviceListener {
 
             for (int i = 0; i <= maxKeyCode; i++) {
                 int deviceKeyCode = device.getKeyCodeForKeyLocation(i);
-                if (deviceKeyCode != KeyEvent.KEYCODE_UNKNOWN) {
+                // A vendor keyboard may report keycodes above KeyEvent.getMaxKeyCode()
+                // (e.g. the HONOR Smart Touch Keyboard reports 745 while maxKeyCode is 340).
+                // Writing such a keycode into deviceKeyCodeToQwertyKeyCode would throw
+                // ArrayIndexOutOfBoundsException and crash the app as soon as the
+                // keyboard is attached (onInputDeviceAdded) or a stream is started.
+                if (deviceKeyCode > KeyEvent.KEYCODE_UNKNOWN && deviceKeyCode <= maxKeyCode) {
                     deviceKeyCodeToQwertyKeyCode[deviceKeyCode] = i;
                 }
             }
@@ -125,7 +130,7 @@ public class KeyboardTranslator implements InputManager.InputDeviceListener {
         }
 
         public int getQwertyKeyCodeForDeviceKeyCode(int deviceKeyCode) {
-            if (deviceKeyCode > KeyEvent.getMaxKeyCode()) {
+            if (deviceKeyCode < 0 || deviceKeyCode > KeyEvent.getMaxKeyCode()) {
                 return KeyEvent.KEYCODE_UNKNOWN;
             }
 
