@@ -176,6 +176,11 @@
 
     <PreferenceCategory android:title="@string/category_gamepad_settings"
         android:key="category_gamepad_settings">
+        <CheckBoxPreference
+            android:key="checkbox_usbip_mode"
+            android:title="@string/title_usbip_mode"
+            android:summary="@string/summary_usbip_mode"
+            android:defaultValue="false" />
         <ListPreference
             android:key="list_gamepad_emulation"
             android:title="@string/title_gamepad_emulation"

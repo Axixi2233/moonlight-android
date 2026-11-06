@@ -344,7 +344,7 @@
     <string name="perf_overlay_hostprocessinglatency">主机处理延迟最小值/最大值/平均值: %1$.1f/%2$.1f/%3$.1f ms</string>
     <string name="fps_suffix_fps">FPS</string>
     <string name="title_native_fps_dialog">原生 FPS 警告</string>
-    <string name="category_gamepad_settings">手柄设置</string>
+    <string name="category_gamepad_settings">外设设置</string>
     <string name="title_checkbox_gamepad_touchpad_as_mouse">始终使用触摸板控制鼠标</string>
     <string name="summary_checkbox_gamepad_touchpad_as_mouse">强制使用手柄触摸板来控制主机鼠标，即使在使用触摸板模拟游戏板时也是如此。</string>
     <string name="title_checkbox_gamepad_motion_sensors">允许使用手柄的运动传感器</string>

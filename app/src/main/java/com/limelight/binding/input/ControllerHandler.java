@@ -167,6 +167,11 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
     private short currentControllers, initialControllers;
     private int reportedControllerArrivalMask;
     private boolean virtualDsTouchpadSessionUsed;
+    // Bit 31 is stripped by moonlight-common to guard against sign extension.
+    private static final int USBIP_RETIRE_CONTROLLER_FLAG = 0x40000000;
+    private UsbDevice usbIpHandoffDevice;
+    private int usbIpHandoffSlots;
+    private boolean usbIpHandoffActive;
 
     private final Runnable mouseEmulationRunnable = new Runnable() {
         @Override
@@ -622,6 +627,9 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
     public synchronized void onInputDeviceRemoved(int deviceId) {
         InputDeviceContext context = inputDeviceContexts.get(deviceId);
         if (context != null) {
+            if (context.assignedControllerNumber && matchesUsbIpDevice(context.inputDevice)) {
+                usbIpHandoffSlots |= getControllerNumberBit(context.controllerNumber);
+            }
             LimeLog.info("Removed controller: "+context.name+" ("+deviceId+")");
             inputDeviceContexts.remove(deviceId);
             releaseControllerNumber(context);
@@ -1088,7 +1096,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
     }
 
     private boolean hasOnscreenControllerSourceForSlot(short controllerNumber) {
-        return controllerNumber == defaultContext.controllerNumber &&
+        return controllerNumber == defaultContext.controllerNumber && !usbIpHandoffActive &&
                 (prefConfig.onscreenController || virtualDsTouchpadSessionUsed);
     }
 
@@ -1684,6 +1692,10 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
             return null;
         }
 
+        if (usbIpHandoffActive && matchesUsbIpDevice(event.getDevice())) {
+            return null;
+        }
+
         // HACK for https://issuetracker.google.com/issues/163120692
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.R) {
             if (event.getDeviceId() == -1) {
@@ -1729,11 +1741,11 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
     private short getActiveControllerMask() {
         if (prefConfig.multiController) {
             return (short)(currentControllers | initialControllers |
-                    (prefConfig.onscreenController || virtualDsTouchpadSessionUsed ? 1 : 0));
+                    (hasOnscreenControllerSourceForSlot((short) 0) ? 1 : 0));
         }
         else {
             // Only Player 1 is active with multi-controller disabled
-            return 1;
+            return (short) (usbIpHandoffActive && !hasAssignedControllerForSlot((short) 0) ? 0 : 1);
         }
     }
 
@@ -1858,6 +1870,9 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
     }
 
     private synchronized void sendControllerInputPacket(GenericControllerContext originalContext) {
+        if (usbIpHandoffActive && originalContext == defaultContext) {
+            return;
+        }
         assignControllerNumberIfNeeded(originalContext);
 
         // Take the context's controller number and fuse all inputs with the same number
@@ -2692,8 +2707,69 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
         return supportedButtonFlags;
     }
 
+    private boolean matchesUsbIpDevice(InputDevice device) {
+        return device != null && usbIpHandoffDevice != null &&
+                device.getVendorId() == usbIpHandoffDevice.getVendorId() &&
+                device.getProductId() == usbIpHandoffDevice.getProductId();
+    }
+
+    /** Remember the affected slots before Android unbinds its system HID interface. */
+    public synchronized void beginUsbIpHandoff(UsbDevice device) {
+        usbIpHandoffDevice = device;
+        usbIpHandoffSlots = 0;
+        for (int i = 0; i < inputDeviceContexts.size(); i++) {
+            InputDeviceContext context = inputDeviceContexts.valueAt(i);
+            if (context.assignedControllerNumber && matchesUsbIpDevice(context.inputDevice)) {
+                usbIpHandoffSlots |= getControllerNumberBit(context.controllerNumber);
+            }
+        }
+    }
+
+    /** Replace only unshared virtual slots after successful USB/IP input. */
+    public synchronized void confirmUsbIpHandoff() {
+        if (stopped || usbIpHandoffDevice == null || usbIpHandoffActive) {
+            return;
+        }
+        if (hasOnscreenControllerSourceForSlot((short) 0)) {
+            usbIpHandoffSlots |= 1;
+        }
+        usbIpHandoffActive = true;
+        virtualDsTouchpadSessionUsed = false;
+        defaultContext.inputMap = 0;
+        defaultContext.gyroStickX = defaultContext.gyroStickY = 0;
+        defaultContext.leftStickX = defaultContext.leftStickY = 0;
+        defaultContext.rightStickX = defaultContext.rightStickY = 0;
+        defaultContext.leftTrigger = defaultContext.rightTrigger = 0;
+        for (int i = inputDeviceContexts.size() - 1; i >= 0; i--) {
+            InputDeviceContext context = inputDeviceContexts.valueAt(i);
+            if (matchesUsbIpDevice(context.inputDevice)) {
+                onInputDeviceRemoved(inputDeviceContexts.keyAt(i));
+            }
+        }
+        for (short slot = 0; slot < MAX_GAMEPADS; slot++) {
+            int bit = getControllerNumberBit(slot);
+            if ((usbIpHandoffSlots & bit) == 0 || hasAssignedControllerForSlot(slot)) {
+                continue;
+            }
+            initialControllers &= ~bit;
+            clearControllerArrival(slot);
+            conn.cancelPendingControllerArrivalEvent((byte) slot);
+            short mask = (short) (getActiveControllerMask() & ~bit);
+            conn.sendControllerInput(slot, mask, USBIP_RETIRE_CONTROLLER_FLAG,
+                    (byte) 0, (byte) 0, (short) 0, (short) 0, (short) 0, (short) 0);
+            LimeLog.info("USB/IP handoff retired virtual controller slot " + slot);
+        }
+    }
+
+    /** Reenable the normal controller path on failure or detach. */
+    public synchronized void finishUsbIpHandoff() {
+        usbIpHandoffActive = false;
+        usbIpHandoffDevice = null;
+        usbIpHandoffSlots = 0;
+    }
+
     private void sendOnscreenControllerArrivalIfNeeded() {
-        if ((!prefConfig.onscreenController && !virtualDsTouchpadSessionUsed) ||
+        if (usbIpHandoffActive || (!prefConfig.onscreenController && !virtualDsTouchpadSessionUsed) ||
                 hasReportedControllerArrival(defaultContext.controllerNumber)) {
             return;
         }
@@ -4167,6 +4243,9 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
                                short leftStickX, short leftStickY,
                                short rightStickX, short rightStickY,
                                byte leftTrigger, byte rightTrigger) {
+        if (usbIpHandoffActive) {
+            return;
+        }
         sendOnscreenControllerArrivalIfNeeded();
 
         defaultContext.leftStickX = leftStickX;
@@ -4189,7 +4268,7 @@ public class ControllerHandler implements InputManager.InputDeviceListener, UsbD
      * doesn't hot-unplug the virtual controller while a game is running.
      */
     public synchronized boolean prepareVirtualDsTouchpad() {
-        if (stopped || !isDsGamepadEmulation(gamepadEmulationPreference)) {
+        if (stopped || usbIpHandoffActive || !isDsGamepadEmulation(gamepadEmulationPreference)) {
             return false;
         }
 

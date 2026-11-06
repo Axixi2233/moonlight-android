@@ -10,10 +10,16 @@ import android.content.IntentFilter;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
+import android.net.ConnectivityManager;
+import android.net.LinkAddress;
+import android.net.LinkProperties;
+import android.net.Network;
+import android.net.RouteInfo;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.view.InputDevice;
 import android.widget.Toast;
 
@@ -22,6 +28,9 @@ import com.limelight.R;
 import com.limelight.preferences.PreferenceConfiguration;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.Inet4Address;
 import java.util.ArrayList;
 
 public class UsbDriverService extends Service implements UsbDriverListener {
@@ -41,6 +50,15 @@ public class UsbDriverService extends Service implements UsbDriverListener {
     private UsbDriverListener listener;
     private UsbDriverStateListener stateListener;
     private int nextDeviceId;
+    private final Handler usbIpHandler = new Handler(Looper.getMainLooper());
+    private InetAddress usbIpPeer;
+    private boolean usbIpSessionActive;
+    private UsbIpControllerExport usbIpExport;
+    private String usbIpDeviceName;
+    private String usbIpFallbackDeviceName;
+    private int usbIpStatusRes = R.string.usbip_disabled;
+    private boolean usbIpGamepad;
+    private static final long USBIP_IMPORT_TIMEOUT_MS = 30_000;
 
     @Override
     public void reportControllerState(int controllerId, int buttonFlags, float leftStickX, float leftStickY,
@@ -95,6 +113,13 @@ public class UsbDriverService extends Service implements UsbDriverListener {
             if (action.equals(UsbManager.ACTION_USB_DEVICE_ATTACHED)) {
                 final UsbDevice device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
 
+                // USB/IP claims the already enumerated USB device directly, without consulting system input.
+                if (device != null && usbIpPeer != null && usbIpSessionActive && usbIpExport == null
+                        && UsbIpControllerExport.supports(device)) {
+                    handleUsbDeviceState(device);
+                    return;
+                }
+
                 // shouldClaimDevice() looks at the kernel's enumerated input
                 // devices to make its decision about whether to prompt to take
                 // control of the device. The kernel bringing up the input stack
@@ -110,6 +135,16 @@ public class UsbDriverService extends Service implements UsbDriverListener {
                     }
                 }, 1000);
             }
+            else if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
+                UsbDevice device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+                if (device != null && device.getDeviceName().equals(usbIpDeviceName)) {
+                    stopUsbIpExport();
+                }
+                if (device != null && device.getDeviceName().equals(usbIpFallbackDeviceName)) {
+                    usbIpFallbackDeviceName = null;
+                    usbIpStatusRes = R.string.usbip_waiting_device;
+                }
+            }
             // Subsequent permission dialog completion intent
             else if (action.equals(ACTION_USB_PERMISSION)) {
                 UsbDevice device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
@@ -122,6 +157,9 @@ public class UsbDriverService extends Service implements UsbDriverListener {
                 // If we got this far, we've already found we're able to handle this device
                 if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
                     handleUsbDeviceState(device);
+                } else if (device != null && usbIpPeer != null && usbIpSessionActive
+                        && UsbIpControllerExport.supports(device)) {
+                    usbIpStatusRes = R.string.usbip_permission_denied;
                 }
             }
         }
@@ -151,6 +189,69 @@ public class UsbDriverService extends Service implements UsbDriverListener {
             UsbDriverService.this.stop();
         }
 
+        /** Configure the importer address from the selected stream host. */
+        public void configureUsbIp(String host) {
+            usbIpPeer = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                    ? UsbIpControllerExport.parsePeer(host) : null;
+            usbIpStatusRes = host == null ? R.string.usbip_disabled
+                    : usbIpPeer == null ? R.string.usbip_host_required : R.string.usbip_waiting_session;
+        }
+
+        /** Return the session's USB/IP state for the full performance overlay. */
+        public String getUsbIpStatus() {
+            return getString(usbIpStatusRes);
+        }
+
+        /** Return the IPv4 address on the route to the importer and the USB/IP listening port. */
+        public String getUsbIpAddress() {
+            if (usbIpPeer == null) {
+                return "--";
+            }
+            ConnectivityManager manager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+            String address = null;
+            int prefixLength = -1;
+            for (Network network : manager.getAllNetworks()) {
+                LinkProperties properties = manager.getLinkProperties(network);
+                if (properties == null) {
+                    continue;
+                }
+                for (RouteInfo route : properties.getRoutes()) {
+                    if (!route.matches(usbIpPeer) || route.getDestination().getPrefixLength() <= prefixLength) {
+                        continue;
+                    }
+                    for (LinkAddress local : properties.getLinkAddresses()) {
+                        if (local.getAddress() instanceof Inet4Address && !local.getAddress().isLoopbackAddress()) {
+                            address = local.getAddress().getHostAddress();
+                            prefixLength = route.getDestination().getPrefixLength();
+                            break;
+                        }
+                    }
+                }
+            }
+            return address == null ? "--" : address + ":" + UsbIpControllerExport.PORT;
+        }
+
+        /** Keep the export listener open only during a connected stream. */
+        public void setUsbIpSessionActive(boolean active) {
+            if (usbIpPeer == null || usbIpSessionActive == active) {
+                return;
+            }
+            usbIpSessionActive = active;
+            if (active) {
+                usbIpStatusRes = R.string.usbip_waiting_device;
+                for (UsbDevice device : usbManager.getDeviceList().values()) {
+                    if (UsbIpControllerExport.supports(device)) {
+                        handleUsbDeviceState(device);
+                        break;
+                    }
+                }
+            } else {
+                usbIpStatusRes = R.string.usbip_waiting_session;
+                usbIpFallbackDeviceName = null;
+                stopUsbIpExport();
+            }
+        }
+
         public void changeUSBFlag(boolean flag){
             prefConfig.bindAllUsb=flag;
         }
@@ -158,10 +259,21 @@ public class UsbDriverService extends Service implements UsbDriverListener {
     }
 
     private void handleUsbDeviceState(UsbDevice device) {
-        // Are we able to operate it?
-        if (shouldClaimDevice(device, prefConfig.bindAllUsb)) {
+        if (!started || device == null || !usbManager.getDeviceList().containsKey(device.getDeviceName())) {
+            return;
+        }
+        boolean export = usbIpPeer != null && UsbIpControllerExport.supports(device)
+                && !device.getDeviceName().equals(usbIpFallbackDeviceName)
+                && (usbIpExport == null || device.getDeviceName().equals(usbIpDeviceName));
+        if (export && (!usbIpSessionActive || usbIpExport != null)) {
+            return;
+        }
+        if (export || (prefConfig.usbDriver && shouldClaimDevice(device, prefConfig.bindAllUsb))) {
             // Do we have permission yet?
             if (!usbManager.hasPermission(device)) {
+                if (export) {
+                    usbIpStatusRes = R.string.usbip_waiting_permission;
+                }
                 // Let's ask for permission
                 try {
                     // Tell the state listener that we're about to display a permission dialog
@@ -188,7 +300,11 @@ public class UsbDriverService extends Service implements UsbDriverListener {
 
                     usbManager.requestPermission(device, PendingIntent.getBroadcast(UsbDriverService.this, 0, i, intentFlags));
                 } catch (SecurityException e) {
-                    Toast.makeText(this, this.getText(R.string.error_usb_prohibited), Toast.LENGTH_LONG).show();
+                    if (export) {
+                        usbIpStatusRes = R.string.error_usb_prohibited;
+                    } else {
+                        Toast.makeText(this, this.getText(R.string.error_usb_prohibited), Toast.LENGTH_LONG).show();
+                    }
                     if (stateListener != null) {
                         stateListener.onUsbPermissionPromptCompleted();
                     }
@@ -199,10 +315,18 @@ public class UsbDriverService extends Service implements UsbDriverListener {
             // Open the device
             UsbDeviceConnection connection = usbManager.openDevice(device);
             if (connection == null) {
+                if (export) {
+                    usbIpStatusRes = R.string.usbip_open_failed;
+                }
                 LimeLog.warning("Unable to open USB device: "+device.getDeviceName());
                 return;
             }
 
+
+            if (export) {
+                startUsbIpExport(device, connection);
+                return;
+            }
 
             AbstractController controller;
 
@@ -243,6 +367,105 @@ public class UsbDriverService extends Service implements UsbDriverListener {
             if (stateListener != null) {
                 stateListener.onUSBInfo(device);
             }
+        }
+    }
+
+    private void startUsbIpExport(UsbDevice device, UsbDeviceConnection connection) {
+        usbIpGamepad = UsbIpControllerExport.isGamepad(device, connection);
+        if (usbIpGamepad && stateListener != null) {
+            stateListener.onUsbIpHandoffStarted(device);
+        }
+        try {
+            UsbIpControllerExport exporter = new UsbIpControllerExport(device, connection, usbIpPeer);
+            usbIpExport = exporter;
+            usbIpDeviceName = device.getDeviceName();
+            exporter.start(new UsbIpControllerExport.Listener() {
+                private boolean imported;
+
+                private final Runnable timeout = () -> {
+                    if (usbIpExport == exporter && usbIpSessionActive && !imported) {
+                        LimeLog.info("USB/IP import timed out; restoring controller input");
+                        exporter.close();
+                    }
+                };
+
+                {
+                    usbIpHandler.postDelayed(timeout, USBIP_IMPORT_TIMEOUT_MS);
+                }
+                @Override
+                public void onImportStarted() {
+                    usbIpHandler.post(() -> {
+                        if (usbIpExport == exporter && usbIpSessionActive && exporter.isOpen()) {
+                            usbIpStatusRes = R.string.usbip_initializing;
+                        }
+                    });
+                    // Idle keyboards and mice may have no interrupt IN data until the user interacts.
+                    if (!usbIpGamepad) {
+                        onImported();
+                    }
+                }
+
+                @Override
+                public void onImported() {
+                    usbIpHandler.post(() -> {
+                        if (usbIpExport == exporter && usbIpSessionActive && exporter.isOpen() && !imported) {
+                            imported = true;
+                            usbIpHandler.removeCallbacks(timeout);
+                            if (usbIpGamepad && stateListener != null) {
+                                stateListener.onUsbIpHandoffConfirmed();
+                            }
+                            usbIpStatusRes = R.string.usbip_imported;
+                        }
+                    });
+                }
+
+                @Override
+                public void onStopped(UsbIpControllerExport stopped, IOException error) {
+                    usbIpHandler.post(() -> {
+                        usbIpHandler.removeCallbacks(timeout);
+                        if (usbIpExport != stopped) {
+                            return;
+                        }
+                        usbIpExport = null;
+                        usbIpDeviceName = null;
+                        if (error != null) {
+                            LimeLog.warning("USB/IP export ended: " + error);
+                        }
+                        finishUsbIpHandoff(device);
+                    });
+                }
+            });
+            LimeLog.info("USB/IP waiting on TCP " + UsbIpControllerExport.PORT + " for " + usbIpPeer.getHostAddress());
+            usbIpStatusRes = R.string.usbip_waiting;
+        } catch (IOException | RuntimeException e) {
+            connection.close();
+            LimeLog.warning("USB/IP export failed: " + e);
+            finishUsbIpHandoff(device);
+        }
+    }
+
+    private void finishUsbIpHandoff(UsbDevice device) {
+        if (usbIpGamepad && stateListener != null) {
+            stateListener.onUsbIpHandoffFinished();
+        }
+        usbIpGamepad = false;
+        if (!started || !usbIpSessionActive || !usbManager.getDeviceList().containsKey(device.getDeviceName())) {
+            usbIpStatusRes = usbIpSessionActive ? R.string.usbip_waiting_device : R.string.usbip_waiting_session;
+            return;
+        }
+        usbIpFallbackDeviceName = device.getDeviceName();
+        usbIpStatusRes = R.string.usbip_fallback;
+        // Let Android's system input driver rebind before deciding whether to claim in-app.
+        usbIpHandler.postDelayed(() -> {
+            if (started && usbIpSessionActive && device.getDeviceName().equals(usbIpFallbackDeviceName)) {
+                handleUsbDeviceState(device);
+            }
+        }, 500);
+    }
+
+    private void stopUsbIpExport() {
+        if (usbIpExport != null) {
+            usbIpExport.close();
         }
     }
 
@@ -333,6 +556,7 @@ public class UsbDriverService extends Service implements UsbDriverListener {
         // Register for USB attach broadcasts and permission completions
         IntentFilter filter = new IntentFilter();
         filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
+        filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
         filter.addAction(ACTION_USB_PERMISSION);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(receiver, filter, RECEIVER_NOT_EXPORTED);
@@ -343,14 +567,7 @@ public class UsbDriverService extends Service implements UsbDriverListener {
 
         // Enumerate existing devices
         for (UsbDevice dev : usbManager.getDeviceList().values()) {
-            if (shouldClaimDevice(dev, prefConfig.bindAllUsb)) {
-                // Start the process of claiming this device
-                handleUsbDeviceState(dev);
-            }else{
-                if (stateListener != null) {
-                    stateListener.onUSBInfo(dev);
-                }
-            }
+            handleUsbDeviceState(dev);
         }
     }
 
@@ -360,6 +577,8 @@ public class UsbDriverService extends Service implements UsbDriverListener {
         }
 
         started = false;
+        usbIpSessionActive = false;
+        stopUsbIpExport();
 
         // Stop the attachment receiver
         unregisterReceiver(receiver);
@@ -395,5 +614,8 @@ public class UsbDriverService extends Service implements UsbDriverListener {
         void onUsbPermissionPromptStarting();
         void onUsbPermissionPromptCompleted();
         default void onUSBInfo(UsbDevice device){}
+        default void onUsbIpHandoffStarted(UsbDevice device) {}
+        default void onUsbIpHandoffConfirmed() {}
+        default void onUsbIpHandoffFinished() {}
     }
 }

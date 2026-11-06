@@ -84,6 +84,7 @@ final class SettingsProfileKeys {
         "checkbox_ui_theme_white",
         "checkbox_unlock_fps",
         "checkbox_usb_bind_all",
+        "checkbox_usbip_mode",
         "checkbox_usb_driver",
         "checkbox_vibrate_fallback",
         "checkbox_vibrate_keyboard",

@@ -338,13 +338,18 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     private WifiManager.WifiLock lowLatencyWifiLock;
 
     private boolean connectedToUsbDriverService = false;
+    private UsbDriverService.UsbDriverBinder usbDriverBinder;
+    private boolean usbIpHandoffActive;
     private ServiceConnection usbDriverServiceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
             UsbDriverService.UsbDriverBinder binder = (UsbDriverService.UsbDriverBinder) iBinder;
             binder.setListener(controllerHandler);
             binder.setStateListener(Game.this);
+            usbDriverBinder = binder;
+            binder.configureUsbIp(prefConfig.usbIpMode ? getIntent().getStringExtra(EXTRA_HOST) : null);
             binder.start();
+            binder.setUsbIpSessionActive(connected);
             connectedToUsbDriverService = true;
             logSessionInfo("USB", "USB 手柄服务已连接");
         }
@@ -352,6 +357,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         @Override
         public void onServiceDisconnected(ComponentName componentName) {
             connectedToUsbDriverService = false;
+            usbDriverBinder = null;
             logSessionWarn("USB", "USB 手柄服务意外断开");
         }
     };
@@ -1080,7 +1086,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             initKeyboardController();
         }
 
-        if (prefConfig.usbDriver) {
+        if (prefConfig.usbDriver || prefConfig.usbIpMode) {
             // Start the USB driver
             bindService(new Intent(this, UsbDriverService.class),
                     usbDriverServiceConnection, Service.BIND_AUTO_CREATE);
@@ -1185,6 +1191,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     //显示隐藏虚拟手柄控制器
     public void showHideVirtualController(){
+        if (usbIpHandoffActive) {
+            return;
+        }
         if(virtualController==null){
             initVirtualController();
             prefConfig.onscreenController=true;
@@ -1199,11 +1208,14 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     }
 
     public boolean isDsTouchpadSupported() {
-        return prefConfig != null &&
+        return prefConfig != null && !usbIpHandoffActive &&
                 ControllerHandler.isDsGamepadEmulation(prefConfig.gamepadEmulation);
     }
 
     public boolean toggleDsTouchpad() {
+        if (usbIpHandoffActive) {
+            return false;
+        }
         boolean show = !dsTouchpadVisible;
         if (show && (controllerHandler == null ||
                 !controllerHandler.prepareVirtualDsTouchpad())) {
@@ -2227,6 +2239,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         if (connectedToUsbDriverService) {
             // Unbind from the discovery service
             unbindService(usbDriverServiceConnection);
+            usbDriverBinder = null;
         }
 
         if (fsrInputSurface != null) {
@@ -4283,6 +4296,9 @@ public class Game extends Activity implements SurfaceHolder.Callback,
             public void run() {
                 connected = true;
                 connecting = false;
+                if (usbDriverBinder != null) {
+                    usbDriverBinder.setUsbIpSessionActive(true);
+                }
                 streamStartElapsedMs = SystemClock.elapsedRealtime();
                 if (backgroundReconnectAttempt > 0) {
                     final int completedAttempt = backgroundReconnectAttempt;
@@ -4837,6 +4853,8 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
         if (stats == null) {
             addPerfRow("状态", "--");
+            addPerfRow("USB/IP", buildUsbIpStatusText());
+            addPerfRow("USB/IP地址", buildUsbIpAddressText());
             return;
         }
 
@@ -4882,6 +4900,22 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         addPerfRow("游戏震动", buildNativeGameHapticsStatusText());
         addPerfRow("音频震动", buildAudioHapticsStatusText());
         addPerfRow("USB手柄", buildUsbControllerStatusText());
+        addPerfRow("USB/IP", buildUsbIpStatusText());
+        addPerfRow("USB/IP地址", buildUsbIpAddressText());
+    }
+
+    /** Read the service-owned USB/IP state without retaining an old handoff state in the UI. */
+    private String buildUsbIpStatusText() {
+        if (!prefConfig.usbIpMode) {
+            return getString(R.string.usbip_disabled);
+        }
+        return usbDriverBinder != null ? usbDriverBinder.getUsbIpStatus()
+                : getString(R.string.usbip_waiting_session);
+    }
+
+    /** Show the Android export endpoint used by Windows to import the controller. */
+    private String buildUsbIpAddressText() {
+        return prefConfig.usbIpMode && usbDriverBinder != null ? usbDriverBinder.getUsbIpAddress() : "--";
     }
 
     private void addPerfRow(String label, String value) {
@@ -6586,7 +6620,47 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                         ? controllerHandler.getNativeGameHapticsOutputRouteDisplayName() : "");
     }
 
+    @Override
+    public void onUsbIpHandoffStarted(android.hardware.usb.UsbDevice device) {
+        if (controllerHandler != null) {
+            controllerHandler.beginUsbIpHandoff(device);
+        }
+    }
+
+    @Override
+    public void onUsbIpHandoffConfirmed() {
+        if (!connected || controllerHandler == null || controllerHandlerStopped) {
+            return;
+        }
+        usbIpHandoffActive = true;
+        controllerHandler.confirmUsbIpHandoff();
+        if (virtualController != null) {
+            virtualController.hide();
+        }
+        cancelDsTouchpadDrag();
+        releaseDsTouchpadInput();
+        updateDsTouchpadVisibility();
+    }
+
+    @Override
+    public void onUsbIpHandoffFinished() {
+        boolean wasActive = usbIpHandoffActive;
+        usbIpHandoffActive = false;
+        if (controllerHandler != null) {
+            controllerHandler.finishUsbIpHandoff();
+        }
+        if (wasActive && connected && !controllerHandlerStopped) {
+            if (virtualController != null && prefConfig.onscreenController) {
+                virtualController.show();
+            }
+            updateDsTouchpadVisibility();
+        }
+    }
+
     private void stopControllerHandler(String reason) {
+        if (usbDriverBinder != null) {
+            usbDriverBinder.setUsbIpSessionActive(false);
+        }
         if (controllerHandler == null || controllerHandlerStopped) {
             return;
         }
