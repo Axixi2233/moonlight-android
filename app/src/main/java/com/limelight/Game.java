@@ -62,6 +62,7 @@ import com.limelight.ui.BaseFragmentDialog.BaseGameMenuFragmentDialog;
 import com.limelight.ui.StreamView;
 import com.limelight.ui.StreamLoadingOverlayController;
 import com.limelight.ui.virtualcontroller.DsTouchpadView;
+import com.limelight.ui.LocalCursorOverlay;
 import com.limelight.ui.virtualmouse.RemoteMouseSink;
 import com.limelight.ui.virtualmouse.VirtualMouseController;
 import com.limelight.ui.virtualmouse.VirtualMouseOverlay;
@@ -272,6 +273,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     private StreamView streamView;
     private VideoProcessingGLSurfaceView fsrView;
     private FsrVideoProcessor fsrVideoProcessor;
+    private LocalCursorOverlay localCursorOverlay;
     private VirtualMouseOverlay virtualMouseOverlay;
     private FrameLayout dsTouchpadPanel;
     private FrameLayout dsTouchpadWindow;
@@ -1005,6 +1007,63 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 new ComputerDetails.AddressTuple(host, port),
                 httpsPort, uniqueId, config,
                 PlatformBinding.getCryptoProvider(this), serverCert);
+
+        // Client-side cursor. The host only re-encodes on desktop changes, so a
+        // pointer moved purely by client input is often never composited into the
+        // stream. Draw it here, driven by the same deltas we forward to the host.
+        if (rootView instanceof ViewGroup) {
+            localCursorOverlay = new LocalCursorOverlay(this);
+            ((ViewGroup) rootView).addView(localCursorOverlay, new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            conn.setMouseMoveListener(new NvConnection.MouseMoveListener() {                @Override
+                public void onLocalMouseMove(short dx, short dy) {
+                    runOnUiThread(() -> {
+                        if (localCursorOverlay == null || isFinishing()) {
+                            return;
+                        }
+                        float streamWidth = prefConfig != null && prefConfig.width > 0
+                                ? prefConfig.width : 1280f;
+                        float viewWidth = streamView.getWidth() > 0
+                                ? streamView.getWidth() : getWindow().getDecorView().getWidth();
+                        if (viewWidth > 0f) {
+                            localCursorOverlay.setDeltaScale(viewWidth / streamWidth);
+                        }
+                        localCursorOverlay.moveBy(dx, dy);
+                    });
+                }
+
+                @Override
+                public void onLocalMousePosition(short x, short y, short refW, short refH) {
+                    runOnUiThread(() -> {
+                        if (localCursorOverlay == null || isFinishing()) {
+                            return;
+                        }
+                        RectF videoRect = new RectF();
+                        getVirtualMouseBaseVideoRect(videoRect);
+                        localCursorOverlay.setReferencePosition(
+                                x, y, refW, refH,
+                                videoRect.left, videoRect.top,
+                                videoRect.width(), videoRect.height());
+                    });
+                }
+            });
+
+            // Drive the pointer with absolute packets tracked here, so the locally
+            // drawn cursor and the remote pointer use identical coordinates.
+            localCursorOverlay.post(() -> {
+                if (conn == null || localCursorOverlay == null) {
+                    return;
+                }
+                int w = streamView.getWidth() > 0
+                        ? streamView.getWidth() : localCursorOverlay.getWidth();
+                int h = streamView.getHeight() > 0
+                        ? streamView.getHeight() : localCursorOverlay.getHeight();
+                if (w > 0 && h > 0) {
+                    conn.enableAbsoluteCursor(w, h);
+                }
+            });
+        }
+
         startConnectionIfReady();
         PcmHapticsBackend optionalPcmHapticsBackend = OptionalPcmHapticsLoader.load(this,
                 new PcmHapticsBackend.Callback() {
@@ -2662,6 +2721,21 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 || device.getKeyboardType() == InputDevice.KEYBOARD_TYPE_ALPHABETIC;
     }
 
+    private boolean isKeyboardBackAsEscape(KeyEvent event) {
+        if (!connected || !grabbedInput) {
+            return false;
+        }
+        if (event.getKeyCode() != KeyEvent.KEYCODE_BACK) {
+            return false;
+        }
+        // Only physical keyboards, not the synthetic back events from right-click.
+        if ((event.getSource() & InputDevice.SOURCE_KEYBOARD) == 0) {
+            return false;
+        }
+        InputDevice device = event.getDevice();
+        return device == null || !ControllerHandler.isGameControllerDevice(device);
+    }
+
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         return handleKeyDown(event) || super.onKeyDown(keyCode, event);
@@ -2669,6 +2743,7 @@ public class Game extends Activity implements SurfaceHolder.Callback,
 
     @Override
     public boolean handleKeyDown(KeyEvent event) {
+
         // Pass-through virtual navigation keys
         if ((event.getFlags() & KeyEvent.FLAG_VIRTUAL_HARD_KEY) != 0) {
             return false;
@@ -2697,6 +2772,20 @@ public class Game extends Activity implements SurfaceHolder.Callback,
         if (isPhysicalKeyboardEscapeMenuEvent(event)) {
             keyboardEscapeMenuPending = true;
             return true;
+        }
+
+        // The HONOR keyboard firmware reports its ESC key as KEYCODE_BACK
+        // (code 4, scan 158), so Android turns it into a back navigation.
+        // While streaming, send it to the host as a real ESC instead.
+        if (isKeyboardBackAsEscape(event)) {
+            short vkEscape = keyboardTranslator.translate(KeyEvent.KEYCODE_ESCAPE, event.getDeviceId());
+            if (vkEscape != 0) {
+                if (event.getRepeatCount() == 0) {
+                    conn.sendKeyboardInput(vkEscape, KeyboardPacket.KEY_DOWN,
+                            getModifierState(), (byte) 0);
+                }
+                return true;
+            }
         }
 
         boolean handled = false;
@@ -2798,6 +2887,16 @@ public class Game extends Activity implements SurfaceHolder.Callback,
                 runOnUiThread(this::showGameMenu);
             }
             return true;
+        }
+
+        // Mirror of the key-down remap for the HONOR keyboard's ESC-as-BACK key.
+        if (isKeyboardBackAsEscape(event)) {
+            short vkEscape = keyboardTranslator.translate(KeyEvent.KEYCODE_ESCAPE, event.getDeviceId());
+            if (vkEscape != 0) {
+                conn.sendKeyboardInput(vkEscape, KeyboardPacket.KEY_UP,
+                        getModifierState(), (byte) 0);
+                return true;
+            }
         }
 
         boolean handled = false;
@@ -3447,7 +3546,23 @@ public class Game extends Activity implements SurfaceHolder.Callback,
     private boolean handleMotionEventWithoutStylus(View view, MotionEvent event) {
         // Pass through mouse/touch/joystick input if we're not grabbing
         if (!grabbedInput) {
-            return false;
+            // Re-acquire pointer capture as soon as the user interacts with the stream
+            // again (leaving fullscreen or closing the menu releases it, and previously
+            // nothing ever took it back without restarting the session).
+            final int action = event.getActionMasked();
+            final boolean pointerSource =
+                    (event.getSource() & InputDevice.SOURCE_CLASS_POINTER) != 0;
+            final boolean reGrabTrigger =
+                    action == MotionEvent.ACTION_DOWN
+                            || action == MotionEvent.ACTION_HOVER_ENTER
+                            || action == MotionEvent.ACTION_HOVER_MOVE;
+            if (pointerSource && reGrabTrigger) {
+                setInputGrabState(true);
+                // Fall through so this event is treated as the first grabbed event.
+            }
+            else {
+                return false;
+            }
         }
         int eventSource = event.getSource();
         int deviceSources = event.getDevice() != null ? event.getDevice().getSources() : 0;

@@ -564,19 +564,98 @@ public class NvConnection {
         }).start();
     }
     
+    /**
+     * Notified for every relative mouse delta that is forwarded to the host, so
+     * the UI can keep a locally drawn cursor in sync with the remote pointer.
+     */
+    public interface MouseMoveListener {
+        void onLocalMouseMove(short deltaX, short deltaY);
+
+        /** Absolute pointer position the host has just been told to move to. */
+        void onLocalMousePosition(short x, short y, short referenceWidth, short referenceHeight);
+    }
+
+    private volatile MouseMoveListener mouseMoveListener;
+
+    public void setMouseMoveListener(MouseMoveListener listener) {
+        this.mouseMoveListener = listener;
+    }
+
+    /**
+     * When enabled, relative deltas are converted into absolute pointer packets that
+     * this class tracks itself. The local cursor and the host then work from the very
+     * same numbers, so they cannot drift apart.
+     */
+    private volatile boolean absoluteCursorEnabled;
+    private float cursorX;
+    private float cursorY;
+    private float cursorRefWidth = 1280f;
+    private float cursorRefHeight = 720f;
+
+    public void enableAbsoluteCursor(float referenceWidth, float referenceHeight) {
+        if (referenceWidth > 0f && referenceHeight > 0f) {
+            cursorRefWidth = referenceWidth;
+            cursorRefHeight = referenceHeight;
+        }
+        if (!absoluteCursorEnabled) {
+            // Start centred; both sides are told about this position below.
+            cursorX = cursorRefWidth / 2f;
+            cursorY = cursorRefHeight / 2f;
+            absoluteCursorEnabled = true;
+            pushAbsoluteCursor();
+        }
+    }
+
+    public void disableAbsoluteCursor() {
+        absoluteCursorEnabled = false;
+    }
+
+    private void pushAbsoluteCursor() {
+        short x = (short) Math.max(0f, Math.min(cursorX, cursorRefWidth - 1f));
+        short y = (short) Math.max(0f, Math.min(cursorY, cursorRefHeight - 1f));
+        short rw = (short) cursorRefWidth;
+        short rh = (short) cursorRefHeight;
+        if (!isMonkey) {
+            MoonBridge.sendMousePosition(x, y, rw, rh);
+        }
+        MouseMoveListener listener = mouseMoveListener;
+        if (listener != null) {
+            listener.onLocalMousePosition(x, y, rw, rh);
+        }
+    }
+
     public void sendMouseMove(final short deltaX, final short deltaY)
     {
         LimeLog.info("sendMousePosition==1-"+deltaX+","+deltaY);
 
+        if (absoluteCursorEnabled) {
+            cursorX = Math.max(0f, Math.min(cursorX + deltaX, cursorRefWidth - 1f));
+            cursorY = Math.max(0f, Math.min(cursorY + deltaY, cursorRefHeight - 1f));
+            pushAbsoluteCursor();
+            return;
+        }
+
         if (!isMonkey) {
             MoonBridge.sendMouseMove(deltaX, deltaY);
+        }
+
+        MouseMoveListener listener = mouseMoveListener;
+        if (listener != null) {
+            listener.onLocalMouseMove(deltaX, deltaY);
         }
     }
 
     public void sendMousePosition(short x, short y, short referenceWidth, short referenceHeight)
     {
+        LimeLog.info("sendMousePosition==4-" + x + "," + y + " ref=" + referenceWidth + "x" + referenceHeight);
+
         if (!isMonkey) {
             MoonBridge.sendMousePosition(x, y, referenceWidth, referenceHeight);
+        }
+
+        MouseMoveListener listener = mouseMoveListener;
+        if (listener != null) {
+            listener.onLocalMousePosition(x, y, referenceWidth, referenceHeight);
         }
     }
 
